@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Gestión de Cochera</title>
+  <!-- Estilos del Sistema (Guía de Estilos UI/UX) -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231E3A8A'><path d='M4 4h7a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5H8v6H4V4zm4 4v2h3a1 1 0 0 0 1-1 1 1 0 0 0-1-1H8z'/></svg>">
+</head>
+<body>
+
+  <!-- ========================================================================
+       BARRA SUPERIOR (HEADER ORIENTADO AL USUARIO)
+       ======================================================================== -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">P</div>
+      <div class="brand-info">
+        <h1>COCHERA A-DEV</h1>
+        <p>Sistema de Gestión de Cochera</p>
+      </div>
+    </div>
+
+    <!-- Información del usuario en sesión y cerrar sesión (oculto en pantalla de Login) -->
+    <div class="header-user-section" id="header-user-section" style="display: none;">
+      <div class="user-profile-badge">
+        <div class="user-avatar">DA</div>
+        <div class="user-meta">
+          <span class="user-name" id="session-user-name">Leonardo Aliaga</span>
+          <span class="user-role" id="session-user-role">DUEÑO</span>
+        </div>
+        <span class="badge badge-primary mono" id="session-user-badge">DUEÑO</span>
+      </div>
+      <button type="button" class="btn-logout" id="btn-logout" title="Cerrar sesión">
+        Cerrar Sesión
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenedor para Notificaciones Toast (3.5s - 4.0s) -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- ========================================================================
+       CONTENIDO PRINCIPAL: 3 PANTALLAS BÁSICAS
+       ======================================================================== -->
+  <main class="app-container">
+
+    <!-- ----------------------------------------------------------------------
+         1. PANTALLA DE LOGIN
+         ---------------------------------------------------------------------- -->
+    <section id="view-login" class="view-section active">
+      <div class="login-wrapper">
+        <div class="login-card">
+          <div class="login-header">
+            <div class="logo-badge">P</div>
+            <h1>Iniciar Sesión</h1>
+            <p>Ingrese sus credenciales para acceder al sistema</p>
+            <div class="accent-bar"></div>
+          </div>
+
+          <form id="form-login" novalidate>
+            <!-- Usuario o Correo -->
+            <div class="form-group">
+              <label for="login-usuario" class="form-label">
+                <span>Usuario o Correo</span>
+                <span class="required">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="login-usuario" 
+                class="input-control" 
+                placeholder="ej. admin@cochera.pe" 
+                value="admin@cochera.pe" 
+                autocomplete="username" 
+                required
+              >
+              <div class="input-feedback"></div>
+            </div>
+
+            <!-- Contraseña -->
+            <div class="form-group">
+              <label for="login-password" class="form-label">
+                <span>Contraseña</span>
+                <span class="required">*</span>
+              </label>
+              <div class="input-container">
+                <input 
+                  type="password" 
+                  id="login-password" 
+                  class="input-control" 
+                  placeholder="••••••••" 
+                  value="123456" 
+                  autocomplete="current-password" 
+                  required
+                >
+                <button type="button" id="btn-toggle-password" class="password-toggle-btn">
+                  Mostrar
+                </button>
+              </div>
+              <div class="input-feedback"></div>
+            </div>
+
+            <!-- Botón de Ingreso -->
+            <button type="submit" id="btn-login-submit" class="btn btn-primary btn-block" style="margin-top: 24px;">
+              Ingresar al Sistema
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------------------------
+         2. PANTALLA DE MENÚ PRINCIPAL / DASHBOARD (CRONOLOGÍA SPRINT 1)
+         ---------------------------------------------------------------------- -->
+    <section id="view-dashboard" class="view-section">
+      <div class="dashboard-header">
+        <div>
+          <h1>Menú Principal</h1>
+          <p>Seleccione el módulo que desea gestionar</p>
+        </div>
+      </div>
+
+      <!-- Opciones del Menú Principal -->
+      <div class="modules-grid">
+        
+        <!-- Módulo de Tarifas (UPAO-16) -->
+        <div class="module-card card-primary" id="card-modulo-tarifas">
+          <div class="module-card-icon">💰</div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Configurar Tarifas</h2>
+              <span class="badge badge-primary mono">UPAO-16</span>
+            </div>
+            <p>Visualizar y modificar tarifas por hora y fracción para autos, motos y reservas.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------------------------
+         3. PANTALLA DEL MÓDULO DE TARIFAS (UPAO-16)
+         ---------------------------------------------------------------------- -->
+    <section id="view-tarifas" class="view-section">
+      <!-- Navegación de retorno -->
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Módulo de Tarifas</h1>
+        <p>Gestión de precios vigentes por hora y fracción para vehículos y reservas</p>
+      </div>
+
+      <div class="tarifas-layout">
+        
+        <!-- SECCIÓN 1: TABLA DE TARIFAS VIGENTES (AUTOS, MOTOS, RESERVAS) -->
+        <div class="card card-table">
+          <div class="card-header">
+            <h2>Tarifas Actuales</h2>
+            <p class="caption">Seleccione una tarifa para modificar sus valores</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tipo de Vehículo / Servicio</th>
+                  <th>Precio por Hora</th>
+                  <th>Precio por Fracción</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-tarifas-body">
+                <!-- Se llena dinámicamente con JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 2: FORMULARIO PARA MODIFICAR TARIFA -->
+        <div class="card card-form" id="card-formulario-tarifa">
+          <div class="card-header">
+            <h2 id="form-tarifa-title">Modificar Tarifa</h2>
+            <p class="caption">Actualice el precio por hora o por fracción</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <form id="form-modificar-tarifa" novalidate>
+            <!-- Tipo de Vehículo / Servicio -->
+            <div class="form-group">
+              <label for="select-tipo-tarifa" class="form-label">
+                <span>Tipo de Vehículo / Servicio</span>
+                <span class="required">*</span>
+              </label>
+              <select id="select-tipo-tarifa" class="input-control">
+                <option value="auto">Automóvil / Camioneta</option>
+                <option value="moto">Motocicleta</option>
+                <option value="reserva">Reserva Web</option>
+              </select>
+            </div>
+
+            <!-- Precio por Hora (S/) -->
+            <div class="form-group">
+              <label for="input-precio-hora" class="form-label">
+                <span>Tarifa por Hora (S/)</span>
+                <span class="required">*</span>
+              </label>
+              <div class="input-container">
+                <span class="input-prefix">S/</span>
+                <input 
+                  type="text" 
+                  id="input-precio-hora" 
+                  class="input-control has-prefix mono" 
+                  placeholder="0.00" 
+                  required
+                >
+              </div>
+              <div class="input-feedback"></div>
+              <span class="caption">Formato: 0.01 a 999.99 (máx. 2 decimales)</span>
+            </div>
+
+            <!-- Precio por Fracción (S/) -->
+            <div class="form-group">
+              <label for="input-precio-fraccion" class="form-label">
+                <span>Tarifa por Fracción (S/)</span>
+                <span class="required">*</span>
+              </label>
+              <div class="input-container">
+                <span class="input-prefix">S/</span>
+                <input 
+                  type="text" 
+                  id="input-precio-fraccion" 
+                  class="input-control has-prefix mono" 
+                  placeholder="0.00" 
+                  required
+                >
+              </div>
+              <div class="input-feedback"></div>
+              <span class="caption">Cobro aplicable por fracción de permanencia</span>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="form-actions">
+              <button type="submit" id="btn-guardar-tarifa" class="btn btn-primary" style="flex: 2;">
+                Guardar Tarifa
+              </button>
+              <button type="button" id="btn-cancelar-edicion" class="btn btn-secondary" style="flex: 1;">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       PIE DE PÁGINA SIMPLE
+       ======================================================================== -->
+  <footer class="app-footer">
+    <p>Sistema de Gestión de Cochera · Moneda: PEN (S/)</p>
+  </footer>
+
+  <!-- Lógica JavaScript (Vainilla) -->
+  <script src="js/app.js"></script>
+</body>
+</html>
