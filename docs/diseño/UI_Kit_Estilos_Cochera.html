@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI Kit — Sistema de Gestión de Cochera</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+  :root{
+    --primary:#1E3A8A; --accent:#F59E0B; --success:#10B981; --danger:#EF4444;
+    --bg:#F3F4F6; --surface:#FFFFFF; --border:#E5E7EB; --text:#111827; --text2:#6B7280;
+    --inp-border:#D0D7DE; --inp-text:#1F2328; --ph:#656D76; --focus:#0969DA;
+    --err:#CF222E; --errbg:#FFEBE9; --ok:#1A7F37; --okbg:#E6F6EB;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Geist','Segoe UI',Arial,sans-serif;padding:48px 60px 60px;}
+  .mono{font-family:'JetBrains Mono',Consolas,'Courier New',monospace;}
+
+  header{margin-bottom:36px;}
+  .eyebrow{font-size:14px;letter-spacing:2px;color:var(--text2);text-transform:uppercase;}
+  h1{font-size:34px;font-weight:700;margin-top:8px;}
+  header p{font-size:15px;color:var(--text2);margin-top:8px;}
+  .accent-bar{width:72px;height:6px;border-radius:3px;background:var(--accent);margin-top:16px;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 32px 32px;}
+  .card h2{color:var(--primary);font-size:20px;font-weight:700;}
+  .card .rule{width:48px;height:4px;border-radius:2px;background:var(--accent);margin:8px 0 18px;}
+  .sub{font-size:12px;color:var(--text2);margin-bottom:14px;}
+
+  /* Tipografía */
+  .type-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:6px 0;}
+  .type-row .spec{font-size:12px;color:var(--text2);white-space:nowrap;text-align:right;}
+  .h1s{font-size:24px;font-weight:700;}
+  .h2s{font-size:18px;font-weight:600;}
+  .bodys{font-size:14px;font-weight:400;}
+  .labels{font-size:13px;font-weight:500;}
+  .caps{font-size:12px;font-weight:400;color:var(--text2);}
+  .data{font-size:26px;font-weight:700;color:var(--primary);}
+  hr.sep{border:none;border-top:1.5px solid var(--border);margin:14px 0;}
+
+  /* Paleta */
+  .palette{display:grid;grid-template-columns:repeat(3,1fr);gap:22px 16px;}
+  .swatch .chip{width:60px;height:60px;border-radius:10px;margin-bottom:10px;}
+  .swatch .name{font-size:12px;font-weight:600;}
+  .swatch .hex{font-size:11px;color:var(--text2);}
+  .chip.bordered{border:1.5px solid var(--border);}
+
+  /* Inputs */
+  .inputs{display:grid;grid-template-columns:1fr 1fr;gap:26px 24px;}
+  .field label{display:block;font-size:13px;font-weight:500;margin-bottom:8px;}
+  .control{width:100%;height:44px;border-radius:10px;display:flex;align-items:center;padding:0 14px;font-size:14px;}
+  .ctrl-default{border:1.5px solid var(--inp-border);background:#fff;color:var(--ph);}
+  .ctrl-focus{position:relative;border:2px solid var(--focus);background:#fff;color:var(--inp-text);box-shadow:0 0 0 4px rgba(9,105,218,.2);}
+  .ctrl-error{border:1.5px solid var(--err);background:var(--errbg);color:var(--inp-text);}
+  .ctrl-ok{border:1.5px solid var(--ok);background:var(--okbg);color:var(--ok);gap:10px;}
+  .check{width:18px;height:18px;border-radius:50%;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 18px;}
+  .hint{font-size:11px;color:var(--text2);margin-top:6px;}
+  .errmsg{font-size:12px;color:var(--err);margin-top:6px;}
+
+  /* Badges */
+  .badges{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:26px;}
+  .badge{font-size:11px;font-weight:600;padding:5px 12px;border-radius:12px;color:#fff;letter-spacing:.4px;}
+  .bg-primary{background:var(--primary);} .bg-accent{background:var(--accent);color:var(--text);}
+  .bg-dark{background:var(--text);} .bg-gray{background:var(--text2);}
+  .bg-success{background:var(--success);} .bg-danger{background:var(--danger);}
+
+  /* Semáforo */
+  .semaforo{display:flex;flex-direction:column;gap:16px;}
+  .sem{display:flex;align-items:center;gap:14px;}
+  .dot{width:18px;height:18px;border-radius:5px;flex:0 0 18px;}
+  .sem span{font-size:13px;}
+  .pill-ok{background:var(--success);color:#fff;font-size:12px;font-weight:600;border-radius:14px;padding:6px 18px;margin-left:auto;}
+
+  /* Validaciones */
+  .val-row{padding:10px 0;border-bottom:1px solid var(--border);}
+  .val-row:last-child{border-bottom:none;}
+  .val-top{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+  .val-name{font-size:13px;font-weight:500;}
+  .val-example{font-size:14px;color:var(--primary);background:var(--bg);border-radius:6px;padding:5px 12px;white-space:nowrap;}
+  .val-rule{font-size:11px;color:var(--text2);margin-top:6px;}
+
+  /* Toasts */
+  .toast-label{font-size:11px;font-weight:600;margin-bottom:6px;display:block;}
+  .toast{display:flex;align-items:center;gap:14px;border-radius:10px;padding:14px 16px;margin-bottom:14px;border-left:6px solid transparent;font-size:14px;font-weight:500;}
+  .toast .ic{width:22px;height:22px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 22px;}
+  .toast-ok{background:var(--okbg);border-color:var(--success);}
+  .toast-ok .ic{background:var(--success);}
+  .toast-err{background:var(--errbg);border-color:var(--danger);}
+  .toast-err .ic{background:var(--danger);}
+  .notes{font-size:12px;color:var(--text2);line-height:1.9;border-top:1.5px solid var(--border);padding-top:16px;margin-top:6px;}
+
+  footer{font-size:12px;color:var(--text2);margin-top:36px;}
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="eyebrow">Sistema de Gestión de Cochera · UI/UX</div>
+    <h1>Guía de Estilos y Lineamientos de Interfaz</h1>
+    <p>Resumen visual de parámetros: tipografía, color, inputs, estados, aforo y validaciones.</p>
+    <div class="accent-bar"></div>
+  </header>
+
+  <div class="grid">
+
+    <!-- 1 TIPOGRAFÍA -->
+    <section class="card">
+      <h2>1 · Tipografía y Jerarquía</h2>
+      <div class="rule"></div>
+      <p class="sub">Primaria: Geist Sans (Segoe UI) · Mono: JetBrains Mono (Consolas)</p>
+
+      <div class="type-row"><span class="h1s">Configuración de Tarifas</span><span class="spec mono">H1 · 24px · Bold 700</span></div>
+      <div class="type-row"><span class="h2s">Encabezado de Contenedor Bento</span><span class="spec mono">H2/H3 · 16-18px · SemiBold 600</span></div>
+      <div class="type-row"><span class="bodys">Toyota Corolla · Placa ABC-123</span><span class="spec mono">Body · 14px · Regular 400</span></div>
+      <div class="type-row"><span class="labels">Tipo de Vehículo</span><span class="spec mono">Label · 13px · Medium 500</span></div>
+      <div class="type-row"><span class="caps">Mensaje de ayuda / timestamp</span><span class="spec mono">Caption · 12px · Regular 400</span></div>
+      <hr class="sep">
+      <div class="type-row"><span class="data mono">S/ 4.50</span><span class="spec mono">Data · 18-28px · Bold 700 · Mono</span></div>
+      <div class="type-row"><span class="badge bg-primary mono">AUTO</span><span class="spec mono">Badge · 11px · SemiBold 600 · Mono</span></div>
+    </section>
+
+    <!-- 2 PALETA -->
+    <section class="card">
+      <h2>2 · Paleta de Colores</h2>
+      <div class="rule"></div>
+      <div class="palette">
+        <div class="swatch"><div class="chip" style="background:#1E3A8A"></div><div class="name">Azul Corporativo</div><div class="hex mono">Primario · #1E3A8A</div></div>
+        <div class="swatch"><div class="chip" style="background:#F59E0B"></div><div class="name">Ámbar / Garaje</div><div class="hex mono">Acento · #F59E0B</div></div>
+        <div class="swatch"><div class="chip" style="background:#10B981"></div><div class="name">Verde Esmeralda</div><div class="hex mono">Éxito · #10B981</div></div>
+        <div class="swatch"><div class="chip" style="background:#EF4444"></div><div class="name">Rojo Carmesí</div><div class="hex mono">Peligro · #EF4444</div></div>
+        <div class="swatch"><div class="chip bordered" style="background:#F3F4F6"></div><div class="name">Gris Claro</div><div class="hex mono">Fondo · #F3F4F6</div></div>
+        <div class="swatch"><div class="chip bordered" style="background:#FFFFFF"></div><div class="name">Blanco Puro</div><div class="hex mono">Superficie · #FFFFFF</div></div>
+        <div class="swatch"><div class="chip" style="background:#E5E7EB"></div><div class="name">Gris Borde</div><div class="hex mono">Bordes · #E5E7EB</div></div>
+        <div class="swatch"><div class="chip" style="background:#111827"></div><div class="name">Gris Oscuro</div><div class="hex mono">Texto · #111827</div></div>
+        <div class="swatch"><div class="chip" style="background:#6B7280"></div><div class="name">Gris Medio</div><div class="hex mono">Texto 2 · #6B7280</div></div>
+      </div>
+    </section>
+
+    <!-- 3 INPUTS -->
+    <section class="card">
+      <h2>3 · Estados de Inputs</h2>
+      <div class="rule"></div>
+      <div class="inputs">
+        <div class="field">
+          <label>Reposo (Default)</label>
+          <div class="control ctrl-default mono">ABC-123</div>
+          <div class="hint mono">borde #D0D7DE · texto #1F2328</div>
+        </div>
+        <div class="field">
+          <label>Activo / Focus</label>
+          <div class="control ctrl-focus mono">ABC-123</div>
+          <div class="hint mono">borde #0969DA + anillo de foco</div>
+        </div>
+        <div class="field">
+          <label>Error</label>
+          <div class="control ctrl-error mono">ABC-12</div>
+          <div class="errmsg">Ingrese una placa válida (ej. ABC-123).</div>
+          <div class="hint mono">borde #CF222E · fondo #FFEBE9</div>
+        </div>
+        <div class="field">
+          <label>Éxito / Guardado</label>
+          <div class="control ctrl-ok"><span class="check">✓</span> Tarifa actualizada correctamente</div>
+          <div class="hint mono">fondo #E6F6EB · borde #1A7F37</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 BADGES Y AFORO -->
+    <section class="card">
+      <h2>4 · Badges y Semáforo de Aforo</h2>
+      <div class="rule"></div>
+      <p class="sub">Badges de categoría y estado</p>
+      <div class="badges">
+        <span class="badge bg-primary mono">AUTO</span>
+        <span class="badge bg-accent mono">MOTO</span>
+        <span class="badge bg-dark mono">CAMIONETA</span>
+        <span class="badge bg-gray mono">PESADO</span>
+        <span class="badge bg-success mono">ACTIVO</span>
+        <span class="badge bg-danger mono">LLENO</span>
+      </div>
+      <p class="sub">Semáforo dinámico de ocupación</p>
+      <div class="semaforo">
+        <div class="sem"><span class="dot" style="background:#10B981"></span><span>Ocupación normal — menos de 80%</span><span class="pill-ok mono">DISPONIBLE 65%</span></div>
+        <div class="sem"><span class="dot" style="background:#F59E0B"></span><span>Alta ocupación — 80% a 99%</span></div>
+        <div class="sem"><span class="dot" style="background:#EF4444"></span><span>Aforo completo — 100% (bloquea el ingreso)</span></div>
+      </div>
+    </section>
+
+    <!-- 5 VALIDACIONES -->
+    <section class="card">
+      <h2>5 · Validaciones y Formatos (Perú)</h2>
+      <div class="rule"></div>
+      <div class="val-row"><div class="val-top"><span class="val-name">Placa Auto / Camioneta</span><span class="val-example mono">ABC-123</span></div><div class="val-rule">6 alfanuméricos con guion · MAYÚSCULAS (ej. A1B-234)</div></div>
+      <div class="val-row"><div class="val-top"><span class="val-name">Placa Motocicleta (L)</span><span class="val-example mono">1234-AB</span></div><div class="val-rule">6 alfanuméricos (2-4 + 2-4) · MAYÚSCULAS</div></div>
+      <div class="val-row"><div class="val-top"><span class="val-name">Celular (Perú)</span><span class="val-example mono">987654321</span></div><div class="val-rule">Exactamente 9 dígitos · debe iniciar en 9</div></div>
+      <div class="val-row"><div class="val-top"><span class="val-name">Correo electrónico</span><span class="val-example mono">usuario@dominio.com</span></div><div class="val-rule">Máximo 100 caracteres · se guarda en minúsculas</div></div>
+      <div class="val-row"><div class="val-top"><span class="val-name">DNI / RUC</span><span class="val-example mono">12345678 / 20123456789</span></div><div class="val-rule">DNI 8 dígitos · RUC 11 dígitos (inicia en 10/15/17/20)</div></div>
+      <div class="val-row"><div class="val-top"><span class="val-name">Tarifa / Monto</span><span class="val-example mono">S/ 4.50</span></div><div class="val-rule">0.01 – 999.99 · 2 decimales · solo dígitos y un punto</div></div>
+    </section>
+
+    <!-- 6 TOASTS -->
+    <section class="card">
+      <h2>6 · Retroalimentación (Toasts)</h2>
+      <div class="rule"></div>
+      <p class="sub">Duración 3.5 – 4 s · esquina superior derecha o inferior central</p>
+
+      <span class="toast-label" style="color:#10B981">Éxito</span>
+      <div class="toast toast-ok"><span class="ic">✓</span> Tarifa actualizada correctamente</div>
+
+      <span class="toast-label" style="color:#10B981">Éxito</span>
+      <div class="toast toast-ok"><span class="ic">✓</span> Ingreso registrado: Placa ABC-123</div>
+
+      <span class="toast-label" style="color:#EF4444">Error</span>
+      <div class="toast toast-err"><span class="ic">!</span> Error: La placa ya cuenta con un ingreso activo</div>
+
+      <div class="notes">
+        Botones: Default · Hover · Active · Disabled · Loading (spinner) — anti doble clic.<br>
+        Teclado: ENTER procesa el formulario · ESC cancela/cierra modal.<br>
+        Impresión térmica: rollo 58 / 80 mm · monocromo · reglas @media print.
+      </div>
+    </section>
+
+  </div>
+
+  <footer>Fuente: Guía de Estilos y Lineamientos de Interfaz.docx · Sistema de Gestión de Cochera</footer>
+
+</body>
+</html>
