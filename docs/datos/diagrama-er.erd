@@ -12,7 +12,7 @@
     "show": 431,
     "database": 4,
     "databaseName": "cochera-adev",
-    "canvasType": "ERD",
+    "canvasType": "@dineug/erd-editor/builtin-visualization",
     "language": 1,
     "tableNameCase": 4,
     "columnNameCase": 2,
