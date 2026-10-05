@@ -60,11 +60,12 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 ## 4. Comandos
 
-> `package.json` aún está vacío. Estos scripts son la convención a implementar; actualizar aquí cuando existan.
+> Los scripts base ya existen en `package.json`; los de Prisma se agregarán al configurar el ORM.
 
 | Comando | Descripción |
 | --- | --- |
 | `npm install` | Instalar dependencias. |
+| `npm run setup:skills` | Instalar las skills estándar del equipo (ver §10). |
 | `npm run dev` | Levantar backend en desarrollo con recarga automática. |
 | `npm start` | Levantar el servidor. |
 | `npx prisma migrate dev` | Crear/aplicar migraciones en desarrollo. |
@@ -109,7 +110,21 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 ---
 
-## 8. Jira
+## 8. Metodología Scrum y control de alcance
+
+**Trabajamos con Scrum, por sprints.** Estas reglas son obligatorias para personas y agentes de IA:
+
+- **Solo se avanza lo planificado:** únicamente se trabaja en las Historias/Subtareas del **sprint en curso**, en el **orden definido en Jira** (Análisis y Diseño → Prototipado → Codificación → Test → Configuración).
+- **Prohibido adelantar trabajo no planificado:** no implementar funcionalidad de Historias de **sprints futuros** ni del **backlog sin sprint**, aunque parezca fácil o "necesaria". Si surge una necesidad, se registra como nota/pregunta para el equipo; **no se programa**.
+- **Prohibido revivir alcance de HUs anteriores:** no volver a tocar ni mezclar funcionalidad de Historias ya cerradas en la tarea actual. Si hay que corregir algo de una HU previa, se hace en su propia rama/ticket.
+- **Antes de codificar, verificar en Jira:** (a) la HU está `En curso`, (b) la subtarea está asignada a ti, y (c) es la siguiente en el orden planificado.
+- **Cambios de alcance:** solo con autorización del dueño del producto y con la Historia/Subtarea actualizada en Jira **antes** de programar.
+- **Si falta información o hay ambigüedad:** detenerse y preguntar al equipo. No inventar reglas de negocio ni asumir requisitos.
+- **No cerrar una subtarea** sin sus criterios de aceptación cumplidos y verificados.
+
+---
+
+## 9. Jira
 
 - **Proyecto / clave:** `UPAO`.
 - **URL del tablero:** _TODO (pendiente de confirmar)_.
@@ -147,7 +162,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 - **Subtareas por historia (patrón):** Análisis y Diseño → Prototipado → Codificación → Test → Configuración (integración/subida a GitHub).
 - **Nomenclatura de ramas:** `feature/<CLAVE-JIRA>-descripcion` (ej. `feature/UPAO-16-configurar-tarifas`).
 - **Referencia en commits/PR:** incluir la clave del ticket (ej. `feat: ... (UPAO-16)`).
-- **Definition of Done (DoD):** _propuesto_ — subtareas de Análisis, Prototipado, Codificación, Test y Configuración completadas; criterios de aceptación cumplidos; PR aprobado por 1 revisor e integrado a `develop`; historia en estado `Listo`.
+- **Definition of Done (DoD):** subtareas de Análisis, Prototipado, Codificación, Test y Configuración completadas; criterios de aceptación cumplidos; documentación actualizada (§11); PR aprobado por 1 revisor e integrado a `develop`; historia en estado `Listo`.
 
 ### Equipo
 
@@ -162,7 +177,95 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 ---
 
-## 9. Documentación del proyecto
+## 10. Skills y flujo de trabajo de los agentes
+
+Para que **todos los integrantes y sus agentes de IA** trabajen igual, se usa el mismo set de skills y el mismo flujo.
+
+### Skills estándar del equipo
+
+Instaladas globalmente para todos los agentes (`~\.agents\skills`). Ejecutar estos comandos en cada máquina nueva:
+
+```bash
+# Especificación (Spec Kit)
+npx skills add dceoy/speckit-agent-skills@speckit-constitution -g -y
+npx skills add dceoy/speckit-agent-skills@speckit-specify -g -y
+npx skills add dceoy/speckit-agent-skills@speckit-plan -g -y
+npx skills add dceoy/speckit-agent-skills@speckit-tasks -g -y
+npx skills add dceoy/speckit-agent-skills@speckit-implement -g -y
+
+# Datos y ORM (oficiales de Prisma)
+npx skills add prisma/skills@prisma-database-setup -g -y
+npx skills add prisma/skills@prisma-client-api -g -y
+npx skills add prisma/skills@prisma-cli -g -y
+
+# UI/UX
+npx skills add nextlevelbuilder/ui-ux-pro-max-skill@ui-ux-pro-max -g -y
+npx skills add anthropics/skills@frontend-design -g -y
+
+# Calidad, testing, dominio y documentación
+npx skills add mattpocock/skills@code-review -g -y
+npx skills add mattpocock/skills@tdd -g -y
+npx skills add mattpocock/skills@diagnosing-bugs -g -y
+npx skills add mattpocock/skills@domain-modeling -g -y
+npx skills add mattpocock/skills@grill-with-docs -g -y
+
+# Seguridad de API
+npx skills add usestrix/strix@api-security-testing -g -y
+```
+
+| Fase | Skill | Para qué |
+| --- | --- | --- |
+| Mapa del código | **graphify** | Grafo/consulta del codebase (ya instalada en OpenCode). |
+| Especificación | `speckit-constitution` | Principios del proyecto. |
+| Especificación | `speckit-specify` | Convertir una HU en especificación. |
+| Especificación | `speckit-plan` | Plan técnico. |
+| Especificación | `speckit-tasks` | Desglose en tareas. |
+| Especificación | `speckit-implement` | Implementar tareas. |
+| Datos/ORM | `prisma-database-setup`, `prisma-client-api`, `prisma-cli` | Prisma + PostgreSQL (setup, cliente, migraciones). |
+| Dominio | `domain-modeling` | Modelar el dominio y las entidades. |
+| UI/UX | `ui-ux-pro-max` ("UX Pro") | Diseño y mejora de interfaces. |
+| UI/UX | `frontend-design` | Criterio de diseño frontend. |
+| Calidad | `code-review` | Revisión de código/PR. |
+| Testing | `tdd` | Desarrollo guiado por pruebas. |
+| Debugging | `diagnosing-bugs` | Diagnóstico de bugs. |
+| Seguridad | `api-security-testing` | Pruebas de seguridad de API. |
+| Documentación | `grill-with-docs` | Verificar que la documentación refleje el código. |
+
+> graphify se instala a nivel de OpenCode; si usas otro agente, instala su equivalente para no perder el mapa del proyecto.
+> Nota: el escaneo de Snyk marcó `code-review` como _High Risk_; revisar su contenido antes de usarla o reemplazarla por `thermo-nuclear-code-quality-review` (ya instalada).
+
+### Flujo estándar de trabajo de un agente
+
+1. **Entender:** usar `graphify` para ubicar el código afectado (nunca asumir la estructura).
+2. **Especificar y planificar:** `speckit-specify` → `speckit-plan` → `speckit-tasks` (con `speckit-constitution` como marco) antes de escribir código.
+3. **Datos (si aplica):** modelar con `domain-modeling` y trabajar el esquema con `prisma-database-setup`, `prisma-client-api` y `prisma-cli`.
+4. **Implementar:** con `speckit-implement` y `tdd`, respetando §5, §8 y el alcance de la subtarea.
+5. **UI (si aplica):** usar `ui-ux-pro-max` y `frontend-design`, respetando la guía de estilos del proyecto.
+6. **Verificar:** `code-review` antes del PR; `api-security-testing` sobre los endpoints; `diagnosing-bugs` si algo falla.
+7. **Documentar y reportar:** `grill-with-docs`, actualizar la documentación (§11) y mover el estado en Jira.
+
+---
+
+## 11. Documentación y actualización de avances
+
+- **Regla de oro:** todo cambio importante se documenta **en la misma rama/PR** en que se realiza. Si no está documentado, la tarea **no está terminada**.
+- Mapa de actualización según el cambio:
+
+| Si cambia... | Actualizar... |
+| --- | --- |
+| Estructura, capas o stack | `docs/arquitectura/Arquitectura.md` y §2/§3 de este archivo |
+| Modelo de datos (tablas, campos, relaciones) | `docs/datos/Modelo_de_Datos.md` y `diagrama-er.erd` |
+| UI, colores, tipografía o componentes | Guía de estilos y `UI_Kit_Estilos_Cochera.svg` / `.html` |
+| Comportamiento o reglas de un módulo | `docs/modulos/<modulo>/` |
+| Comandos, scripts o dependencias | `package.json` y §4 de este archivo |
+| Decisiones de metodología o flujo | Este archivo (`AGENTS.md`) |
+
+- **Avances en Jira:** al iniciar una subtarea → `En curso`; al terminarla y documentarla → `Listo`. No marcar `Listo` sin PR mergeado a `develop` (o verificación acordada).
+- **No duplicar documentación:** enlazar a `docs/` en lugar de copiar contenido.
+
+---
+
+## 12. Documentación del proyecto
 
 | Tema | Archivo |
 | --- | --- |
@@ -176,9 +279,12 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 ---
 
-## 10. Reglas para agentes de IA
+## 13. Reglas para agentes de IA
 
 - Responder y documentar en **español**.
+- **Cumplir §8:** no avanzar trabajo no planificado ni funcionalidad de HUs anteriores/futuras.
+- **Usar las skills y el flujo de §10** antes y durante la implementación.
+- **Documentar según §11** antes de dar una tarea por terminada.
 - Antes de implementar, revisar la documentación de `docs/` correspondiente al módulo.
 - Respetar la guía de estilos y las validaciones peruanas descritas arriba.
 - **No** hacer `commit`, `push` ni abrir PR si no se solicita explícitamente.
@@ -187,10 +293,10 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 ---
 
-## 11. Pendientes conocidos
+## 14. Pendientes conocidos
 
-- `package.json`, `server.js` y `.env.example` están vacíos: definir scripts, servidor Express y variables de entorno (ej. `DATABASE_URL`, `PORT`).
+- `server.js` y `.env.example` están vacíos: definir el servidor Express y las variables de entorno (ej. `DATABASE_URL`, `PORT`).
 - Configurar Prisma (`schema.prisma`, migraciones) según `docs/datos/Modelo_de_Datos.md`.
 - Posible error de nombre en `public/css/stye.css` (¿`style.css`?).
-- Confirmar la **URL del tablero de Jira** (ver §8).
-- Priorizar las historias del **Sprint 1** (UPAO-16, UPAO-6, UPAO-7, UPAO-11, UPAO-17) al iniciar el desarrollo.
+- Confirmar la **URL del tablero de Jira** (ver §9).
+- Priorizar las historias del **Sprint 1** (UPAO-16, UPAO-6, UPAO-7, UPAO-11, UPAO-17) respetando el orden planificado.
