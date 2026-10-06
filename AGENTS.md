@@ -301,6 +301,7 @@ npx skills add usestrix/strix@api-security-testing -g -y
 
 - Compartir el `DATABASE_URL` de Neon con el equipo (por privado; ver README).
 - API implementada para login y tarifas; falta el resto de módulos del Sprint 1 (en su orden).
+- **Despliegue (futuro, Epic UPAO-28):** cuando la Reserva Web sea para clientes, el backend deberá publicarse en la nube (Render/Railway/Koyeb u otro) con HTTPS y `DATABASE_URL` como variable secreta. Fuera del Sprint 1.
 - Posible error de nombre en `public/css/stye.css` (¿`style.css`?).
 - Confirmar la **URL del tablero de Jira** (ver §9).
 - Priorizar las historias del **Sprint 1** (UPAO-16, UPAO-6, UPAO-7, UPAO-11, UPAO-17) respetando el orden planificado.
