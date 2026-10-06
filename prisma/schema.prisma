@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  RECEPCIONISTA
+  DUENO @map("DUEÑO")
+
+  @@map("rol_usuario")
+}
+
+model Usuario {
+  id         Int    @id @default(autoincrement()) @map("id_usuario")
+  usuario    String @unique @db.VarChar(50)
+  nombre     String @db.VarChar(100)
+  contrasena String @db.VarChar(255)
+  rol        Rol    @default(RECEPCIONISTA)
+
+  estadias Estadia[]
+
+  @@map("usuario")
+}
+
+model TipoVehiculo {
+  id     Int    @id @default(autoincrement()) @map("id_tipo_vehiculo")
+  nombre String @unique @db.VarChar(50)
+
+  tarifas  Tarifa[]
+  estadias Estadia[]
+
+  @@map("tipo_vehiculo")
+}
+
+model Tarifa {
+  id             Int     @id @default(autoincrement()) @map("id_tarifa")
+  idTipoVehiculo Int     @map("id_tipo_vehiculo")
+  precioHora     Decimal @db.Decimal(10, 2) @map("precio_hora")
+  precioFraccion Decimal @db.Decimal(10, 2) @map("precio_fraccion")
+  estado         Boolean @default(true)
+
+  tipoVehiculo TipoVehiculo @relation(fields: [idTipoVehiculo], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  estadias     Estadia[]
+
+  @@map("tarifa")
+}
+
+model Estadia {
+  id             Int       @id @default(autoincrement()) @map("id_estadia")
+  placa          String    @db.VarChar(10)
+  idTipoVehiculo Int       @map("id_tipo_vehiculo")
+  idTarifa       Int       @map("id_tarifa")
+  idUsuario      Int       @map("id_usuario")
+  idPago         Int?      @unique @map("id_pago")
+  horaIngreso    DateTime  @default(now()) @map("hora_ingreso")
+  horaSalida     DateTime? @map("hora_salida")
+
+  tipoVehiculo TipoVehiculo @relation(fields: [idTipoVehiculo], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tarifa       Tarifa       @relation(fields: [idTarifa], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  usuario      Usuario      @relation(fields: [idUsuario], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  pago         Pago?        @relation(fields: [idPago], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([placa])
+  @@map("estadia")
+}
+
+model Pago {
+  id             Int      @id @default(autoincrement()) @map("id_pago")
+  idMetodoPago   Int      @map("id_metodo_pago")
+  monto          Decimal  @db.Decimal(10, 2)
+  tiempoHoras    Decimal  @default(0) @db.Decimal(6, 2) @map("tiempo_horas")
+  tiempoFraccion Decimal  @default(0) @db.Decimal(6, 2) @map("tiempo_fraccion")
+  fechaHora      DateTime @default(now()) @map("fecha_hora")
+
+  metodoPago MetodoPago @relation(fields: [idMetodoPago], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  estadia    Estadia?
+
+  @@map("pago")
+}
+
+model MetodoPago {
+  id     Int    @id @default(autoincrement()) @map("id_metodo_pago")
+  nombre String @unique @db.VarChar(50)
+
+  pagos Pago[]
+
+  @@map("metodo_pago")
+}

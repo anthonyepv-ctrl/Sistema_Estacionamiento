@@ -1,0 +1,29 @@
+{
+  "name": "sistema-estacionamiento",
+  "version": "1.0.0",
+  "description": "Sistema de Gestión de Cochera",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "setup:skills": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/setup-skills.ps1",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "db:seed": "node prisma/seed.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
+  }
+}

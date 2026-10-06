@@ -1,0 +1,13 @@
+---
+description: Reglas compartidas del proyecto (AGENTS.md)
+alwaysApply: true
+---
+
+Lee y cumple **`AGENTS.md`** (raíz del repositorio) antes de cualquier tarea.
+
+Puntos críticos:
+
+- **Scrum / alcance (§8):** solo lo planificado del sprint en curso; sin funcionalidad de HUs anteriores ni futuras.
+- **Skills y flujo (§10):** `graphify`, Spec Kit, Prisma, UI/UX, testing, code-review.
+- **Documentación (§11):** documentar todo cambio importante en la misma rama; sin doc, no está terminado.
+- **Git:** no hacer `commit`, `push` ni PR sin autorización.
