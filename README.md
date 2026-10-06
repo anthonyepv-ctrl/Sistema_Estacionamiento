@@ -28,3 +28,14 @@ Los mensajes deben ser claros y descriptivos siguiendo este formato:
 2. Abre un Pull Request dirigido hacia la rama **develop** (usa la plantilla `.github/pull_request_template.md`; incluye el checklist de `AGENTS.md`: alcance, skills, documentación y pruebas).
 3. Solicita la revisión a al menos 1 compañero de equipo.
 4. Una vez aprobado y pasadas las verificaciones, realiza el Merge.
+
+## Despliegue (Render)
+
+El sistema (login + módulo de tarifas) se publica en **Render** (plan free) desde la rama `main`, usando el Blueprint `render.yaml`:
+
+1. En Render: **New → Blueprint** → conectar el repositorio → pegar el valor de `DATABASE_URL` (Neon) cuando lo solicite → **Apply**.
+2. Render construye con `npm install && npx prisma generate` y arranca con `npm start` (el servidor respeta `PORT`).
+3. `DATABASE_URL` es un secreto del panel de Render; **no** se versiona en el repositorio.
+4. El plan free suspende el servicio tras ~15 min sin uso: el primer acceso puede tardar ~1 min.
+
+> Las migraciones y el seed ya están aplicados en la BD compartida (Neon); `npm run db:deploy` es idempotente si se necesitara reaplicar.
