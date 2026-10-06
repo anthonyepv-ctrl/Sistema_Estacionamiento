@@ -58,6 +58,7 @@ Da funcionalidad al botón "Guardar Tarifa".
 | Usuario | Contraseña | Rol |
 | --- | --- | --- |
 | `admin@cochera.pe` | `123456` | DUEÑO |
+| `recepcion` | `123456` | RECEPCIONISTA |
 
 > Cambiar antes de cualquier despliegue real. La contraseña se guarda hasheada con bcrypt.
 

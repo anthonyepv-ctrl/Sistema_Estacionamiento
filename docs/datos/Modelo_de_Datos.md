@@ -130,7 +130,7 @@ Regla de borrado: `RESTRICT` en las FK de catálogos (no se puede borrar un tipo
 ## 4. Decisiones tomadas (respecto al ERD)
 
 - Nombres de tabla en **singular `snake_case`**.
-- `usuario.usuario` (UNIQUE) reemplaza a `nombre`: permite el login "usuario o correo" de la interfaz.
+- `usuario.usuario` (UNIQUE) reemplaza a `nombre`: es el nombre de usuario con el que se inicia sesión.
 - `pago.tiempo_horas` y `pago.tiempo_fraccion` pasaron de `TIME` a `DECIMAL(6,2)` (número de horas).
 - `estadia.id_pago` es **UNIQUE** (relación 1:1 estadía–pago).
 - Se eliminaron columnas duplicadas (`id_tipo` / `id_tipo_vehiculo`).

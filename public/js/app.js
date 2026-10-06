@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = inputPassword.value.trim();
 
       if (!usuario) {
-        mostrarErrorCampo(inputUsuario, 'Ingrese su usuario o correo.');
+        mostrarErrorCampo(inputUsuario, 'Ingrese su usuario.');
         return;
       }
       if (!password) {

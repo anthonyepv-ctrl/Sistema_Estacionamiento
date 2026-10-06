@@ -11,11 +11,10 @@ const TIPOS = [
 
 const METODOS_PAGO = ['Efectivo', 'Yape', 'Plin'];
 
-const USUARIO_INICIAL = {
-  usuario: 'admin@cochera.pe',
-  contrasena: '123456',
-  rol: 'DUENO'
-};
+const USUARIOS_INICIALES = [
+  { usuario: 'admin@cochera.pe', contrasena: '123456', rol: 'DUENO' },
+  { usuario: 'recepcion', contrasena: '123456', rol: 'RECEPCIONISTA' }
+];
 
 async function main() {
   for (const tipo of TIPOS) {
@@ -57,19 +56,21 @@ async function main() {
     });
   }
 
-  const contrasenaHash = await bcrypt.hash(USUARIO_INICIAL.contrasena, 10);
+  for (const datos of USUARIOS_INICIALES) {
+    const contrasenaHash = await bcrypt.hash(datos.contrasena, 10);
 
-  await prisma.usuario.upsert({
-    where: { usuario: USUARIO_INICIAL.usuario },
-    update: { contrasena: contrasenaHash },
-    create: {
-      usuario: USUARIO_INICIAL.usuario,
-      contrasena: contrasenaHash,
-      rol: USUARIO_INICIAL.rol
-    }
-  });
+    await prisma.usuario.upsert({
+      where: { usuario: datos.usuario },
+      update: { contrasena: contrasenaHash },
+      create: {
+        usuario: datos.usuario,
+        contrasena: contrasenaHash,
+        rol: datos.rol
+      }
+    });
+  }
 
-  console.log('Seed completado: tipos de vehículo, tarifas, métodos de pago y usuario inicial.');
+  console.log('Seed completado: tipos de vehículo, tarifas, métodos de pago y usuarios iniciales.');
 }
 
 main()
