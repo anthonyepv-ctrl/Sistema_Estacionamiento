@@ -22,7 +22,7 @@ Sistema web para la **gestión de una cochera/estacionamiento**: registro de ing
 | --- | --- |
 | Frontend | HTML + CSS + JavaScript (vanilla) en `public/` |
 | Backend | Node.js + Express (`server.js`, `src/`) |
-| Base de datos | PostgreSQL (base `cochera-adev`) |
+| Base de datos | PostgreSQL — nube: **Neon** (plan gratuito); local opcional: Docker (base `cochera-adev`) |
 | ORM | **Prisma** |
 | Control de versiones | Git + GitHub |
 
@@ -60,7 +60,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 ## 4. Comandos
 
-> Los scripts base ya existen en `package.json`; los de Prisma se agregarán al configurar el ORM.
+> Prisma 6 ya está configurado (`prisma/schema.prisma` + migración inicial). Requiere `DATABASE_URL` en `.env` (ver `.env.example`).
 
 | Comando | Descripción |
 | --- | --- |
@@ -68,9 +68,10 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run setup:skills` | Instalar las skills estándar del equipo (ver §10). |
 | `npm run dev` | Levantar backend en desarrollo con recarga automática. |
 | `npm start` | Levantar el servidor. |
-| `npx prisma migrate dev` | Crear/aplicar migraciones en desarrollo. |
-| `npx prisma generate` | Generar el cliente Prisma. |
-| `npx prisma studio` | Explorar la base de datos. |
+| `npm run db:deploy` | Aplicar migraciones pendientes (BD compartida). |
+| `npm run db:migrate` | Crear/aplicar migraciones en desarrollo. |
+| `npm run db:generate` | Generar el cliente Prisma. |
+| `npm run db:studio` | Explorar la base de datos. |
 
 ---
 
@@ -90,9 +91,10 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 ## 6. Modelo de datos
 
 - Referencia: [`docs/datos/Modelo_de_Datos.md`](docs/datos/Modelo_de_Datos.md).
-- Diagrama editable: `docs/datos/diagrama-er.erd` (base `cochera-adev`, PostgreSQL).
-- Entidades principales: `TARIFA`, `TIPO_VEHICULO`, `ESTADIA`, `PAGO`, `METODO_PAGO`, `USUARIO`.
-- Regla clave: una estadía está activa mientras `hora_salida IS NULL`; no se permite un nuevo ingreso para una placa con estadía activa.
+- Implementación: `prisma/schema.prisma` + `prisma/migrations/` (Prisma 6, PostgreSQL). Aplicar con `npm run db:deploy`.
+- Diagrama editable: `docs/datos/diagrama-er.erd`.
+- Entidades: `usuario`, `tipo_vehiculo`, `tarifa`, `estadia`, `pago`, `metodo_pago`.
+- Regla clave: una estadía está activa mientras `hora_salida IS NULL`; no se permite un nuevo ingreso para una placa con estadía activa (garantizado por índice único parcial).
 
 ---
 
@@ -271,6 +273,7 @@ npx skills add usestrix/strix@api-security-testing -g -y
 | --- | --- |
 | Arquitectura y estructura | [`docs/arquitectura/Arquitectura.md`](docs/arquitectura/Arquitectura.md) |
 | Modelo de datos | [`docs/datos/Modelo_de_Datos.md`](docs/datos/Modelo_de_Datos.md) |
+| Guía rápida de Prisma | [`docs/datos/Guia_Prisma.md`](docs/datos/Guia_Prisma.md) |
 | Diagrama ER | `docs/datos/diagrama-er.erd` |
 | Guía de estilos UI/UX | [`docs/diseño/Guía de Estilos y Lineamientos de Interfaz.md`](docs/diseño/Guía%20de%20Estilos%20y%20Lineamientos%20de%20Interfaz.md) |
 | UI Kit (referencia visual) | `docs/diseño/UI_Kit_Estilos_Cochera.svg` / `.html` |
@@ -296,7 +299,9 @@ npx skills add usestrix/strix@api-security-testing -g -y
 ## 14. Pendientes conocidos
 
 - `server.js` y `.env.example` están vacíos: definir el servidor Express y las variables de entorno (ej. `DATABASE_URL`, `PORT`).
-- Configurar Prisma (`schema.prisma`, migraciones) según `docs/datos/Modelo_de_Datos.md`.
+- Configurar la **BD compartida en Neon** y compartir el `DATABASE_URL` con el equipo (por privado; ver README).
+- Implementar **hash de contraseñas** (bcrypt) al crear usuarios.
+- **Seed inicial:** tipos de vehículo, tarifas, métodos de pago y usuario dueño.
 - Posible error de nombre en `public/css/stye.css` (¿`style.css`?).
 - Confirmar la **URL del tablero de Jira** (ver §9).
 - Priorizar las historias del **Sprint 1** (UPAO-16, UPAO-6, UPAO-7, UPAO-11, UPAO-17) respetando el orden planificado.
