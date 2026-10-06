@@ -1,41 +1,19 @@
 /**
- * Sistema de Gestión de Cochera — Lógica Básica de Interfaz (Sprint 1 / UPAO-32)
+ * Sistema de Gestión de Cochera — Lógica de Interfaz conectada a la API (UPAO-34)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Datos vigentes de tarifas (Autos, Motos, Reservas)
-  const tarifas = [
-    {
-      id: 'auto',
-      nombre: 'Automóvil / Camioneta',
-      precio_hora: 4.50,
-      precio_fraccion: 2.50,
-      estado: 'ACTIVA'
-    },
-    {
-      id: 'moto',
-      nombre: 'Motocicleta',
-      precio_hora: 2.50,
-      precio_fraccion: 1.50,
-      estado: 'ACTIVA'
-    },
-    {
-      id: 'reserva',
-      nombre: 'Reserva Web',
-      precio_hora: 5.00,
-      precio_fraccion: 3.00,
-      estado: 'ACTIVA'
-    }
-  ];
+  let tarifas = [];
 
-  // Elementos de vistas
   const viewLogin = document.getElementById('view-login');
   const viewDashboard = document.getElementById('view-dashboard');
   const viewTarifas = document.getElementById('view-tarifas');
   const headerUserSection = document.getElementById('header-user-section');
   const toastContainer = document.getElementById('toast-container');
+  const sessionUserName = document.getElementById('session-user-name');
+  const sessionUserRole = document.getElementById('session-user-role');
+  const sessionUserBadge = document.getElementById('session-user-badge');
 
-  // Control simple de navegación de pantallas
   function mostrarPantalla(nombre) {
     viewLogin.classList.remove('active');
     viewDashboard.classList.remove('active');
@@ -57,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Notificación Toast estándar (3.8 segundos)
   function mostrarToast(mensaje, esError = false) {
     if (!toastContainer) return;
 
@@ -73,7 +50,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3800);
   }
 
-  // 1. PANTALLA DE LOGIN
+  async function pedirApi(url, opciones = {}) {
+    const respuesta = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opciones
+    });
+
+    const datos = await respuesta.json().catch(() => ({}));
+
+    if (!respuesta.ok) {
+      throw new Error(datos.error || 'Ocurrió un error inesperado.');
+    }
+
+    return datos;
+  }
+
   const formLogin = document.getElementById('form-login');
   const inputUsuario = document.getElementById('login-usuario');
   const inputPassword = document.getElementById('login-password');
@@ -89,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (formLogin) {
-    formLogin.addEventListener('submit', (e) => {
+    formLogin.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const usuario = inputUsuario.value.trim();
@@ -104,16 +95,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Estado de carga y pase al menú principal
       btnLoginSubmit.classList.add('loading');
-      setTimeout(() => {
-        btnLoginSubmit.classList.remove('loading');
+      btnLoginSubmit.disabled = true;
+
+      try {
+        const sesion = await pedirApi('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ usuario, contrasena: password })
+        });
+
+        if (sessionUserName) sessionUserName.textContent = sesion.usuario;
+        if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
+        if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
+
         mostrarPantalla('dashboard');
-      }, 400);
+      } catch (error) {
+        mostrarToast(error.message, true);
+      } finally {
+        btnLoginSubmit.classList.remove('loading');
+        btnLoginSubmit.disabled = false;
+      }
     });
   }
 
-  // Cerrar sesión
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
@@ -121,16 +125,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 2. PANTALLA DE MENÚ PRINCIPAL
   const cardModuloTarifas = document.getElementById('card-modulo-tarifas');
   if (cardModuloTarifas) {
-    cardModuloTarifas.addEventListener('click', () => {
+    cardModuloTarifas.addEventListener('click', async () => {
       mostrarPantalla('tarifas');
-      cargarTarifaEnFormulario('auto');
+
+      try {
+        await cargarTarifas();
+        if (tarifas.length > 0) {
+          cargarTarifaEnFormulario(tarifas[0].id);
+        }
+      } catch (error) {
+        mostrarToast(error.message, true);
+      }
     });
   }
 
-  // 3. PANTALLA DEL MÓDULO DE TARIFAS
   const btnBackToMenu = document.getElementById('btn-back-to-menu');
   if (btnBackToMenu) {
     btnBackToMenu.addEventListener('click', () => {
@@ -147,16 +157,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCancelarEdicion = document.getElementById('btn-cancelar-edicion');
   const formTitle = document.getElementById('form-tarifa-title');
 
-  // Renderizar tabla de tarifas
+  async function cargarTarifas() {
+    tarifas = await pedirApi('/api/tarifas');
+    renderSelectTipos();
+    renderTablaTarifas();
+  }
+
+  function renderSelectTipos() {
+    if (!selectTipo) return;
+
+    selectTipo.innerHTML = tarifas
+      .map((tarifa) => `<option value="${tarifa.id}">${tarifa.tipo}</option>`)
+      .join('');
+  }
+
   function renderTablaTarifas() {
     if (!tablaBody) return;
 
-    tablaBody.innerHTML = tarifas.map(item => `
+    tablaBody.innerHTML = tarifas.map((item) => `
       <tr>
-        <td style="font-weight: 500;">${item.nombre}</td>
-        <td class="mono" style="font-weight: 700; color: var(--primary);">S/ ${item.precio_hora.toFixed(2)}</td>
-        <td class="mono" style="font-weight: 600;">S/ ${item.precio_fraccion.toFixed(2)}</td>
-        <td><span class="badge badge-success">${item.estado}</span></td>
+        <td style="font-weight: 500;">${item.tipo}</td>
+        <td class="mono" style="font-weight: 700; color: var(--primary);">S/ ${item.precioHora.toFixed(2)}</td>
+        <td class="mono" style="font-weight: 600;">S/ ${item.precioFraccion.toFixed(2)}</td>
+        <td><span class="badge ${item.estado ? 'badge-success' : 'badge-danger'}">${item.estado ? 'ACTIVA' : 'INACTIVA'}</span></td>
         <td>
           <button type="button" class="btn btn-secondary btn-sm btn-editar-fila" data-id="${item.id}">
             Modificar
@@ -165,24 +188,21 @@ document.addEventListener('DOMContentLoaded', () => {
       </tr>
     `).join('');
 
-    // Eventos de botones Modificar en la tabla
-    tablaBody.querySelectorAll('.btn-editar-fila').forEach(btn => {
+    tablaBody.querySelectorAll('.btn-editar-fila').forEach((btn) => {
       btn.addEventListener('click', (e) => {
-        const id = e.currentTarget.getAttribute('data-id');
-        cargarTarifaEnFormulario(id);
+        cargarTarifaEnFormulario(e.currentTarget.getAttribute('data-id'));
       });
     });
   }
 
-  // Cargar datos al formulario
   function cargarTarifaEnFormulario(id) {
-    const tarifa = tarifas.find(t => t.id === id);
+    const tarifa = tarifas.find((t) => String(t.id) === String(id));
     if (!tarifa) return;
 
     selectTipo.value = tarifa.id;
-    inputPrecioHora.value = tarifa.precio_hora.toFixed(2);
-    inputPrecioFraccion.value = tarifa.precio_fraccion.toFixed(2);
-    formTitle.textContent = `Modificar Tarifa: ${tarifa.nombre}`;
+    inputPrecioHora.value = tarifa.precioHora.toFixed(2);
+    inputPrecioFraccion.value = tarifa.precioFraccion.toFixed(2);
+    formTitle.textContent = `Modificar Tarifa: ${tarifa.tipo}`;
 
     limpiarErrores(inputPrecioHora);
     limpiarErrores(inputPrecioFraccion);
@@ -201,7 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Validar monto según normativa (0.01 - 999.99 con 2 decimales)
   function validarMonto(input) {
     const val = input.value.trim();
     const regex = /^\d+(\.\d{1,2})?$/;
@@ -234,13 +253,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Validación en vivo al escribir
   inputPrecioHora?.addEventListener('input', () => validarMonto(inputPrecioHora));
   inputPrecioFraccion?.addEventListener('input', () => validarMonto(inputPrecioFraccion));
 
-  // Procesar actualización de tarifa
   if (formTarifa) {
-    formTarifa.addEventListener('submit', (e) => {
+    formTarifa.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const esHoraValida = validarMonto(inputPrecioHora);
@@ -250,37 +267,36 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Prevención de doble clic y feedback de guardado
       btnGuardarTarifa.classList.add('loading');
       btnGuardarTarifa.disabled = true;
 
-      setTimeout(() => {
-        const idSeleccionado = selectTipo.value;
-        const tarifa = tarifas.find(t => t.id === idSeleccionado);
-        if (tarifa) {
-          tarifa.precio_hora = parseFloat(inputPrecioHora.value);
-          tarifa.precio_fraccion = parseFloat(inputPrecioFraccion.value);
-        }
+      try {
+        await pedirApi(`/api/tarifas/${selectTipo.value}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            precioHora: inputPrecioHora.value.trim(),
+            precioFraccion: inputPrecioFraccion.value.trim()
+          })
+        });
 
-        renderTablaTarifas();
+        await cargarTarifas();
+        cargarTarifaEnFormulario(selectTipo.value);
 
+        mostrarToast('Tarifa actualizada correctamente');
+      } catch (error) {
+        mostrarToast(error.message, true);
+      } finally {
         btnGuardarTarifa.classList.remove('loading');
         btnGuardarTarifa.disabled = false;
-
-        // Criterio exacto de aceptación de la historia UPAO-16
-        mostrarToast('Tarifa actualizada correctamente');
-      }, 400);
+      }
     });
   }
 
-  // Atajos de teclado (ENTER envía, ESC cancela)
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && viewTarifas.classList.contains('active')) {
       cargarTarifaEnFormulario(selectTipo.value);
     }
   });
 
-  // Inicialización
-  renderTablaTarifas();
   mostrarPantalla('login');
 });
