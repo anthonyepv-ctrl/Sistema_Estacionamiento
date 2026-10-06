@@ -69,6 +69,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run dev` | Levantar backend en desarrollo con recarga automática. |
 | `npm start` | Levantar el servidor. |
 | `npm run db:deploy` | Aplicar migraciones pendientes (BD compartida). |
+| `npm run db:seed` | Cargar datos iniciales (tipos, tarifas, métodos de pago, usuario). |
 | `npm run db:migrate` | Crear/aplicar migraciones en desarrollo. |
 | `npm run db:generate` | Generar el cliente Prisma. |
 | `npm run db:studio` | Explorar la base de datos. |
@@ -298,10 +299,9 @@ npx skills add usestrix/strix@api-security-testing -g -y
 
 ## 14. Pendientes conocidos
 
-- `server.js` y `.env.example` están vacíos: definir el servidor Express y las variables de entorno (ej. `DATABASE_URL`, `PORT`).
-- Configurar la **BD compartida en Neon** y compartir el `DATABASE_URL` con el equipo (por privado; ver README).
-- Implementar **hash de contraseñas** (bcrypt) al crear usuarios.
-- **Seed inicial:** tipos de vehículo, tarifas, métodos de pago y usuario dueño.
+- Compartir el `DATABASE_URL` de Neon con el equipo (por privado; ver README).
+- API implementada para login y tarifas; falta el resto de módulos del Sprint 1 (en su orden).
+- **Despliegue (futuro, Epic UPAO-28):** cuando la Reserva Web sea para clientes, el backend deberá publicarse en la nube (Render/Railway/Koyeb u otro) con HTTPS y `DATABASE_URL` como variable secreta. Fuera del Sprint 1.
 - Posible error de nombre en `public/css/stye.css` (¿`style.css`?).
 - Confirmar la **URL del tablero de Jira** (ver §9).
 - Priorizar las historias del **Sprint 1** (UPAO-16, UPAO-6, UPAO-7, UPAO-11, UPAO-17) respetando el orden planificado.
