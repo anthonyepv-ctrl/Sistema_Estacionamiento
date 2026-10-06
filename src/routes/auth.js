@@ -29,6 +29,7 @@ router.post('/login', async (req, res) => {
 
     return res.json({
       usuario: encontrado.usuario,
+      nombre: encontrado.nombre,
       rol: encontrado.rol
     });
   } catch (error) {

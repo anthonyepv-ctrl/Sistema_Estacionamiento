@@ -17,6 +17,7 @@ enum Rol {
 model Usuario {
   id         Int    @id @default(autoincrement()) @map("id_usuario")
   usuario    String @unique @db.VarChar(50)
+  nombre     String @db.VarChar(100)
   contrasena String @db.VarChar(255)
   rol        Rol    @default(RECEPCIONISTA)
 

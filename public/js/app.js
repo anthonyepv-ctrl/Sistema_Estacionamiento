@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({ usuario, contrasena: password })
         });
 
-        if (sessionUserName) sessionUserName.textContent = sesion.usuario;
+        if (sessionUserName) sessionUserName.textContent = sesion.nombre;
         if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
         if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
 

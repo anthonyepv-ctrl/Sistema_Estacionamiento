@@ -17,10 +17,10 @@ Da funcionalidad al botón "Ingresar al Sistema".
 
 ```json
 // Petición
-{ "usuario": "admin@cochera.pe", "contrasena": "123456" }
+{ "usuario": "admin", "contrasena": "123456" }
 
 // Respuesta 200
-{ "usuario": "admin@cochera.pe", "rol": "DUENO" }
+{ "usuario": "admin", "nombre": "Administrador", "rol": "DUENO" }
 
 // Respuesta 401
 { "error": "Credenciales inválidas." }
@@ -55,10 +55,10 @@ Da funcionalidad al botón "Guardar Tarifa".
 
 ## Credenciales de desarrollo (seed)
 
-| Usuario | Contraseña | Rol |
-| --- | --- | --- |
-| `admin@cochera.pe` | `123456` | DUEÑO |
-| `recepcion` | `123456` | RECEPCIONISTA |
+| Usuario | Nombre | Contraseña | Rol |
+| --- | --- | --- | --- |
+| `admin` | Administrador | `123456` | DUEÑO |
+| `recepcion` | Recepcionista | `123456` | RECEPCIONISTA |
 
 > Cambiar antes de cualquier despliegue real. La contraseña se guarda hasheada con bcrypt.
 

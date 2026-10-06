@@ -12,8 +12,8 @@ const TIPOS = [
 const METODOS_PAGO = ['Efectivo', 'Yape', 'Plin'];
 
 const USUARIOS_INICIALES = [
-  { usuario: 'admin@cochera.pe', contrasena: '123456', rol: 'DUENO' },
-  { usuario: 'recepcion', contrasena: '123456', rol: 'RECEPCIONISTA' }
+  { usuario: 'admin', nombre: 'Administrador', contrasena: '123456', rol: 'DUENO' },
+  { usuario: 'recepcion', nombre: 'Recepcionista', contrasena: '123456', rol: 'RECEPCIONISTA' }
 ];
 
 async function main() {
@@ -61,9 +61,10 @@ async function main() {
 
     await prisma.usuario.upsert({
       where: { usuario: datos.usuario },
-      update: { contrasena: contrasenaHash },
+      update: { contrasena: contrasenaHash, nombre: datos.nombre },
       create: {
         usuario: datos.usuario,
+        nombre: datos.nombre,
         contrasena: contrasenaHash,
         rol: datos.rol
       }

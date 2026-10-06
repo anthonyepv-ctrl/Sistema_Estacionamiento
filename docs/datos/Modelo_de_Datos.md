@@ -32,7 +32,8 @@ Credenciales y rol de acceso al sistema.
 | Columna | Tipo | Restricciones |
 | --- | --- | --- |
 | `id_usuario` | SERIAL | PK |
-| `usuario` | VARCHAR(50) | UNIQUE, NOT NULL — nombre de usuario para login |
+| `usuario` | VARCHAR(50) | UNIQUE, NOT NULL — nombre de usuario para iniciar sesión (sin correo) |
+| `nombre` | VARCHAR(100) | NOT NULL — nombre visible de la persona |
 | `contrasena` | VARCHAR(255) | NOT NULL — se guardará hasheada |
 | `rol` | ENUM `rol_usuario` | NOT NULL, DEFAULT `RECEPCIONISTA` — valores: `RECEPCIONISTA`, `DUEÑO` |
 
@@ -130,7 +131,7 @@ Regla de borrado: `RESTRICT` en las FK de catálogos (no se puede borrar un tipo
 ## 4. Decisiones tomadas (respecto al ERD)
 
 - Nombres de tabla en **singular `snake_case`**.
-- `usuario.usuario` (UNIQUE) reemplaza a `nombre`: es el nombre de usuario con el que se inicia sesión.
+- `usuario.usuario` (UNIQUE) es la credencial de acceso (sin correo); `usuario.nombre` es el nombre visible.
 - `pago.tiempo_horas` y `pago.tiempo_fraccion` pasaron de `TIME` a `DECIMAL(6,2)` (número de horas).
 - `estadia.id_pago` es **UNIQUE** (relación 1:1 estadía–pago).
 - Se eliminaron columnas duplicadas (`id_tipo` / `id_tipo_vehiculo`).
