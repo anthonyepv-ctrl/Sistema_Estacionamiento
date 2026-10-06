@@ -110,6 +110,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
    - `chore:`, `test:`, `refactor:` según corresponda.
 4. Push de la rama: `git push origin feature/nombre-rama`.
 5. Abrir **Pull Request** hacia `develop`, con **al menos 1 revisor**; merge tras aprobación y verificaciones.
+6. **Integración a `main`:** la rama `main` **solo** se actualiza con un merge desde `develop` (nunca directamente desde ramas `feature/` o `chore/`), y únicamente al cierre de la tarea de configuración *Integración final al repositorio en GitHub* (ej. UPAO-36) con autorización. Antes de ese merge, `develop` debe tener todas las ramas del sprint integradas y sin conflictos.
 
 ---
 
