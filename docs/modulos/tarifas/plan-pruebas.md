@@ -56,29 +56,33 @@ Verificar que el **login** y el **módulo de tarifas** (UPAO-16 / UPAO-34) cumpl
 
 | ID | Resultado (PASA/FALLA) | Evidencia | Observaciones |
 | --- | --- | --- | --- |
-| CP-01 | | | |
-| CP-02 | | | |
-| CP-03 | | | |
-| CP-04 | | | |
-| CP-05 | | | |
-| CP-06 | | | |
-| CP-07 | | | |
-| CP-08 | | | |
-| CP-09 | | | |
-| CP-10 | | | |
-| CP-11 | | | |
-| CP-12 | | | |
-| CP-13 | | | |
-| CP-14 | | | |
-| CP-15 | | | |
-| CP-16 | | | |
-| CP-17 | | | |
+| CP-01 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-02 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-03 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-04 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-05 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-06 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-07 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-08 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-09 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-10 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-11 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-12 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-13 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-14 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-15 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-16 | PASA | Adjunta en Jira (UPAO-35) | |
+| CP-17 | PASA | Adjunta en Jira (UPAO-35) | |
+
+> Ejecución: **06/10/2026** — servidor local (`npm run dev`) + BD compartida (Neon). Los 17 casos pasaron.
 
 ## Registro de defectos y depuración
 
 | ID | Caso | Pasos para reproducir | Esperado | Obtenido | Causa | Corrección (commit) | Re-probado |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | DEF-01 | | | | | | | |
+
+> Sin defectos registrados: los 17 casos de prueba pasaron en la primera ejecución.
 
 ## Evidencia
 
