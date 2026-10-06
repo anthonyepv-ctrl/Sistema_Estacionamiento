@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: cochera-sp
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm install --include=dev && npx prisma generate
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false
