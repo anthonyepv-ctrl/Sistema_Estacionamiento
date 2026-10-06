@@ -6,7 +6,7 @@
 2. Instalar las skills estándar del equipo: `npm run setup:skills` (ver `AGENTS.md` §10).
 3. Leer **`AGENTS.md`** (obligatorio) y la documentación de `docs/` antes de desarrollar.
 
-> Los agentes de IA también deben seguir `AGENTS.md` (archivos puente: `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/`).
+> Los agentes de IA también deben seguir `AGENTS.md` (archivos puente: `CLAUDE.md` y `.cursor/rules/`).
 
 ## Flujo de Trabajo (Git Workflow)
 1. Clonar el repositorio:
