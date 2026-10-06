@@ -9,12 +9,12 @@ const TIPOS = [
   { nombre: 'Reserva Web', precioHora: 5.0, precioFraccion: 3.0 }
 ];
 
-const METODOS_PAGO = ['Efectivo', 'Yape', 'Plin'];
-
-const USUARIOS_INICIALES = [
-  { usuario: 'admin', nombre: 'Administrador', contrasena: '123456', rol: 'DUENO' },
-  { usuario: 'recepcion', nombre: 'Recepcionista', contrasena: '123456', rol: 'RECEPCIONISTA' }
-];
+const USUARIO_DUENO = {
+  usuario: 'admin',
+  nombre: 'Administrador',
+  contrasena: '123456',
+  rol: 'DUENO'
+};
 
 async function main() {
   for (const tipo of TIPOS) {
@@ -48,30 +48,20 @@ async function main() {
     }
   }
 
-  for (const nombre of METODOS_PAGO) {
-    await prisma.metodoPago.upsert({
-      where: { nombre },
-      update: {},
-      create: { nombre }
-    });
-  }
+  const contrasenaHash = await bcrypt.hash(USUARIO_DUENO.contrasena, 10);
 
-  for (const datos of USUARIOS_INICIALES) {
-    const contrasenaHash = await bcrypt.hash(datos.contrasena, 10);
+  await prisma.usuario.upsert({
+    where: { usuario: USUARIO_DUENO.usuario },
+    update: { contrasena: contrasenaHash, nombre: USUARIO_DUENO.nombre },
+    create: {
+      usuario: USUARIO_DUENO.usuario,
+      nombre: USUARIO_DUENO.nombre,
+      contrasena: contrasenaHash,
+      rol: USUARIO_DUENO.rol
+    }
+  });
 
-    await prisma.usuario.upsert({
-      where: { usuario: datos.usuario },
-      update: { contrasena: contrasenaHash, nombre: datos.nombre },
-      create: {
-        usuario: datos.usuario,
-        nombre: datos.nombre,
-        contrasena: contrasenaHash,
-        rol: datos.rol
-      }
-    });
-  }
-
-  console.log('Seed completado: tipos de vehículo, tarifas, métodos de pago y usuarios iniciales.');
+  console.log('Seed completado: tipos de vehículo, tarifas y usuario dueño (UPAO-16).');
 }
 
 main()

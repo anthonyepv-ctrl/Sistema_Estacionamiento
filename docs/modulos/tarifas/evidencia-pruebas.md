@@ -17,8 +17,7 @@ Entorno: Node v22.17.1 · Express 5 · Prisma 6.19.3 · PostgreSQL Neon (sa-east
 
 ```sql
 SELECT id_usuario, usuario, nombre, rol FROM usuario ORDER BY id_usuario;
--- 1 | admin     | Administrador | DUEÑO
--- 3 | recepcion | Recepcionista | RECEPCIONISTA
+-- 1 | admin | Administrador | DUEÑO
 
 SELECT id_tarifa, precio_hora, precio_fraccion, estado FROM tarifa ORDER BY id_tarifa;
 ```

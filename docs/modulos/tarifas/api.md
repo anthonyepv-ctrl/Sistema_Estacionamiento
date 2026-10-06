@@ -58,7 +58,6 @@ Da funcionalidad al botón "Guardar Tarifa".
 | Usuario | Nombre | Contraseña | Rol |
 | --- | --- | --- | --- |
 | `admin` | Administrador | `123456` | DUEÑO |
-| `recepcion` | Recepcionista | `123456` | RECEPCIONISTA |
 
 > Cambiar antes de cualquier despliegue real. La contraseña se guarda hasheada con bcrypt.
 
