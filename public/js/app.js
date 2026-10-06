@@ -51,15 +51,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function pedirApi(url, opciones = {}) {
-    const respuesta = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
-      ...opciones
-    });
+    let respuesta;
+
+    try {
+      respuesta = await fetch(url, {
+        headers: { 'Content-Type': 'application/json' },
+        ...opciones
+      });
+    } catch (error) {
+      throw new Error('No se pudo conectar con el servidor. Verifica que esté corriendo (npm run dev).');
+    }
 
     const datos = await respuesta.json().catch(() => ({}));
 
     if (!respuesta.ok) {
-      throw new Error(datos.error || 'Ocurrió un error inesperado.');
+      throw new Error(datos.error || 'La API no respondió correctamente. Abre la aplicación en http://localhost:3000.');
     }
 
     return datos;
