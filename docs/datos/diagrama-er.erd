@@ -12,7 +12,7 @@
     "show": 431,
     "database": 4,
     "databaseName": "cochera-adev",
-    "canvasType": "@dineug/erd-editor/builtin-visualization",
+    "canvasType": "ERD",
     "language": 1,
     "tableNameCase": 4,
     "columnNameCase": 2,
@@ -218,12 +218,14 @@
         "columnIds": [
           "EkuPDOpgehGfIfUag5s7I",
           "siEnkBdAQKR4u-U1KBOyF",
+          "r4NdOm-nOmBrE-uS1a2B3C",
           "WjGLh7lubDP5Zi7Ilwz_z",
           "3k6ctVzZ-Gf65s7B-L6ws"
         ],
         "seqColumnIds": [
           "EkuPDOpgehGfIfUag5s7I",
           "siEnkBdAQKR4u-U1KBOyF",
+          "r4NdOm-nOmBrE-uS1a2B3C",
           "WjGLh7lubDP5Zi7Ilwz_z",
           "3k6ctVzZ-Gf65s7B-L6ws"
         ],
@@ -565,7 +567,7 @@
       "-pQ-EzbEH8i2tRSHwJzo1": {
         "id": "-pQ-EzbEH8i2tRSHwJzo1",
         "tableId": "O2fnjhGxO_d-EChnWHXkt",
-        "name": "fecha-hora",
+        "name": "fecha_hora",
         "comment": "",
         "dataType": "DATETIME",
         "default": "",
@@ -578,7 +580,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1791227266532,
+          "updateAt": 1791252435784,
           "createAt": 1791227249275
         }
       },
@@ -905,6 +907,26 @@
       "siEnkBdAQKR4u-U1KBOyF": {
         "id": "siEnkBdAQKR4u-U1KBOyF",
         "tableId": "eYJ7FxkPofyiGAwV3yOLs",
+        "name": "usuario",
+        "comment": "",
+        "dataType": "VARCHAR",
+        "default": "",
+        "options": 8,
+        "ui": {
+          "keys": 0,
+          "widthName": 60,
+          "widthComment": 60,
+          "widthDataType": 60,
+          "widthDefault": 60
+        },
+        "meta": {
+          "updateAt": 1791252226630,
+          "createAt": 1791228388158
+        }
+      },
+      "r4NdOm-nOmBrE-uS1a2B3C": {
+        "id": "r4NdOm-nOmBrE-uS1a2B3C",
+        "tableId": "eYJ7FxkPofyiGAwV3yOLs",
         "name": "nombre",
         "comment": "",
         "dataType": "VARCHAR",
@@ -918,8 +940,8 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1791229052152,
-          "createAt": 1791228388158
+          "updateAt": 1791260000000,
+          "createAt": 1791260000000
         }
       },
       "3k6ctVzZ-Gf65s7B-L6ws": {
