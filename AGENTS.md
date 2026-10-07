@@ -25,6 +25,7 @@ Sistema web para la **gestión de una cochera/estacionamiento**: registro de ing
 | Base de datos | PostgreSQL — nube: **Neon** (plan gratuito); local opcional: Docker (base `cochera-adev`) |
 | ORM | **Prisma** |
 | Control de versiones | Git + GitHub |
+| Despliegue | **Render** (plan free) — `render.yaml`, rama `main` |
 
 ---
 
@@ -38,8 +39,9 @@ Sistema_Estacionamiento/
 │   └── index.html
 ├── src/                 # Código del backend
 │   ├── routes/          # Rutas de la API
-│   ├── models/          # Modelos y acceso a datos
-│   └── config/          # Configuración
+│   └── config/          # Configuración (cliente Prisma)
+├── prisma/              # Esquema, migraciones y seed
+├── scripts/             # Utilidades (setup de skills)
 ├── docs/                # Documentación
 │   ├── arquitectura/    # Arquitectura y estructura técnica
 │   ├── datos/           # Modelo de datos y diagrama ER
@@ -49,6 +51,7 @@ Sistema_Estacionamiento/
 ├── .env.example         # Ejemplo de configuración
 ├── .gitignore
 ├── package.json
+├── render.yaml          # Blueprint de despliegue en Render
 ├── server.js            # Punto de entrada del backend
 ├── README.md
 └── AGENTS.md            # Este archivo
