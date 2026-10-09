@@ -311,6 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputPlaca = document.getElementById('input-placa');
   const selectTipoIngreso = document.getElementById('select-tipo-ingreso');
   const btnLimpiarIngreso = document.getElementById('btn-limpiar-ingreso');
+  const btnRegistrarIngreso = document.getElementById('btn-registrar-ingreso');
   const previewPlaca = document.getElementById('preview-placa');
   const previewTipo = document.getElementById('preview-tipo');
 
@@ -320,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const ETIQUETA_TIPO = {
-    auto: 'Automóvil / Camioneta',
+    auto: 'Automóvil',
     moto: 'Motocicleta'
   };
 
@@ -335,7 +336,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function inferirTipo(placa) {
-    return /^\d/.test(placa) ? 'moto' : 'auto';
+    const limpio = placa.replace(/[^A-Z0-9]/g, '');
+    return /^\d/.test(limpio) ? 'moto' : 'auto';
   }
 
   function actualizarVistaPrevia() {
@@ -385,13 +387,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (inputPlaca) {
+    // Bloqueo instantáneo de la tecla espacio y atajo con ENTER
+    inputPlaca.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (formIngreso) formIngreso.requestSubmit();
+      }
+    });
+
     inputPlaca.addEventListener('input', () => {
-      inputPlaca.value = normalizarPlaca(inputPlaca.value);
+      const sinEspacios = inputPlaca.value.replace(/\s+/g, '');
+      inputPlaca.value = normalizarPlaca(sinEspacios);
       selectTipoIngreso.value = inferirTipo(inputPlaca.value);
       actualizarVistaPrevia();
 
       const alfanumerico = inputPlaca.value.replace(/[^A-Z0-9]/g, '');
-      if (alfanumerico.length >= 6) {
+      if (alfanumerico.length === 0) {
+        mostrarErrorCampo(inputPlaca, 'Ingrese la placa del vehículo.');
+      } else if (alfanumerico.length >= 6) {
         validarPlaca(true);
       } else {
         limpiarErrores(inputPlaca);
@@ -399,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     inputPlaca.addEventListener('blur', () => {
-      if (inputPlaca.value.trim()) validarPlaca(true);
+      validarPlaca(true);
     });
   }
 
@@ -418,11 +434,28 @@ document.addEventListener('DOMContentLoaded', () => {
     formIngreso.addEventListener('submit', (e) => {
       e.preventDefault();
 
-      if (!validarPlaca(true)) return;
+      if (!validarPlaca(true)) {
+        inputPlaca.focus();
+        return;
+      }
 
       const placa = inputPlaca.value.trim();
-      mostrarToast(`Ingreso registrado: Placa [${placa}]`);
-      limpiarFormularioIngreso();
+
+      // Estados visuales del botón: Loading y anti-debounce
+      if (btnRegistrarIngreso) {
+        btnRegistrarIngreso.classList.add('loading');
+        btnRegistrarIngreso.disabled = true;
+      }
+
+      setTimeout(() => {
+        if (btnRegistrarIngreso) {
+          btnRegistrarIngreso.classList.remove('loading');
+          btnRegistrarIngreso.disabled = false;
+        }
+
+        mostrarToast(`Ingreso registrado: Placa [${placa}]`);
+        limpiarFormularioIngreso();
+      }, 500);
     });
   }
 

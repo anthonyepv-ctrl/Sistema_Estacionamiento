@@ -247,6 +247,36 @@ p {
   background: var(--bg);
 }
 
+.btn-success {
+  background: var(--success);
+  color: #fff;
+}
+
+.btn-success:hover {
+  background: #0EA472;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:active {
+  background: #12275E;
+}
+
+.btn-secondary:active {
+  background: #E5E7EB;
+}
+
+.btn-success:active {
+  background: #0B8A60;
+}
+
+.btn:disabled:not(.loading) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-sm {
   height: 34px;
   padding: 0 12px;
@@ -334,8 +364,14 @@ p {
 }
 
 .input-control.error {
-  border-color: var(--err);
-  background: var(--errbg);
+  border-color: var(--err) !important;
+  background-color: var(--errbg) !important;
+}
+
+.input-control.error:focus {
+  border-color: var(--err) !important;
+  background-color: var(--errbg) !important;
+  box-shadow: 0 0 0 3px rgba(207, 34, 46, 0.2) !important;
 }
 
 .input-feedback {
