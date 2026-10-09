@@ -55,9 +55,27 @@ flowchart TD
 - **Inferencia del tipo:** si la placa inicia con letras (`ABC123`) se preselecciona **Auto/Camioneta**; si inicia con dígitos (`1234AB`) se preselecciona **Motocicleta**. El selector queda visible y editable.
 - **Mensaje de error:** "Ingrese una placa válida según el formato peruano (ej. ABC-123 o 1234-5A)."
 
-## 5. Referencias
+## 5. Modelo de datos
+
+La tabla del ingreso **ya existe** en el modelo: es **`estadia`** (creada en UPAO-33 y presente en el ERD), que registra ingresos y salidas.
+
+| Columna | Tipo | Uso en el ingreso |
+| --- | --- | --- |
+| `placa` | VARCHAR(10) | Placa del vehículo |
+| `id_tipo_vehiculo` | FK → `tipo_vehiculo` | Auto/Camioneta o Motocicleta |
+| `id_tarifa` | FK → `tarifa` | Tarifa vigente aplicada |
+| `id_usuario` | FK → `usuario` | Recepcionista que registra |
+| `hora_ingreso` | TIMESTAMP (`DEFAULT now()`) | Hora de entrada automática |
+| `hora_salida` | TIMESTAMP (NULL = activa) | Se completa al registrar la salida (UPAO-7) |
+
+- Restricción clave: índice único parcial `estadia_placa_activa_key` (`placa` WHERE `hora_salida IS NULL`) → impide dos ingresos activos con la misma placa.
+- Diagrama editable: [`docs/datos/diagrama-er.erd`](../../datos/diagrama-er.erd) · modelo completo: [`Modelo_de_Datos.md`](../../datos/Modelo_de_Datos.md).
+
+> No se requieren **tablas nuevas** para el ingreso.
+
+## 6. Referencias
 
 - [Guía de Estilos y Lineamientos de Interfaz](../../diseño/Guía%20de%20Estilos%20y%20Lineamientos%20de%20Interfaz.md), §2.A (validaciones de placa).
-- Modelo de datos: la tabla `estadia` ya contiene `placa`, `hora_ingreso` y `hora_salida`.
+- [Modelo de datos](../../datos/Modelo_de_Datos.md) y [diagrama ER](../../datos/diagrama-er.erd).
 
 > El control de aforo (por totales y entradas activas) y la API se definen en UPAO-38 y UPAO-40.
