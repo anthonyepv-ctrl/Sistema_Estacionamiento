@@ -50,6 +50,23 @@ Sea `Δ = hora_salida − hora_ingreso` (en horas):
 4. Confirmar → registra `hora_salida`, crea el `pago` y vincula `estadia.id_pago`.
 5. El espacio queda **Disponible** (la estadía deja de estar activa).
 
+```mermaid
+flowchart TD
+    A[Inicio: solicitar salida] --> B[Buscar vehículo<br/>por placa o ID de ingreso]
+    B -->|Sin estadía activa| B1[Mostrar error] --> A
+    B -->|Estadía activa| C[Calcular permanencia<br/>Δ = hora_salida − hora_ingreso]
+    C --> D[Calcular monto<br/>con la tarifa del ingreso]
+    D --> E[Resumen del cobro y<br/>selección de método de pago]
+    E --> F{¿Confirmar cobro?}
+    F -->|No| E
+    F -->|Sí| G[Registrar hora de salida<br/>y monto pagado]
+    G --> H[Crear el pago y vincularlo<br/>a la estadía]
+    H --> I[El espacio queda<br/>Disponible]
+    I --> J[Fin]
+```
+
+> **Nota:** `estadia` no tiene columna de "estado": el estado se **deriva** de `hora_salida` (`NULL` = activa). Registrar la salida = escribir `hora_salida` + crear el `pago` (vinculado por `id_pago`). No se integra una pasarela de pago: solo se **registra** el método de pago y el monto.
+
 ## 6. Modelo de datos (referencia)
 
 - `estadia.hora_salida` (`NULL` = activa) y `estadia.id_pago` (1:1 con `pago`).
