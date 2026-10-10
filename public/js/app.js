@@ -4,6 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   let tarifas = [];
+  let rolActual = '';
 
   const viewLogin = document.getElementById('view-login');
   const viewDashboard = document.getElementById('view-dashboard');
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (nombre === 'dashboard') {
       viewDashboard.classList.add('active');
       headerUserSection.style.display = 'flex';
+      aplicarMenuPorRol(rolActual);
     } else if (nombre === 'tarifas') {
       viewTarifas.classList.add('active');
       headerUserSection.style.display = 'flex';
@@ -40,6 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const inputPlaca = document.getElementById('input-placa');
       if (inputPlaca) inputPlaca.focus();
     }
+  }
+
+  function aplicarMenuPorRol(rol) {
+    const esDueno = rol === 'DUENO' || rol === 'DUEÑO';
+    const esRecepcionista = rol === 'RECEPCIONISTA';
+
+    const cardTarifas = document.getElementById('card-modulo-tarifas');
+    const cardIngreso = document.getElementById('card-modulo-ingreso');
+
+    if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
+    if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
   }
 
   function mostrarToast(mensaje, esError = false) {
@@ -116,6 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
           method: 'POST',
           body: JSON.stringify({ usuario, contrasena: password })
         });
+
+        rolActual = sesion.rol;
 
         if (sessionUserName) sessionUserName.textContent = sesion.nombre;
         if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
