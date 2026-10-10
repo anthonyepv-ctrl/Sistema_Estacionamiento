@@ -30,3 +30,6 @@ ehthumbs.db
 dist/
 build/
 .cache/
+
+# Evidencia del test E2E (videos locales, no se suben)
+evidencia/

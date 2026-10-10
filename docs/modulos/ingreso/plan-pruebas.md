@@ -16,7 +16,7 @@ Verificar el registro de ingreso (UPAO-6 / UPAO-37..40): login por rol, detecci�
 - `npm run dev` → `http://localhost:3000`
 - BD compartida (Neon)
 - Usuarios: `recepcion` / `123456` (RECEPCIONISTA) · `admin` / `123456` (DUEÑO)
-- Test **automatizado E2E con Playwright** (navegador), con grabación de video.
+- Test **automatizado E2E con Playwright**: `tests/e2e-ingreso.js` → `npm run test:e2e` (opciones: `HEADED=1` navegador visible · `VIDEO=1` graba en `./evidencia`).
 
 ## Casos de prueba
 
