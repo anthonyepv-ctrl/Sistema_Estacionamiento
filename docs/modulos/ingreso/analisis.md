@@ -52,7 +52,7 @@ flowchart TD
 | Moto / Menores | 2 a 4 + 2 a 4 alfanuméricos | `1234-AB`, `AB-1234` | `^[A-Z0-9]{2,4}-?[A-Z0-9]{2,4}$` |
 
 - **Normalización:** MAYÚSCULAS automáticas y guion automático (no se exige al usuario).
-- **Inferencia del tipo:** si la placa inicia con letras (`ABC123`) se preselecciona **Auto/Camioneta**; si inicia con dígitos (`1234AB`) se preselecciona **Motocicleta**. El selector queda visible y editable.
+- **Inferencia del tipo (por patrón):** `3 letras + 3 dígitos` → **Auto/Camioneta** (`ABC-123`); `2 letras + 4 dígitos` → **Motocicleta** (`AB-1234`); `4 dígitos + 2 letras` → **Motocicleta** (`1234-AB`). El selector queda visible y editable.
 - **Mensaje de error:** "Ingrese una placa válida según el formato peruano (ej. ABC-123 o 1234-5A)."
 
 ## 5. Modelo de datos
