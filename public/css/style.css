@@ -482,6 +482,12 @@ select.input-control {
   flex-shrink: 0;
 }
 
+.module-card-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--primary);
+}
+
 .module-card-body {
   flex: 1;
 }
