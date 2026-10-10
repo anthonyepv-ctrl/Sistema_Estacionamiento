@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (formIngreso) {
-    formIngreso.addEventListener('submit', (e) => {
+    formIngreso.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       if (!validarPlaca(true)) {
@@ -440,22 +440,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const placa = inputPlaca.value.trim();
+      const tipo = selectTipoIngreso.value;
 
-      // Estados visuales del botón: Loading y anti-debounce
       if (btnRegistrarIngreso) {
         btnRegistrarIngreso.classList.add('loading');
         btnRegistrarIngreso.disabled = true;
       }
 
-      setTimeout(() => {
+      try {
+        const ingreso = await pedirApi('/api/ingresos', {
+          method: 'POST',
+          body: JSON.stringify({ placa, tipo })
+        });
+
+        mostrarToast(ingreso.mensaje || `Ingreso registrado: Placa [${placa}]`);
+        limpiarFormularioIngreso();
+      } catch (error) {
+        mostrarToast(error.message, true);
+      } finally {
         if (btnRegistrarIngreso) {
           btnRegistrarIngreso.classList.remove('loading');
           btnRegistrarIngreso.disabled = false;
         }
-
-        mostrarToast(`Ingreso registrado: Placa [${placa}]`);
-        limpiarFormularioIngreso();
-      }, 500);
+      }
     });
   }
 
