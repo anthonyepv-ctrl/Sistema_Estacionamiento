@@ -4,10 +4,12 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   let tarifas = [];
+  let rolActual = '';
 
   const viewLogin = document.getElementById('view-login');
   const viewDashboard = document.getElementById('view-dashboard');
   const viewTarifas = document.getElementById('view-tarifas');
+  const viewIngreso = document.getElementById('view-ingreso');
   const headerUserSection = document.getElementById('header-user-section');
   const toastContainer = document.getElementById('toast-container');
   const sessionUserName = document.getElementById('session-user-name');
@@ -18,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     viewLogin.classList.remove('active');
     viewDashboard.classList.remove('active');
     viewTarifas.classList.remove('active');
+    viewIngreso.classList.remove('active');
 
     if (nombre === 'login') {
       viewLogin.classList.add('active');
@@ -27,12 +30,29 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (nombre === 'dashboard') {
       viewDashboard.classList.add('active');
       headerUserSection.style.display = 'flex';
+      aplicarMenuPorRol(rolActual);
     } else if (nombre === 'tarifas') {
       viewTarifas.classList.add('active');
       headerUserSection.style.display = 'flex';
       const inputHora = document.getElementById('input-precio-hora');
       if (inputHora) inputHora.focus();
+    } else if (nombre === 'ingreso') {
+      viewIngreso.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      const inputPlaca = document.getElementById('input-placa');
+      if (inputPlaca) inputPlaca.focus();
     }
+  }
+
+  function aplicarMenuPorRol(rol) {
+    const esDueno = rol === 'DUENO' || rol === 'DUEÑO';
+    const esRecepcionista = rol === 'RECEPCIONISTA';
+
+    const cardTarifas = document.getElementById('card-modulo-tarifas');
+    const cardIngreso = document.getElementById('card-modulo-ingreso');
+
+    if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
+    if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
   }
 
   function mostrarToast(mensaje, esError = false) {
@@ -109,6 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
           method: 'POST',
           body: JSON.stringify({ usuario, contrasena: password })
         });
+
+        rolActual = sesion.rol;
 
         if (sessionUserName) sessionUserName.textContent = sesion.nombre;
         if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
@@ -298,9 +320,187 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const cardModuloIngreso = document.getElementById('card-modulo-ingreso');
+  const btnBackToMenuIngreso = document.getElementById('btn-back-to-menu-ingreso');
+  const formIngreso = document.getElementById('form-registrar-ingreso');
+  const inputPlaca = document.getElementById('input-placa');
+  const selectTipoIngreso = document.getElementById('select-tipo-ingreso');
+  const btnLimpiarIngreso = document.getElementById('btn-limpiar-ingreso');
+  const btnRegistrarIngreso = document.getElementById('btn-registrar-ingreso');
+  const previewPlaca = document.getElementById('preview-placa');
+  const previewTipo = document.getElementById('preview-tipo');
+
+  const PLACA_REGEX = {
+    auto: /^[A-Z0-9]{3}-?[A-Z0-9]{3}$/,
+    moto: /^[A-Z0-9]{2,4}-?[A-Z0-9]{2,4}$/
+  };
+
+  const ETIQUETA_TIPO = {
+    auto: 'Automóvil',
+    moto: 'Motocicleta'
+  };
+
+  function analizarPlaca(limpio) {
+    if (/^\d/.test(limpio)) {
+      return { tipo: 'moto', corte: 4 };
+    }
+
+    const letras = (limpio.match(/^[A-Z]+/) || [''])[0].length;
+
+    if (letras === 2 && /\d/.test(limpio)) {
+      return { tipo: 'moto', corte: 2 };
+    }
+
+    return { tipo: 'auto', corte: 3 };
+  }
+
+  function normalizarPlaca(valor) {
+    const limpio = valor.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (limpio.length === 0) return '';
+
+    const { corte } = analizarPlaca(limpio);
+    if (limpio.length <= corte) return limpio;
+
+    return `${limpio.slice(0, corte)}-${limpio.slice(corte, 6)}`;
+  }
+
+  function inferirTipo(placa) {
+    const limpio = placa.replace(/[^A-Z0-9]/g, '');
+    return analizarPlaca(limpio).tipo;
+  }
+
+  function actualizarVistaPrevia() {
+    if (previewPlaca) previewPlaca.textContent = inputPlaca.value.trim() || '—';
+    if (previewTipo) previewTipo.textContent = ETIQUETA_TIPO[selectTipoIngreso.value] || '—';
+  }
+
+  function validarPlaca(mostrarMensaje) {
+    const valor = inputPlaca.value.trim();
+    const tipo = selectTipoIngreso.value;
+
+    if (!valor) {
+      if (mostrarMensaje) mostrarErrorCampo(inputPlaca, 'Ingrese la placa del vehículo.');
+      return false;
+    }
+
+    if (!PLACA_REGEX[tipo].test(valor)) {
+      if (mostrarMensaje) {
+        mostrarErrorCampo(inputPlaca, 'Ingrese una placa válida según el formato peruano (ej. ABC-123 o 1234-5A).');
+      }
+      return false;
+    }
+
+    limpiarErrores(inputPlaca);
+    return true;
+  }
+
+  function limpiarFormularioIngreso() {
+    inputPlaca.value = '';
+    selectTipoIngreso.value = 'auto';
+    limpiarErrores(inputPlaca);
+    actualizarVistaPrevia();
+    inputPlaca.focus();
+  }
+
+  if (cardModuloIngreso) {
+    cardModuloIngreso.addEventListener('click', () => {
+      mostrarPantalla('ingreso');
+      limpiarFormularioIngreso();
+    });
+  }
+
+  if (btnBackToMenuIngreso) {
+    btnBackToMenuIngreso.addEventListener('click', () => {
+      mostrarPantalla('dashboard');
+    });
+  }
+
+  if (inputPlaca) {
+    // Bloqueo instantáneo de la tecla espacio y atajo con ENTER
+    inputPlaca.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (formIngreso) formIngreso.requestSubmit();
+      }
+    });
+
+    inputPlaca.addEventListener('input', () => {
+      const sinEspacios = inputPlaca.value.replace(/\s+/g, '');
+      inputPlaca.value = normalizarPlaca(sinEspacios);
+      selectTipoIngreso.value = inferirTipo(inputPlaca.value);
+      actualizarVistaPrevia();
+
+      const alfanumerico = inputPlaca.value.replace(/[^A-Z0-9]/g, '');
+      if (alfanumerico.length === 0) {
+        mostrarErrorCampo(inputPlaca, 'Ingrese la placa del vehículo.');
+      } else if (alfanumerico.length >= 6) {
+        validarPlaca(true);
+      } else {
+        limpiarErrores(inputPlaca);
+      }
+    });
+
+    inputPlaca.addEventListener('blur', () => {
+      validarPlaca(true);
+    });
+  }
+
+  if (selectTipoIngreso) {
+    selectTipoIngreso.addEventListener('change', () => {
+      actualizarVistaPrevia();
+      if (inputPlaca.value.trim()) validarPlaca(true);
+    });
+  }
+
+  if (btnLimpiarIngreso) {
+    btnLimpiarIngreso.addEventListener('click', limpiarFormularioIngreso);
+  }
+
+  if (formIngreso) {
+    formIngreso.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validarPlaca(true)) {
+        inputPlaca.focus();
+        return;
+      }
+
+      const placa = inputPlaca.value.trim();
+      const tipo = selectTipoIngreso.value;
+
+      if (btnRegistrarIngreso) {
+        btnRegistrarIngreso.classList.add('loading');
+        btnRegistrarIngreso.disabled = true;
+      }
+
+      try {
+        const ingreso = await pedirApi('/api/ingresos', {
+          method: 'POST',
+          body: JSON.stringify({ placa, tipo })
+        });
+
+        mostrarToast(ingreso.mensaje || `Ingreso registrado: Placa [${placa}]`);
+        limpiarFormularioIngreso();
+      } catch (error) {
+        mostrarToast(error.message, true);
+      } finally {
+        if (btnRegistrarIngreso) {
+          btnRegistrarIngreso.classList.remove('loading');
+          btnRegistrarIngreso.disabled = false;
+        }
+      }
+    });
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && viewTarifas.classList.contains('active')) {
       cargarTarifaEnFormulario(selectTipo.value);
+    }
+    if (e.key === 'Escape' && viewIngreso.classList.contains('active')) {
+      limpiarFormularioIngreso();
     }
   });
 

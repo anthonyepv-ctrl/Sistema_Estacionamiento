@@ -247,6 +247,36 @@ p {
   background: var(--bg);
 }
 
+.btn-success {
+  background: var(--success);
+  color: #fff;
+}
+
+.btn-success:hover {
+  background: #0EA472;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:active {
+  background: #12275E;
+}
+
+.btn-secondary:active {
+  background: #E5E7EB;
+}
+
+.btn-success:active {
+  background: #0B8A60;
+}
+
+.btn:disabled:not(.loading) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-sm {
   height: 34px;
   padding: 0 12px;
@@ -334,8 +364,14 @@ p {
 }
 
 .input-control.error {
-  border-color: var(--err);
-  background: var(--errbg);
+  border-color: var(--err) !important;
+  background-color: var(--errbg) !important;
+}
+
+.input-control.error:focus {
+  border-color: var(--err) !important;
+  background-color: var(--errbg) !important;
+  box-shadow: 0 0 0 3px rgba(207, 34, 46, 0.2) !important;
 }
 
 .input-feedback {
@@ -446,6 +482,12 @@ select.input-control {
   flex-shrink: 0;
 }
 
+.module-card-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--primary);
+}
+
 .module-card-body {
   flex: 1;
 }
@@ -527,6 +569,40 @@ select.input-control {
   border-bottom: none;
 }
 
+/* 4. ESTILOS DE MÓDULO DE INGRESO */
+.ingreso-layout {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.input-placa {
+  height: 56px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.preview-row:last-child {
+  border-bottom: none;
+}
+
+.preview-value {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text);
+}
+
 /* Toasts de Retroalimentación */
 .toast-container {
   position: fixed;
@@ -568,7 +644,8 @@ select.input-control {
 
 /* Responsive */
 @media (max-width: 860px) {
-  .tarifas-layout {
+  .tarifas-layout,
+  .ingreso-layout {
     grid-template-columns: 1fr;
   }
 }

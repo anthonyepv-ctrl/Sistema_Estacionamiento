@@ -124,13 +124,30 @@
         
         <!-- Módulo de Tarifas (UPAO-16) -->
         <div class="module-card card-primary" id="card-modulo-tarifas">
-          <div class="module-card-icon">💰</div>
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><circle cx="7" cy="7" r="1.5"/></svg>
+          </div>
           <div class="module-card-body">
             <div class="module-card-top">
               <h2>Configurar Tarifas</h2>
-              <span class="badge badge-primary mono">UPAO-16</span>
             </div>
             <p>Visualizar y modificar tarifas por hora y fracción para autos, motos y reservas.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Módulo de Ingreso (UPAO-6) -->
+        <div class="module-card" id="card-modulo-ingreso">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Registrar Ingreso</h2>
+            </div>
+            <p>Registro rápido de vehículos por placa y tipo, con validación del formato peruano.</p>
             <div class="module-card-action">
               <span>Abrir Módulo →</span>
             </div>
@@ -256,6 +273,98 @@
               </button>
             </div>
           </form>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------------------------
+         4. PANTALLA DEL MÓDULO DE INGRESO (UPAO-6)
+         ---------------------------------------------------------------------- -->
+    <section id="view-ingreso" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu-ingreso">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Registrar Ingreso</h1>
+        <p>Registro rápido de vehículos por placa y tipo</p>
+      </div>
+
+      <div class="ingreso-layout">
+
+        <!-- FORMULARIO DE REGISTRO -->
+        <div class="card card-form">
+          <div class="card-header">
+            <h2>Nuevo Ingreso</h2>
+            <p class="caption">Ingrese la placa; el sistema infiere el tipo de vehículo</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <form id="form-registrar-ingreso" novalidate>
+            <div class="form-group">
+              <label for="input-placa" class="form-label">
+                <span>Placa del Vehículo</span>
+                <span class="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="input-placa"
+                class="input-control mono input-placa"
+                placeholder="ABC-123"
+                autocomplete="off"
+                maxlength="7"
+                required
+              >
+              <div class="input-feedback"></div>
+              <span class="caption">Formato peruano: ABC-123 (auto) o 1234-AB (moto)</span>
+            </div>
+
+            <div class="form-group">
+              <label for="select-tipo-ingreso" class="form-label">
+                <span>Tipo de Vehículo</span>
+                <span class="required">*</span>
+              </label>
+              <select id="select-tipo-ingreso" class="input-control">
+                <option value="auto">Automóvil</option>
+                <option value="moto">Motocicleta</option>
+              </select>
+              <span class="caption">Se preselecciona automáticamente según la placa (editable)</span>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" id="btn-registrar-ingreso" class="btn btn-success" style="flex: 2;">
+                Registrar Ingreso
+              </button>
+              <button type="button" id="btn-limpiar-ingreso" class="btn btn-secondary" style="flex: 1;">
+                Limpiar
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- VISTA PREVIA -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Vista Previa</h2>
+            <p class="caption">Así se registrará el vehículo</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <div class="preview-row">
+            <span class="caption">Placa</span>
+            <span class="preview-value mono" id="preview-placa">—</span>
+          </div>
+          <div class="preview-row">
+            <span class="caption">Tipo de vehículo</span>
+            <span class="preview-value" id="preview-tipo">—</span>
+          </div>
+          <div class="preview-row">
+            <span class="caption">Estado</span>
+            <span class="badge badge-success" id="preview-estado">OCUPADO</span>
+          </div>
         </div>
 
       </div>
