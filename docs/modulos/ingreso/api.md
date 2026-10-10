@@ -41,6 +41,15 @@ Lista los vehículos con ingreso activo (`hora_salida` nula).
 | `src/routes/ingresos.js` | Endpoints de ingreso. |
 | `public/js/app.js` | El formulario llama a `POST /api/ingresos`. |
 
+## Credenciales (seed)
+
+| Usuario | Contraseña | Rol | Módulo |
+| --- | --- | --- | --- |
+| `admin` | `123456` | DUEÑO | Configurar Tarifas |
+| `recepcion` | `123456` | RECEPCIONISTA | Registrar Ingreso |
+
+> El menú principal muestra los módulos según el **rol** del usuario que inicia sesión.
+
 ## Pendiente
 
 - **Aforo:** se controla por totales y entradas activas; registrar suma una entrada (ocupado +1, disponible −1). El bloqueo por *"aforo = 0"* requiere definir la **capacidad total**, que aún no está en el modelo.

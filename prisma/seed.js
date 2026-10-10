@@ -9,12 +9,10 @@ const TIPOS = [
   { nombre: 'Reserva Web', precioHora: 5.0, precioFraccion: 3.0 }
 ];
 
-const USUARIO_DUENO = {
-  usuario: 'admin',
-  nombre: 'Administrador',
-  contrasena: '123456',
-  rol: 'DUENO'
-};
+const USUARIOS = [
+  { usuario: 'admin', nombre: 'Administrador', contrasena: '123456', rol: 'DUENO' },
+  { usuario: 'recepcion', nombre: 'Recepcionista', contrasena: '123456', rol: 'RECEPCIONISTA' }
+];
 
 async function main() {
   for (const tipo of TIPOS) {
@@ -48,20 +46,22 @@ async function main() {
     }
   }
 
-  const contrasenaHash = await bcrypt.hash(USUARIO_DUENO.contrasena, 10);
+  for (const datos of USUARIOS) {
+    const contrasenaHash = await bcrypt.hash(datos.contrasena, 10);
 
-  await prisma.usuario.upsert({
-    where: { usuario: USUARIO_DUENO.usuario },
-    update: { contrasena: contrasenaHash, nombre: USUARIO_DUENO.nombre },
-    create: {
-      usuario: USUARIO_DUENO.usuario,
-      nombre: USUARIO_DUENO.nombre,
-      contrasena: contrasenaHash,
-      rol: USUARIO_DUENO.rol
-    }
-  });
+    await prisma.usuario.upsert({
+      where: { usuario: datos.usuario },
+      update: { contrasena: contrasenaHash, nombre: datos.nombre, rol: datos.rol },
+      create: {
+        usuario: datos.usuario,
+        nombre: datos.nombre,
+        contrasena: contrasenaHash,
+        rol: datos.rol
+      }
+    });
+  }
 
-  console.log('Seed completado: tipos de vehículo, tarifas y usuario dueño (UPAO-16).');
+  console.log('Seed completado: tipos de vehículo, tarifas y usuarios (dueño y recepcionista).');
 }
 
 main()
