@@ -61,7 +61,16 @@ async function main() {
     });
   }
 
-  console.log('Seed completado: tipos de vehículo, tarifas y usuarios (dueño y recepcionista).');
+  const METODOS = ['Efectivo', 'Yape', 'POS'];
+  for (const nombre of METODOS) {
+    await prisma.metodoPago.upsert({
+      where: { nombre },
+      update: {},
+      create: { nombre }
+    });
+  }
+
+  console.log('Seed completado: tipos de vehículo, tarifas, usuarios y métodos de pago.');
 }
 
 main()

@@ -693,33 +693,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (btnRegistrarSalida) {
-    btnRegistrarSalida.addEventListener('click', () => {
+    btnRegistrarSalida.addEventListener('click', async () => {
       if (!activoSeleccionado) {
         mostrarToast('Seleccione un vehículo de la lista.', true);
         return;
       }
 
-      const tarifa = tarifaDeTipo(activoSeleccionado.tipo);
-      if (!tarifa) {
-        mostrarToast('No hay una tarifa vigente para este tipo de vehículo.', true);
-        return;
-      }
-
-      const placa = activoSeleccionado.placa;
-      const cobro = calcularCobro(activoSeleccionado.horaIngreso);
-      const monto = montoDeCobro(tarifa, cobro);
       const metodo = selectMetodoPago?.value || 'Efectivo';
 
       btnRegistrarSalida.classList.add('loading');
       btnRegistrarSalida.disabled = true;
 
-      setTimeout(() => {
+      try {
+        const respuesta = await pedirApi('/api/salidas', {
+          method: 'POST',
+          body: JSON.stringify({
+            estadiaId: activoSeleccionado.id,
+            metodoPago: metodo
+          })
+        });
+
+        mostrarToast(respuesta.mensaje || 'Salida registrada exitosamente.');
+        await cargarSalida();
+      } catch (error) {
+        mostrarToast(error.message, true);
+      } finally {
         btnRegistrarSalida.classList.remove('loading');
         btnRegistrarSalida.disabled = false;
-
-        mostrarToast(`Salida registrada: Placa [${placa}] · S/ ${monto.toFixed(2)} · ${metodo}`);
-        limpiarSalida();
-      }, 500);
+      }
     });
   }
 
