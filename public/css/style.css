@@ -272,6 +272,19 @@ p {
   background: #0B8A60;
 }
 
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #DC2626;
+}
+
+.btn-danger:active {
+  background: #B91C1C;
+}
+
 .btn:disabled:not(.loading) {
   opacity: 0.6;
   cursor: not-allowed;
@@ -603,6 +616,36 @@ select.input-control {
   color: var(--text);
 }
 
+/* 5. ESTILOS DE MÓDULO DE SALIDA */
+.salida-layout {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.fila-activo {
+  cursor: pointer;
+}
+
+.fila-activo:hover {
+  background: #F9FAFB;
+}
+
+.fila-activo.seleccionada {
+  background: #EFF6FF;
+}
+
+.monto-total {
+  font-size: 24px;
+  color: var(--primary);
+}
+
+.lista-vacia {
+  padding-top: 12px;
+  text-align: center;
+}
+
 /* Toasts de Retroalimentación */
 .toast-container {
   position: fixed;
@@ -645,7 +688,8 @@ select.input-control {
 /* Responsive */
 @media (max-width: 860px) {
   .tarifas-layout,
-  .ingreso-layout {
+  .ingreso-layout,
+  .salida-layout {
     grid-template-columns: 1fr;
   }
 }
