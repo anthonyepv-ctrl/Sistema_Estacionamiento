@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const viewDashboard = document.getElementById('view-dashboard');
   const viewTarifas = document.getElementById('view-tarifas');
   const viewIngreso = document.getElementById('view-ingreso');
+  const viewSalida = document.getElementById('view-salida');
   const headerUserSection = document.getElementById('header-user-section');
   const toastContainer = document.getElementById('toast-container');
   const sessionUserName = document.getElementById('session-user-name');
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     viewDashboard.classList.remove('active');
     viewTarifas.classList.remove('active');
     viewIngreso.classList.remove('active');
+    viewSalida.classList.remove('active');
 
     if (nombre === 'login') {
       viewLogin.classList.add('active');
@@ -41,6 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
       headerUserSection.style.display = 'flex';
       const inputPlaca = document.getElementById('input-placa');
       if (inputPlaca) inputPlaca.focus();
+    } else if (nombre === 'salida') {
+      viewSalida.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      const inputBuscar = document.getElementById('input-buscar-placa');
+      if (inputBuscar) inputBuscar.focus();
     }
   }
 
@@ -50,9 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const cardTarifas = document.getElementById('card-modulo-tarifas');
     const cardIngreso = document.getElementById('card-modulo-ingreso');
+    const cardSalida = document.getElementById('card-modulo-salida');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
+    if (cardSalida) cardSalida.style.display = esRecepcionista ? '' : 'none';
   }
 
   function mostrarToast(mensaje, esError = false) {
@@ -495,12 +504,234 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const cardModuloSalida = document.getElementById('card-modulo-salida');
+  const btnBackToMenuSalida = document.getElementById('btn-back-to-menu-salida');
+  const inputBuscarPlaca = document.getElementById('input-buscar-placa');
+  const tablaActivosBody = document.getElementById('tabla-activos-body');
+  const listaActivosVacia = document.getElementById('lista-activos-vacia');
+  const salidaVacio = document.getElementById('salida-vacio');
+  const salidaResumen = document.getElementById('salida-resumen');
+  const salidaPlaca = document.getElementById('salida-placa');
+  const salidaTipo = document.getElementById('salida-tipo');
+  const salidaHoraEntrada = document.getElementById('salida-hora-entrada');
+  const salidaTiempo = document.getElementById('salida-tiempo');
+  const salidaTarifa = document.getElementById('salida-tarifa');
+  const salidaMonto = document.getElementById('salida-monto');
+  const selectMetodoPago = document.getElementById('select-metodo-pago');
+  const btnRegistrarSalida = document.getElementById('btn-registrar-salida');
+  const btnCancelarSalida = document.getElementById('btn-cancelar-salida');
+
+  let activos = [];
+  let tarifasSalida = [];
+  let activoSeleccionado = null;
+
+  function formatearHora(fechaISO) {
+    const fecha = new Date(fechaISO);
+    const hoy = new Date();
+    const esHoy = fecha.getFullYear() === hoy.getFullYear()
+      && fecha.getMonth() === hoy.getMonth()
+      && fecha.getDate() === hoy.getDate();
+
+    const hora = fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+    if (esHoy) return hora;
+
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    return `${dia}/${mes} ${hora}`;
+  }
+
+  function calcularCobro(horaIngreso) {
+    const diffMs = Math.max(0, new Date() - new Date(horaIngreso));
+    const horas = Math.floor(diffMs / 3600000);
+    const minutos = Math.floor((diffMs % 3600000) / 60000);
+    const hayFraccion = diffMs % 3600000 > 0;
+    return { horas, minutos, hayFraccion };
+  }
+
+  function tarifaDeTipo(tipo) {
+    return tarifasSalida.find((t) => t.tipo === tipo);
+  }
+
+  function montoDeCobro(tarifa, cobro) {
+    return cobro.horas * tarifa.precioHora + (cobro.hayFraccion ? tarifa.precioFraccion : 0);
+  }
+
+  async function cargarSalida() {
+    activos = await pedirApi('/api/ingresos/activos');
+    tarifasSalida = await pedirApi('/api/tarifas');
+    activoSeleccionado = null;
+    if (inputBuscarPlaca) inputBuscarPlaca.value = '';
+    renderListaActivos();
+    mostrarResumen(null);
+  }
+
+  function placasCoinciden(placa, busqueda) {
+    const limpia = placa.replace(/[^A-Z0-9]/g, '');
+    return limpia.includes(busqueda.replace(/[^A-Z0-9]/g, ''));
+  }
+
+  function renderListaActivos() {
+    if (!tablaActivosBody) return;
+
+    const busqueda = (inputBuscarPlaca?.value || '').trim().toUpperCase();
+    const filtrados = activos.filter((a) => placasCoinciden(a.placa, busqueda));
+
+    tablaActivosBody.innerHTML = filtrados.map((a) => `
+      <tr class="fila-activo ${activoSeleccionado && String(activoSeleccionado.id) === String(a.id) ? 'seleccionada' : ''}" data-id="${a.id}">
+        <td class="mono" style="font-weight: 700;">${a.placa}</td>
+        <td>${a.tipo}</td>
+        <td class="mono">${formatearHora(a.horaIngreso)}</td>
+        <td>
+          <button type="button" class="btn btn-secondary btn-sm btn-seleccionar-activo" data-id="${a.id}">
+            Seleccionar
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    tablaActivosBody.querySelectorAll('.fila-activo').forEach((fila) => {
+      fila.addEventListener('click', () => seleccionarActivo(fila.getAttribute('data-id')));
+    });
+
+    if (listaActivosVacia) {
+      listaActivosVacia.textContent = activos.length > 0
+        ? 'Sin resultados para esa placa.'
+        : 'No hay vehículos en cochera.';
+      listaActivosVacia.style.display = filtrados.length === 0 ? '' : 'none';
+    }
+  }
+
+  function mostrarResumen(activo) {
+    if (!salidaResumen || !salidaVacio) return;
+
+    if (!activo) {
+      salidaResumen.style.display = 'none';
+      salidaVacio.style.display = '';
+      return;
+    }
+
+    const cobro = calcularCobro(activo.horaIngreso);
+    const tarifa = tarifaDeTipo(activo.tipo);
+
+    salidaPlaca.textContent = activo.placa;
+    salidaTipo.textContent = activo.tipo;
+    salidaHoraEntrada.textContent = formatearHora(activo.horaIngreso);
+    salidaTiempo.textContent = `${cobro.horas} h ${cobro.minutos} min`;
+
+    if (tarifa) {
+      salidaTarifa.textContent = `S/ ${tarifa.precioHora.toFixed(2)} /h + S/ ${tarifa.precioFraccion.toFixed(2)} fracción`;
+      salidaMonto.textContent = `S/ ${montoDeCobro(tarifa, cobro).toFixed(2)}`;
+    } else {
+      salidaTarifa.textContent = 'Sin tarifa vigente';
+      salidaMonto.textContent = 'S/ —';
+    }
+
+    salidaVacio.style.display = 'none';
+    salidaResumen.style.display = '';
+    if (selectMetodoPago) selectMetodoPago.focus();
+  }
+
+  function seleccionarActivo(id) {
+    const activo = activos.find((a) => String(a.id) === String(id));
+    if (!activo) return;
+
+    activoSeleccionado = activo;
+
+    tablaActivosBody?.querySelectorAll('.fila-activo').forEach((fila) => {
+      fila.classList.toggle('seleccionada', fila.getAttribute('data-id') === String(id));
+    });
+
+    mostrarResumen(activo);
+  }
+
+  function limpiarSalida() {
+    activoSeleccionado = null;
+    if (inputBuscarPlaca) inputBuscarPlaca.value = '';
+    renderListaActivos();
+    mostrarResumen(null);
+    if (inputBuscarPlaca) inputBuscarPlaca.focus();
+  }
+
+  if (cardModuloSalida) {
+    cardModuloSalida.addEventListener('click', async () => {
+      mostrarPantalla('salida');
+
+      try {
+        await cargarSalida();
+      } catch (error) {
+        mostrarToast(error.message, true);
+      }
+    });
+  }
+
+  if (btnBackToMenuSalida) {
+    btnBackToMenuSalida.addEventListener('click', () => {
+      mostrarPantalla('dashboard');
+    });
+  }
+
+  if (inputBuscarPlaca) {
+    inputBuscarPlaca.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const primera = tablaActivosBody?.querySelector('.fila-activo');
+        if (primera) seleccionarActivo(primera.getAttribute('data-id'));
+      }
+    });
+
+    inputBuscarPlaca.addEventListener('input', () => {
+      inputBuscarPlaca.value = inputBuscarPlaca.value.toUpperCase().replace(/\s+/g, '');
+      renderListaActivos();
+    });
+  }
+
+  if (btnCancelarSalida) {
+    btnCancelarSalida.addEventListener('click', limpiarSalida);
+  }
+
+  if (btnRegistrarSalida) {
+    btnRegistrarSalida.addEventListener('click', () => {
+      if (!activoSeleccionado) {
+        mostrarToast('Seleccione un vehículo de la lista.', true);
+        return;
+      }
+
+      const tarifa = tarifaDeTipo(activoSeleccionado.tipo);
+      if (!tarifa) {
+        mostrarToast('No hay una tarifa vigente para este tipo de vehículo.', true);
+        return;
+      }
+
+      const placa = activoSeleccionado.placa;
+      const cobro = calcularCobro(activoSeleccionado.horaIngreso);
+      const monto = montoDeCobro(tarifa, cobro);
+      const metodo = selectMetodoPago?.value || 'Efectivo';
+
+      btnRegistrarSalida.classList.add('loading');
+      btnRegistrarSalida.disabled = true;
+
+      setTimeout(() => {
+        btnRegistrarSalida.classList.remove('loading');
+        btnRegistrarSalida.disabled = false;
+
+        mostrarToast(`Salida registrada: Placa [${placa}] · S/ ${monto.toFixed(2)} · ${metodo}`);
+        limpiarSalida();
+      }, 500);
+    });
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && viewTarifas.classList.contains('active')) {
       cargarTarifaEnFormulario(selectTipo.value);
     }
     if (e.key === 'Escape' && viewIngreso.classList.contains('active')) {
       limpiarFormularioIngreso();
+    }
+    if (e.key === 'Escape' && viewSalida.classList.contains('active')) {
+      limpiarSalida();
     }
   });
 
