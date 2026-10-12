@@ -170,6 +170,21 @@
           </div>
         </div>
 
+        <div class="module-card card-success" id="card-modulo-aforo">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h18v18H3z"/><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Visualizar Aforo</h2>
+            </div>
+            <p>Monitoreo en tiempo real de espacios disponibles y ocupados para autos y motos.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -506,6 +521,69 @@
       </div>
     </section>
 
+        <!-- ----------------------------------------------------------------------
+        6. PANTALLA DEL MÓDULO DE AFORO (NUEVA SECCIÓN)
+        Colócala justo antes del cierre de </main>
+        ---------------------------------------------------------------------- -->
+    <section id="view-aforo" class="view-section">
+      <!-- Navegación de retorno -->
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu-aforo">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Visualización de Aforo</h1>
+        <p>Control de disponibilidad de espacios e indicadores visuales de ocupación</p>
+      </div>
+
+      <div class="aforo-layout">
+        
+        <!-- TARJETAS DE RESUMEN GLOBAL -->
+        <div class="summary-cards">
+          <!-- Resumen Autos -->
+          <div class="card card-aforo-info">
+            <h2>Sector Autos</h2>
+            <div class="counter-group">
+              <p>Disponibles: <span class="badge badge-success mono" id="autos-disponibles">0</span></p>
+              <p>Ocupados: <span class="badge badge-danger mono" id="autos-ocupados">0</span></p>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-autos" id="progress-autos" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Resumen Motos -->
+          <div class="card card-aforo-info">
+            <h2>Sector Motos</h2>
+            <div class="counter-group">
+              <p>Disponibles: <span class="badge badge-success mono" id="motos-disponibles">0</span></p>
+              <p>Ocupados: <span class="badge badge-danger mono" id="motos-ocupados">0</span></p>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-motos" id="progress-motos" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CUADRÍCULA VISUAL DE PLAZAS -->
+                <div class="card card-table">
+          <div class="card-header">
+            <h2>Listado Estadístico de Espacios</h2>
+            <p class="caption">Monitoreo detallado por cada fila de estacionamiento</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          
+          <!-- Contenedor principal cambiado a lista -->
+          <div class="aforo-list-container" id="parking-list">
+            <!-- Las filas se inyectarán dinámicamente con aforo.js -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- ========================================================================
@@ -517,5 +595,6 @@
 
   <!-- Lógica JavaScript (Vainilla) -->
   <script src="js/app.js"></script>
+  <script src="js/aforo.js"></script>
 </body>
 </html>
