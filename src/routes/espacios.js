@@ -75,7 +75,21 @@ router.get('/', async (req, res) => {
     const ocupados = await obtenerEstadiasActivasPorTipo();
     const estado = calcularEstadoAforo(capacidad, ocupados);
 
-    return res.json(estado);
+    const estadiasActivas = await prisma.estadia.findMany({
+      where: { horaSalida: null },
+      include: { tipoVehiculo: true },
+      orderBy: { horaIngreso: 'desc' }
+    });
+
+    return res.json({
+      ...estado,
+      vehiculosActivos: estadiasActivas.map((estadia) => ({
+        id: estadia.id,
+        placa: estadia.placa,
+        tipo: estadia.tipoVehiculo.nombre,
+        horaIngreso: estadia.horaIngreso
+      }))
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'No se pudo consultar el estado de espacios.' });

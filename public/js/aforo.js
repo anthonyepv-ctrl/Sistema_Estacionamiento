@@ -5,19 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewAforo = document.getElementById('view-aforo');
     const parkingList = document.getElementById('parking-list');
 
-    // 1. Datos del aforo simplificados al máximo (Solo lo requerido por la rúbrica)
-    const plazasSimuladas = [
-        { id: 'A-01', tipo: 'auto', estado: 'occupied' },
-        { id: 'A-02', tipo: 'auto', estado: 'available' },
-        { id: 'A-03', tipo: 'auto', estado: 'available' },
-        { id: 'A-04', tipo: 'auto', estado: 'occupied' },
-        { id: 'A-05', tipo: 'auto', estado: 'available' },
-        { id: 'M-01', tipo: 'moto', estado: 'available' },
-        { id: 'M-02', tipo: 'moto', estado: 'occupied' },
-        { id: 'M-03', tipo: 'moto', estado: 'occupied' },
-        { id: 'M-04', tipo: 'moto', estado: 'available' }
-    ];
-
     if (cardModuloAforo && viewDashboard && viewAforo) {
         cardModuloAforo.addEventListener('click', (e) => {
             e.preventDefault();
@@ -39,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function cargarDatosAforo() {
         if (!parkingList) return;
-        parkingList.innerHTML = '<div style="padding: 1rem; text-align: center; color: #6b7280;">Cargando estado de espacios...</div>';
+        parkingList.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #6b7280;">Cargando estado de la cochera...</div>';
 
         try {
             const res = await fetch('/api/espacios');
@@ -54,13 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const motosOcup = data.motos.ocupados;
             const totalMotos = data.motos.capacidad;
 
-            // Actualizar marcadores de los sectores
+            // 1. Actualizar contadores de sectores (Autos y Motos)
             if (document.getElementById('autos-disponibles')) document.getElementById('autos-disponibles').textContent = autosDisp;
             if (document.getElementById('autos-ocupados')) document.getElementById('autos-ocupados').textContent = autosOcup;
             if (document.getElementById('motos-disponibles')) document.getElementById('motos-disponibles').textContent = motosDisp;
             if (document.getElementById('motos-ocupados')) document.getElementById('motos-ocupados').textContent = motosOcup;
 
-            // Barras de progreso (disponibilidad)
+            // 2. Barras de progreso de disponibilidad
             if (document.getElementById('progress-autos')) {
                 document.getElementById('progress-autos').style.width = totalAutos > 0 ? `${(autosDisp / totalAutos) * 100}%` : '0%';
             }
@@ -68,49 +55,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('progress-motos').style.width = totalMotos > 0 ? `${(motosDisp / totalMotos) * 100}%` : '0%';
             }
 
-            // Renderizar visualmente el listado de espacios basado en capacidad y ocupados reales
+            // 3. Renderizar listado de vehículos actualmente dentro (Placas ocupando)
             parkingList.innerHTML = '';
-            
-            // Plazas de autos
-            for (let i = 1; i <= totalAutos; i++) {
-                const id = `A-${String(i).padStart(2, '0')}`;
-                const estaOcupado = i <= autosOcup;
-                const estado = estaOcupado ? 'occupied' : 'available';
-                const estadoLabel = estaOcupado ? 'Ocupado' : 'Disponible';
-                
-                const rowElement = document.createElement('div');
-                rowElement.className = `parking-list-row ${estado}`;
-                rowElement.innerHTML = `
-                    <div class="row-left-group">
-                        <span class="spot-icon">🚗</span>
-                        <span class="spot-id-badge">${id}</span>
+            const vehiculos = data.vehiculosActivos || [];
+
+            if (vehiculos.length === 0) {
+                parkingList.innerHTML = `
+                    <div style="padding: 2rem 1rem; text-align: center; color: #6b7280; font-size: 0.95rem;">
+                        No hay vehículos ocupando la cochera actualmente.
                     </div>
-                    <span class="status-indicator-pill ${estado}">${estadoLabel}</span>
                 `;
-                parkingList.appendChild(rowElement);
+                return;
             }
 
-            // Plazas de motos
-            for (let j = 1; j <= totalMotos; j++) {
-                const id = `M-${String(j).padStart(2, '0')}`;
-                const estaOcupado = j <= motosOcup;
-                const estado = estaOcupado ? 'occupied' : 'available';
-                const estadoLabel = estaOcupado ? 'Ocupado' : 'Disponible';
-                
+            vehiculos.forEach(v => {
                 const rowElement = document.createElement('div');
-                rowElement.className = `parking-list-row ${estado}`;
+                rowElement.className = 'parking-list-row occupied';
+
+                const esAuto = (v.tipo || '').toLowerCase().includes('auto');
+                const icono = esAuto ? '🚗' : '🏍️';
+                
+                const hora = new Date(v.horaIngreso).toLocaleTimeString('es-PE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
                 rowElement.innerHTML = `
-                    <div class="row-left-group">
-                        <span class="spot-icon">🏍️</span>
-                        <span class="spot-id-badge">${id}</span>
+                    <div class="row-left-group" style="display: flex; align-items: center; gap: 12px;">
+                        <span class="spot-icon" style="font-size: 1.4rem;">${icono}</span>
+                        <div>
+                            <div class="spot-id-badge mono" style="font-size: 1.1rem; font-weight: 700; color: #111827; letter-spacing: 0.5px;">${v.placa}</div>
+                            <div style="font-size: 0.8rem; color: #6b7280; font-weight: normal; margin-top: 2px;">${v.tipo} · Entrada: ${hora}</div>
+                        </div>
                     </div>
-                    <span class="status-indicator-pill ${estado}">${estadoLabel}</span>
+                    <span class="status-indicator-pill occupied">Ocupando</span>
                 `;
+
                 parkingList.appendChild(rowElement);
-            }
+            });
+
         } catch (error) {
             console.error('Error al cargar datos del aforo:', error);
-            parkingList.innerHTML = '<div style="padding: 1rem; text-align: center; color: #ef4444;">No se pudo cargar el estado de espacios.</div>';
+            parkingList.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #ef4444;">No se pudo cargar la información del aforo.</div>';
         }
     }
 });
