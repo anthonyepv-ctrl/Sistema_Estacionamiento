@@ -1,6 +1,7 @@
 const express = require('express');
 
 const prisma = require('../config/prisma');
+const { obtenerCapacidad } = require('../config/espacios');
 
 const router = express.Router();
 
@@ -62,6 +63,19 @@ router.post('/', async (req, res) => {
 
     if (estadiaActiva) {
       return res.status(409).json({ error: `El vehículo con placa ${placa} ya registra un ingreso activo.` });
+    }
+
+    const capacidadConfig = obtenerCapacidad();
+    const capacidadTipo = tipo === 'auto' ? capacidadConfig.capacidadAutos : capacidadConfig.capacidadMotos;
+
+    const ocupadosTipo = await prisma.estadia.count({
+      where: { idTipoVehiculo: tipoVehiculo.id, horaSalida: null }
+    });
+
+    if (ocupadosTipo >= capacidadTipo) {
+      return res.status(409).json({
+        error: `No hay espacios disponibles para ${tipo === 'auto' ? 'automóviles' : 'motocicletas'}. Aforo completo.`
+      });
     }
 
     const tarifa = await prisma.tarifa.findFirst({
