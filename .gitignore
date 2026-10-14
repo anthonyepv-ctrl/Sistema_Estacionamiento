@@ -33,3 +33,4 @@ build/
 
 # Evidencia del test E2E (videos locales, no se suben)
 evidencia/
+docs/modulos/espacios/evidencias/*.webm

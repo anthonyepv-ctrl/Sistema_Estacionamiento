@@ -18,11 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const sessionUserBadge = document.getElementById('session-user-badge');
 
   function mostrarPantalla(nombre) {
-    viewLogin.classList.remove('active');
-    viewDashboard.classList.remove('active');
-    viewTarifas.classList.remove('active');
-    viewIngreso.classList.remove('active');
-    viewSalida.classList.remove('active');
+    document.querySelectorAll('.view-section').forEach((section) => {
+      section.classList.remove('active');
+    });
 
     if (nombre === 'login') {
       viewLogin.classList.add('active');
@@ -58,10 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardTarifas = document.getElementById('card-modulo-tarifas');
     const cardIngreso = document.getElementById('card-modulo-ingreso');
     const cardSalida = document.getElementById('card-modulo-salida');
+    const cardAforo = document.getElementById('card-modulo-aforo');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
     if (cardSalida) cardSalida.style.display = esRecepcionista ? '' : 'none';
+    if (cardAforo) cardAforo.style.display = (esDueno || esRecepcionista) ? '' : 'none';
   }
 
   function mostrarToast(mensaje, esError = false) {
@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const PLACA_REGEX = {
     auto: /^[A-Z0-9]{3}-?[A-Z0-9]{3}$/,
-    moto: /^[A-Z0-9]{2,4}-?[A-Z0-9]{2,4}$/
+    moto: /^([A-Z0-9]{2,4}-?[A-Z0-9]{2,4}|[A-Z]{3}-?\d{4})$/
   };
 
   const ETIQUETA_TIPO = {
@@ -350,13 +350,15 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   function analizarPlaca(limpio) {
+    if (limpio.length >= 7) {
+      return { tipo: 'moto', corte: 3 };
+    }
+
     if (/^\d/.test(limpio)) {
       return { tipo: 'moto', corte: 4 };
     }
 
-    const letras = (limpio.match(/^[A-Z]+/) || [''])[0].length;
-
-    if (letras === 2 && /\d/.test(limpio)) {
+    if (limpio.length === 6 && /\d{4}$/.test(limpio)) {
       return { tipo: 'moto', corte: 2 };
     }
 
@@ -370,7 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const { corte } = analizarPlaca(limpio);
     if (limpio.length <= corte) return limpio;
 
-    return `${limpio.slice(0, corte)}-${limpio.slice(corte, 6)}`;
+    const maxLen = limpio.length >= 7 ? 7 : 6;
+    return `${limpio.slice(0, corte)}-${limpio.slice(corte, maxLen)}`;
   }
 
   function inferirTipo(placa) {
