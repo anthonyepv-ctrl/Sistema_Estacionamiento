@@ -103,4 +103,18 @@ El mensaje se presenta en un estilo informativo, sin color de error, porque la a
 
 ## Nota de catálogo de métodos
 
-La interfaz considera los métodos solicitados por la historia: **Efectivo, Yape**. La implementación actual del sistema registra `Efectivo`, `Yape`; 
+La interfaz considera los métodos solicitados por la historia: **Efectivo, Yape**. La implementación actual del sistema registra `Efectivo`, `Yape`.
+
+---
+
+## Evidencias del Prototipado (UPAO-53)
+
+Se generaron capturas de pantalla que verifican el cumplimiento de todos los criterios de aceptación del prototipo:
+
+1. **Dashboard con acceso exclusivo para Dueño:** [`evidencias/01_dashboard_dueno_modulo_reportes.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/01_dashboard_dueno_modulo_reportes.png)
+2. **Vista principal con recaudación del día actual y desglose:** [`evidencias/02_vista_ingresos_diarios_hoy.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/02_vista_ingresos_diarios_hoy.png)
+3. **Consulta de fechas anteriores (Ayer):** [`evidencias/03_recaudacion_fecha_anterior_ayer.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/03_recaudacion_fecha_anterior_ayer.png)
+4. **Componente interactivo para filtrar por método (Yape):** [`evidencias/04_filtro_interactivo_yape.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/04_filtro_interactivo_yape.png)
+5. **Estado sin movimientos para fechas sin recaudación:** [`evidencias/05_estado_sin_movimientos.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/05_estado_sin_movimientos.png)
+6. **Restricción de rol (Oculto para Recepcionista):** [`evidencias/06_dashboard_recepcionista_sin_reportes.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/06_dashboard_recepcionista_sin_reportes.png)
+7. **Video demostración de interacción del prototipo (MP4):** [`evidencias/demostracion_prototipo_reporte_ingresos_upao53.mp4`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/demostracion_prototipo_reporte_ingresos_upao53.mp4)

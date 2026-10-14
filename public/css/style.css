@@ -803,3 +803,281 @@ select.input-control {
   color: #991b1b;
 }
 
+/* ==========================================================================
+   ESTILOS: REPORTE DE INGRESOS DIARIOS (UPAO-17 / UPAO-53)
+   ========================================================================== */
+
+/* Barra de Filtro de Fecha */
+.card-filtro-reporte {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 24px;
+}
+
+.filtro-reporte-grid {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.input-with-button {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-with-button input[type="date"] {
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.filtro-fecha-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--inp-border);
+}
+
+.fecha-tag {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Grid de Resumen & Desglose */
+.reporte-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.3fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .reporte-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tarjetas de Métodos de Pago (Físico / Digital) */
+.card-metodo-resumen {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-metodo-resumen:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.card-metodo-resumen.active-filter {
+  border-width: 2px;
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+}
+
+.card-metodo-resumen.metodo-efectivo {
+  border-top: 4px solid #10b981;
+}
+
+.card-metodo-resumen.metodo-yape {
+  border-top: 4px solid #8b5cf6;
+}
+
+.card-metodo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.metodo-icon-wrapper {
+  font-size: 1.5rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.efectivo-bg {
+  background: #ecfdf5;
+}
+
+.yape-bg {
+  background: #f5f3ff;
+}
+
+.metodo-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-fisico {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-digital {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.card-metodo-body h3 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.card-metodo-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Tarjeta Destacada: Monto Total General */
+.card-total-general {
+  background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.25);
+}
+
+.card-total-header {
+  margin-bottom: 6px;
+}
+
+.card-total-body h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+/* Barra de Desglose Proporcional */
+.desglose-progress-wrapper {
+  margin-top: 14px;
+}
+
+.desglose-progress-bar {
+  display: flex;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fisico {
+  background: #10b981;
+  transition: width 0.35s ease;
+}
+
+.progress-digital {
+  background: #a78bfa;
+  transition: width 0.35s ease;
+}
+
+.desglose-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+/* Pills / Tabs de Filtrado */
+.filter-pills {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-pill {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-pill:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.btn-pill.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+/* Badges de métodos en la tabla */
+.badge-metodo-efectivo {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-metodo-yape {
+  background: #ede9fe;
+  color: #5b21b6;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Estado Vacío Informativo */
+.empty-state-info {
+  padding: 48px 24px;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  margin: 16px 0;
+}
+
+.empty-state-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.empty-state-text {
+  font-size: 0.95rem;
+  color: var(--text2);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
