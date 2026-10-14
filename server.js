@@ -7,7 +7,6 @@ const authRoutes = require('./src/routes/auth');
 const tarifasRoutes = require('./src/routes/tarifas');
 const ingresosRoutes = require('./src/routes/ingresos');
 const salidasRoutes = require('./src/routes/salidas');
-const espaciosRoutes = require('./src/routes/espacios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,7 +18,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tarifas', tarifasRoutes);
 app.use('/api/ingresos', ingresosRoutes);
 app.use('/api/salidas', salidasRoutes);
-app.use('/api/espacios', espaciosRoutes);
 
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Recurso no encontrado.' });
@@ -33,5 +31,3 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Servidor disponible en http://localhost:${PORT}`);
 });
-
-module.exports = app;
