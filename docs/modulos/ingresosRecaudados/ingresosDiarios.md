@@ -20,8 +20,8 @@ Consulta la recaudación registrada por fecha y método de pago.
 Fecha de consulta [ 14/10/2026                    ] [Consultar]
 
 Recaudación por método de pago
-[ Efectivo       ] [ Yape           ] [ Plin           ] [ Tarjeta        ]
-  S/ 0.00            S/ 0.00           S/ 0.00            S/ 0.00
+[ Efectivo       ] [ Yape           ] 
+  S/ 0.00            S/ 0.00                      
 
 Monto total general
 S/ 0.00
@@ -41,7 +41,7 @@ Detalle de transacciones                         0 movimientos
 | Fecha de consulta | Selector de fecha | Obligatorio. Inicia con el día actual y permite consultar un día específico. No admite fechas futuras. |
 | Botón `Consultar` | Botón primario | Actualiza las métricas y la tabla con la fecha elegida. Durante la carga muestra el estado `Consultando...` y queda deshabilitado. |
 | Botón `Volver al menú` | Botón secundario | Regresa al menú principal sin modificar la fecha consultada. |
-| Tarjetas por método | Métricas de solo lectura | Muestran el total diario de Efectivo, Yape, Plin y Tarjeta. Si un método no tiene pagos, muestra `S/ 0.00`. |
+| Tarjetas por método | Métricas de solo lectura | Muestran el total diario de Efectivo, Yape. Si un método no tiene pagos, muestra `S/ 0.00`. |
 | Monto total general | Métrica destacada | Muestra la suma exacta de todas las tarjetas por método. |
 | Tabla de transacciones | Tabla de solo lectura | Detalla cada salida cobrada en la fecha seleccionada. |
 
@@ -53,8 +53,6 @@ La cabecera presenta cuatro tarjetas de resumen, una por cada método de pago:
 | --- | --- | --- |
 | Efectivo | `Total Efectivo` | Suma de los pagos en efectivo del día. |
 | Yape | `Total Yape` | Suma de los pagos con Yape del día. |
-| Plin | `Total Plin` | Suma de los pagos con Plin del día. |
-| Tarjeta | `Total Tarjeta` | Suma de los pagos con tarjeta del día. |
 
 Debajo de estas tarjetas se muestra, con mayor jerarquía visual, el bloque **Monto Total General**. Su valor debe ser la suma de los cuatro totales anteriores, incluidos los que sean `S/ 0.00`.
 
@@ -67,7 +65,7 @@ La tabla debe mostrar una fila por cada cobro registrado en la fecha consultada 
 | Placa | Mayúsculas y guion: `ABC-123`. |
 | Tipo de vehículo | Nombre completo, por ejemplo `Automóvil / Camioneta` o `Motocicleta`. |
 | Hora de salida | Hora local en formato de 24 horas: `HH:mm`. |
-| Método de pago | `Efectivo`, `Yape`, `Plin` o `Tarjeta`. |
+| Método de pago | `Efectivo`, `Yape`. |
 | Monto cobrado | Moneda peruana: `S/ 0.00`. |
 
 Las filas se ordenan por hora de salida, de la más reciente a la más antigua. El encabezado debe permanecer claramente diferenciado del contenido y los montos deben alinearse a la derecha para facilitar el cuadre.
@@ -76,7 +74,7 @@ Las filas se ordenan por hora de salida, de la más reciente a la más antigua. 
 
 Cuando no existan salidas o pagos para la fecha seleccionada:
 
-- Las cuatro tarjetas por método muestran `S/ 0.00`.
+- Las dos tarjetas por método muestran `S/ 0.00`.
 - El **Monto Total General** muestra `S/ 0.00`.
 - La tabla no presenta filas.
 - En el área de detalle se muestra el mensaje informativo:
@@ -105,4 +103,4 @@ El mensaje se presenta en un estilo informativo, sin color de error, porque la a
 
 ## Nota de catálogo de métodos
 
-La interfaz considera los métodos solicitados por la historia: **Efectivo, Yape, Plin y Tarjeta**. La implementación actual del sistema registra `Efectivo`, `Yape` y `POS`; antes de codificar deberá acordarse si `POS` se renombra a `Tarjeta` y si `Plin` se agrega como método independiente.
+La interfaz considera los métodos solicitados por la historia: **Efectivo, Yape**. La implementación actual del sistema registra `Efectivo`, `Yape`; 
