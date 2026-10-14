@@ -56,10 +56,12 @@ Durante la fase de pruebas se detectaron y depuraron los siguientes defectos:
 
 ---
 
-## 6. Evidencia para Jira
+## 6. Evidencia de Pruebas y Depuración
 
 1. **Capturas de defectos:**
-   - Captura del defecto `DEF-01` (pantalla de login superpuesta con aforo antes de la corrección).
-   - Captura de la tabla de patrones de placa MTC (`DEF-02`).
-2. **Video de prueba (Grabación manual):**
-   - Video recorriendo los casos CP-01 a CP-09 demostrando que todos los defectos fueron depurados con éxito.
+   - Defecto previo `DEF-01` (pantalla de login superpuesta antes de la corrección).
+   - Defecto previo `DEF-02` (placas de moto con 7 caracteres truncadas antes de la corrección).
+2. **Video de demostración automatizado (Playwright):**
+   - Archivo MP4: [`evidencias/demostracion_pruebas_aforo_upao11.mp4`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/espacios/evidencias/demostracion_pruebas_aforo_upao11.mp4)
+   - Archivo WebM: [`evidencias/demostracion_pruebas_aforo_upao11.webm`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/espacios/evidencias/demostracion_pruebas_aforo_upao11.webm)
+   - **Duración:** 01:34 (94 segundos), ejecutado con cursor visual resaltado, pausas de observación y velocidad controlada para revisión técnica.
