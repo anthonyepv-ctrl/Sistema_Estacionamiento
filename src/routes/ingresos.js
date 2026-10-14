@@ -7,17 +7,19 @@ const router = express.Router();
 
 const TIPO_VEHICULO = {
   auto: { nombre: 'Automóvil / Camioneta', regex: /^[A-Z0-9]{3}-?[A-Z0-9]{3}$/ },
-  moto: { nombre: 'Motocicleta', regex: /^[A-Z0-9]{2,4}-?[A-Z0-9]{2,4}$/ }
+  moto: { nombre: 'Motocicleta', regex: /^([A-Z0-9]{2,4}-?[A-Z0-9]{2,4}|[A-Z]{3}-?\d{4})$/ }
 };
 
 function analizarPlaca(limpio) {
+  if (limpio.length >= 7) {
+    return { tipo: 'moto', corte: 3 };
+  }
+
   if (/^\d/.test(limpio)) {
     return { tipo: 'moto', corte: 4 };
   }
 
-  const letras = (limpio.match(/^[A-Z]+/) || [''])[0].length;
-
-  if (letras === 2 && /\d/.test(limpio)) {
+  if (limpio.length === 6 && /\d{4}$/.test(limpio)) {
     return { tipo: 'moto', corte: 2 };
   }
 
@@ -31,7 +33,8 @@ function normalizarPlaca(valor) {
   const { corte } = analizarPlaca(limpio);
   if (limpio.length <= corte) return limpio;
 
-  return `${limpio.slice(0, corte)}-${limpio.slice(corte, 6)}`;
+  const maxLen = limpio.length >= 7 ? 7 : 6;
+  return `${limpio.slice(0, corte)}-${limpio.slice(corte, maxLen)}`;
 }
 
 router.post('/', async (req, res) => {
