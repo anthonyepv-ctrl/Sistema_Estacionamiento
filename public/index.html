@@ -154,6 +154,37 @@
           </div>
         </div>
 
+        <!-- Módulo de Salida (UPAO-7 / UPAO-44) -->
+        <div class="module-card" id="card-modulo-salida">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Registrar Salida</h2>
+            </div>
+            <p>Busque el vehículo en cochera, calcule el monto y registre el método de pago.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="module-card card-success" id="card-modulo-aforo">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h18v18H3z"/><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Visualizar Aforo</h2>
+            </div>
+            <p>Monitoreo en tiempo real de espacios disponibles y ocupados para autos y motos.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -370,6 +401,189 @@
       </div>
     </section>
 
+    <!-- ----------------------------------------------------------------------
+         5. PANTALLA DEL MÓDULO DE SALIDA Y COBRO (UPAO-7 / UPAO-44)
+         ---------------------------------------------------------------------- -->
+    <section id="view-salida" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu-salida">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Registrar Salida</h1>
+        <p>Busque el vehículo en cochera y registre el cobro</p>
+      </div>
+
+      <div class="salida-layout">
+
+        <!-- PANEL 1: BUSQUEDA Y VEHICULOS ACTIVOS -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Vehículos en Cochera</h2>
+            <p class="caption">Busque por placa y seleccione el vehículo</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <div class="form-group">
+            <label for="input-buscar-placa" class="form-label">
+              <span>Buscar por Placa</span>
+            </label>
+            <input
+              type="text"
+              id="input-buscar-placa"
+              class="input-control mono"
+              placeholder="ABC-123"
+              autocomplete="off"
+              maxlength="7"
+            >
+            <span class="caption">La lista se filtra automáticamente al escribir</span>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Placa</th>
+                  <th>Tipo</th>
+                  <th>Ingreso</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-activos-body">
+                <!-- Se llena dinámicamente con JavaScript -->
+              </tbody>
+            </table>
+          </div>
+          <p class="caption lista-vacia" id="lista-activos-vacia" style="display: none;">No hay vehículos en cochera.</p>
+        </div>
+
+        <!-- PANEL 2: RESUMEN DEL COBRO -->
+        <div class="card" id="card-resumen-salida">
+          <div class="card-header">
+            <h2>Resumen de Salida</h2>
+            <p class="caption">Cálculo automático del tiempo y del monto</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <p class="caption" id="salida-vacio">Seleccione un vehículo para ver el resumen del cobro.</p>
+
+          <div id="salida-resumen" style="display: none;">
+            <div class="preview-row">
+              <span class="caption">Placa</span>
+              <span class="preview-value mono" id="salida-placa">—</span>
+            </div>
+            <div class="preview-row">
+              <span class="caption">Tipo de vehículo</span>
+              <span class="preview-value" id="salida-tipo">—</span>
+            </div>
+            <div class="preview-row">
+              <span class="caption">Hora de entrada</span>
+              <span class="preview-value mono" id="salida-hora-entrada">—</span>
+            </div>
+            <div class="preview-row">
+              <span class="caption">Tiempo transcurrido</span>
+              <span class="preview-value mono" id="salida-tiempo">—</span>
+            </div>
+            <div class="preview-row">
+              <span class="caption">Tarifa aplicada</span>
+              <span class="preview-value mono" id="salida-tarifa">—</span>
+            </div>
+            <div class="preview-row">
+              <span class="caption">Monto total a pagar</span>
+              <span class="preview-value mono monto-total" id="salida-monto">S/ 0.00</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+              <label for="select-metodo-pago" class="form-label">
+                <span>Método de Pago</span>
+                <span class="required">*</span>
+              </label>
+              <select id="select-metodo-pago" class="input-control">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Yape">Yape</option>
+                <option value="POS">POS</option>
+              </select>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="btn-registrar-salida" class="btn btn-danger" style="flex: 2;">
+                Registrar Salida
+              </button>
+              <button type="button" id="btn-cancelar-salida" class="btn btn-secondary" style="flex: 1;">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+        <!-- ----------------------------------------------------------------------
+        6. PANTALLA DEL MÓDULO DE AFORO (NUEVA SECCIÓN)
+        Colócala justo antes del cierre de </main>
+        ---------------------------------------------------------------------- -->
+    <section id="view-aforo" class="view-section">
+      <!-- Navegación de retorno -->
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu-aforo">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Visualización de Aforo</h1>
+        <p>Control de disponibilidad de espacios e indicadores visuales de ocupación</p>
+      </div>
+
+      <div class="aforo-layout">
+        
+        <!-- TARJETAS DE RESUMEN GLOBAL -->
+        <div class="summary-cards">
+          <!-- Resumen Autos -->
+          <div class="card card-aforo-info">
+            <h2>Sector Autos</h2>
+            <div class="counter-group">
+              <p>Disponibles: <span class="badge badge-success mono" id="autos-disponibles">0</span></p>
+              <p>Ocupados: <span class="badge badge-danger mono" id="autos-ocupados">0</span></p>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-autos" id="progress-autos" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Resumen Motos -->
+          <div class="card card-aforo-info">
+            <h2>Sector Motos</h2>
+            <div class="counter-group">
+              <p>Disponibles: <span class="badge badge-success mono" id="motos-disponibles">0</span></p>
+              <p>Ocupados: <span class="badge badge-danger mono" id="motos-ocupados">0</span></p>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-motos" id="progress-motos" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CUADRÍCULA VISUAL DE PLAZAS -->
+                <div class="card card-table">
+          <div class="card-header">
+            <h2>Listado Estadístico de Espacios</h2>
+            <p class="caption">Monitoreo detallado por cada fila de estacionamiento</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          
+          <!-- Contenedor principal cambiado a lista -->
+          <div class="aforo-list-container" id="parking-list">
+            <!-- Las filas se inyectarán dinámicamente con aforo.js -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- ========================================================================
@@ -381,5 +595,6 @@
 
   <!-- Lógica JavaScript (Vainilla) -->
   <script src="js/app.js"></script>
+  <script src="js/aforo.js"></script>
 </body>
 </html>
