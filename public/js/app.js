@@ -58,10 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardTarifas = document.getElementById('card-modulo-tarifas');
     const cardIngreso = document.getElementById('card-modulo-ingreso');
     const cardSalida = document.getElementById('card-modulo-salida');
+    const cardAforo = document.getElementById('card-modulo-aforo');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
     if (cardSalida) cardSalida.style.display = esRecepcionista ? '' : 'none';
+    if (cardAforo) cardAforo.style.display = (esDueno || esRecepcionista) ? '' : 'none';
   }
 
   function mostrarToast(mensaje, esError = false) {
