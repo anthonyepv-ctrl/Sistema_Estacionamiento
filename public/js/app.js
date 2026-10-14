@@ -18,11 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const sessionUserBadge = document.getElementById('session-user-badge');
 
   function mostrarPantalla(nombre) {
-    viewLogin.classList.remove('active');
-    viewDashboard.classList.remove('active');
-    viewTarifas.classList.remove('active');
-    viewIngreso.classList.remove('active');
-    viewSalida.classList.remove('active');
+    document.querySelectorAll('.view-section').forEach((section) => {
+      section.classList.remove('active');
+    });
 
     if (nombre === 'login') {
       viewLogin.classList.add('active');
