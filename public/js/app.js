@@ -46,6 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
       headerUserSection.style.display = 'flex';
       const inputBuscar = document.getElementById('input-buscar-placa');
       if (inputBuscar) inputBuscar.focus();
+    } else if (nombre === 'reportes') {
+      const viewReportes = document.getElementById('view-reportes');
+      if (viewReportes) viewReportes.classList.add('active');
+      headerUserSection.style.display = 'flex';
     }
   }
 
@@ -57,11 +61,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardIngreso = document.getElementById('card-modulo-ingreso');
     const cardSalida = document.getElementById('card-modulo-salida');
     const cardAforo = document.getElementById('card-modulo-aforo');
+    const cardReportes = document.getElementById('card-modulo-reportes');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
     if (cardSalida) cardSalida.style.display = esRecepcionista ? '' : 'none';
     if (cardAforo) cardAforo.style.display = (esDueno || esRecepcionista) ? '' : 'none';
+    if (cardReportes) cardReportes.style.display = esDueno ? '' : 'none';
   }
 
   function mostrarToast(mensaje, esError = false) {
