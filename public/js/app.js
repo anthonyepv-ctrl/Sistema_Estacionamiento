@@ -401,6 +401,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return false;
     }
 
+    const alfanumerico = valor.replace(/[^A-Z0-9]/g, '');
+    if (alfanumerico.length >= 6) {
+      const tipoInferido = inferirTipo(valor);
+      if (tipo !== tipoInferido) {
+        if (mostrarMensaje) {
+          const esperado = ETIQUETA_TIPO[tipoInferido];
+          const seleccionado = ETIQUETA_TIPO[tipo];
+          mostrarErrorCampo(
+            inputPlaca,
+            `Incoherencia: La placa ${valor} corresponde a ${esperado} según norma MTC, no puede registrarse como ${seleccionado}.`
+          );
+        }
+        return false;
+      }
+    }
+
     if (!PLACA_REGEX[tipo].test(valor)) {
       if (mostrarMensaje) {
         mostrarErrorCampo(inputPlaca, 'Ingrese una placa válida según el formato peruano (ej. ABC-123 o 1234-5A).');

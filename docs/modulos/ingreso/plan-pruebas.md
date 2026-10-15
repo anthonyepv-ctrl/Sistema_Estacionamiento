@@ -33,6 +33,7 @@ Verificar el registro de ingreso (UPAO-6 / UPAO-37..40): login por rol, detecci�
 | CP-09 | Placa inválida | `AB1` → enviar | Mensaje de formato peruano |
 | CP-10 | Registrar ingreso | Placa válida → "Registrar Ingreso" | Toast verde + hora automática |
 | CP-11 | Duplicado | Registrar la misma placa activa | Toast rojo "ya registra un ingreso activo" |
+| CP-12 | Coherencia Placa ↔ Tipo (Poka-Yoke) | Placa de Auto (`ABC-123`) con tipo Moto o viceversa | Bloqueo inmediato con mensaje de incoherencia según norma MTC |
 
 ## Registro de resultados (ejecutado con Playwright)
 
@@ -49,8 +50,9 @@ Verificar el registro de ingreso (UPAO-6 / UPAO-37..40): login por rol, detecci�
 | CP-09 | PASA | E2E |
 | CP-10 | PASA | E2E + video |
 | CP-11 | PASA | E2E + video |
+| CP-12 | PASA | Pruebas de integración + API |
 
-> Ejecución: **15 verificaciones, 0 fallas** (11 casos). Fecha: 09/10/2026.
+> Ejecución: **16 verificaciones, 0 fallas** (12 casos). Fecha: 15/10/2026.
 
 ## Registro de defectos y depuración
 
@@ -58,10 +60,9 @@ Verificar el registro de ingreso (UPAO-6 / UPAO-37..40): login por rol, detecci�
 | --- | --- | --- | --- | --- | --- | --- |
 | DEF-01 | CP-02 | El dueño ve "Configurar Tarifas" | En la 1.ª corrida no lo veía | **Timing del test** (se evaluaba antes de activarse el dashboard), **no** bug de la app | Esperas robustas (`waitForFunction` al dashboard) | PASA |
 | DEF-02 | CP-10 | Registra el ingreso | Devolvía "ya registra un ingreso activo" | La placa de prueba (`ABC-123`) quedaba de corridas anteriores | Limpiar registros de prueba antes/después | PASA |
+| DEF-03 | CP-12 | Coherencia estricta: Placa de Auto solo puede registrarse como Auto; Placa de Moto solo como Moto | El recepcionista podía forzar manualmente una moto como auto o viceversa, falseando cobros y aforo | Falta de validación cruzada entre el patrón oficial MTC (`analizarPlaca`) y el tipo de vehículo | Validación preventiva en frontend (`validarPlaca`) y rechazo con HTTP 400 en backend (`src/routes/ingresos.js`) | PASA |
 
-> Ninguno fue defecto de la aplicación; ambos eran del **propio test** (timing y data de prueba).
-
-> **Integración frontend ↔ backend:** verificada (el formulario llama a `POST /api/ingresos` y muestra las respuestas 201 / 409). **No se detectaron fallas de integración.**
+> **Integración frontend ↔ backend:** verificada (el formulario llama a `POST /api/ingresos` y muestra las respuestas 201 / 400 / 409). **Defectos depurados y resueltos.**
 
 ## Evidencia
 
