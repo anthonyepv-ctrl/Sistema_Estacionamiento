@@ -73,8 +73,18 @@ Sistema_Estacionamiento/
 - No crear capas o carpetas innecesarias.
 - La arquitectura podrá evolucionar conforme aumente la complejidad del sistema.
 
-## 6. Estado actual (Sprint 1)
+## 6. Estado actual (Sprint 2 y Despliegue Final)
 
-- **Implementado (UPAO-16):** login con contraseña cifrada (bcrypt), menú principal y módulo de tarifas (consulta y actualización), con API REST sobre Prisma y BD en Neon.
-- **Despliegue demo (UPAO-36):** Render (plan free) desde `main`; `DATABASE_URL` configurada como secreto en el panel de Render.
-- **Pendiente del sprint:** registrar ingreso (UPAO-6), registrar salida (UPAO-7), ver estado de espacios (UPAO-11) y consultar ingresos recaudados (UPAO-17), en el orden planificado.
+- **Módulos implementados y verificados:**
+  - **Login y Tarifas (UPAO-16):** autenticación por roles (Dueño/Recepción) con bcrypt y configuración de tarifas por hora/fracción.
+  - **Registrar Ingreso (UPAO-6 / UPAO-37..41):** detección de tipo, normalización de placa y validación Poka-Yoke MTC (DEF-03).
+  - **Registrar Salida y Cobro (UPAO-7 / UPAO-43..45):** cálculo automático de horas/fracción y registro de pago (Efectivo/Yape/POS).
+  - **Visualizar Aforo (UPAO-11 / UPAO-47..51):** cálculo dinámico de ocupación y listado de vehículos activos en cochera.
+  - **Reporte de Ingresos Diarios y Cuadre de Caja (UPAO-17 / UPAO-52..55):** consolidado diario, sumatoria por método de pago (Efectivo vs. Yape), desglose de dinero físico/digital, filtros interactivos y consulta por fecha con zona horaria de Perú (`-05:00`).
+- **Despliegue en Producción (Render + Neon):**
+  - **URL Demo en la Nube:** [`https://cochera-sp.onrender.com`](https://cochera-sp.onrender.com)
+  - **Plataforma:** Render Web Service (plan free, rama `main`).
+  - **Base de Datos:** PostgreSQL en Neon (compartida), gestionada mediante Prisma 6.
+  - **Variables y Secretos:** `DATABASE_URL` configurada como variable de entorno secreta en el panel de Render (`render.yaml`).
+  - **Commit de Release / Despliegue en `main`:** [`3d0db0c`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/3d0db0c)
+
