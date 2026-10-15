@@ -51,22 +51,29 @@ Durante la fase de integración y pruebas se detectaron y corrigieron los siguie
 
 | ID | Caso | Falla Encontrada | Causa Raíz | Corrección Aplicada | Commit | Estado |
 |---|---|---|---|---|---|:---:|
-| **DEF-01** | CP-03 / CP-06 | Desfase en los cobros nocturnos al consultar por fecha en BD. | El rango del día se construía en UTC (`Z`), provocando que cobros entre 7:00 PM y 11:59 PM hora de Perú cayeran en el día siguiente. | Se implementó la función `obtenerRangoFechaPeru` con offset estricto `-05:00` (`T00:00:00-05:00` a `T23:59:59.999-05:00`). | `f93a720` | **SUPERADO** |
-| **DEF-02** | CP-08 | En días sin cobros, la barra de desglose mostraba `NaN%`. | División entre cero al calcular `(totalEfectivo / totalGeneral) * 100` cuando `totalGeneral === 0`. | Se agregaron validaciones de guarda en backend y frontend para asignar `0%` de manera segura. | `f93a720` | **SUPERADO** |
-| **DEF-03** | CP-07 | El usuario podía escribir manualmente fechas futuras en el selector. | El input no tenía límite superior y el backend no validaba la fecha contra el día presente. | Se añadió atributo `max` dinámico en frontend y validación HTTP 400 en el backend con mensaje informativo. | `f93a720` | **SUPERADO** |
+| **DEF-01** | CP-03 / CP-06 | Desfase en los cobros nocturnos al consultar por fecha en BD. | El rango del día se construía en UTC (`Z`), provocando que cobros entre 7:00 PM y 11:59 PM hora de Perú cayeran en el día siguiente. | Se implementó la función `obtenerRangoFechaPeru` con offset estricto `-05:00` (`T00:00:00-05:00` a `T23:59:59.999-05:00`). | [`f93a720`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/f93a720) | **SUPERADO** |
+| **DEF-02** | CP-08 | En días sin cobros, la barra de desglose mostraba `NaN%`. | División entre cero al calcular `(totalEfectivo / totalGeneral) * 100` cuando `totalGeneral === 0`. | Se agregaron validaciones de guarda en backend y frontend para asignar `0%` de manera segura. | [`f93a720`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/f93a720) | **SUPERADO** |
+| **DEF-03** | CP-07 | El usuario podía escribir manualmente fechas futuras en el selector. | El input no tenía límite superior y el backend no validaba la fecha contra el día presente. | Se añadió atributo `max` dinámico en frontend y validación HTTP 400 en el backend con mensaje informativo. | [`f93a720`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/f93a720) | **SUPERADO** |
 
 ---
 
-## 6. Evidencia Audiovisual y Gráfica
+## 6. Evidencias y Trazabilidad en GitHub
 
-- **Video de Demostración Completo (MP4):**  
-  [`evidencias/demostracion_pruebas_depuracion_upao55.mp4`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/demostracion_pruebas_depuracion_upao55.mp4)  
-  *Grabado con Playwright a velocidad controlada, pausas de lectura e indicador de cursor visual para revisión de rúbrica.*
+- **Video Demostrativo MP4 (Pruebas E2E y Depuración):**
+  - Archivo en repositorio: [`demostracion_pruebas_depuracion_upao55.mp4`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/docs/modulos/ingresosRecaudados/evidencias/demostracion_pruebas_depuracion_upao55.mp4)
+- **Commits y Merges de la Tarea en GitHub (UPAO-55):**
+  - Commit de Documentación de Pruebas y Video: [`65a3380`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/65a3380)
+  - Merge Commit a `develop`: [`42a5c13`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/42a5c13)
+  - Rama de la Tarea: [`feature/UPAO-55-pruebas-depuracion-reportes`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/feature/UPAO-55-pruebas-depuracion-reportes)
+- **Trazabilidad con Tareas Previas del Módulo:**
+  - **UPAO-54 (Backend y Lógica de Cuadre de Caja):**
+    - Commit de Implementación: [`f93a720`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/f93a720)
+    - Merge Commit a `develop`: [`d99ac5c`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/d99ac5c)
+    - Rama: [`feature/UPAO-54-logica-reporte-ingresos`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/feature/UPAO-54-logica-reporte-ingresos)
+  - **UPAO-53 (Prototipo e Interfaz de Reportes):**
+    - Commit de Interfaz: [`819b842`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/819b842)
+    - Commit de Documentación: [`b71515b`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/b71515b)
+    - Merge Commit a `develop`: [`2ba4628`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/2ba4628)
+    - Rama: [`feature/UPAO-53-interfaz-reporte-ingresos`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/feature/UPAO-53-interfaz-reporte-ingresos)
 
-- **Capturas de Pantalla:**
-  1. Login de Dueño con tarjeta visible: [`evidencias/01_dashboard_dueno_modulo_reportes.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/01_dashboard_dueno_modulo_reportes.png)
-  2. Consolidado del día con dinero físico y digital: [`evidencias/02_vista_ingresos_diarios_hoy.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/02_vista_ingresos_diarios_hoy.png)
-  3. Consulta de recaudación en fechas pasadas: [`evidencias/03_recaudacion_fecha_anterior_ayer.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/03_recaudacion_fecha_anterior_ayer.png)
-  4. Filtrado interactivo por método de pago: [`evidencias/04_filtro_interactivo_yape.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/04_filtro_interactivo_yape.png)
-  5. Despliegue de estado sin movimientos: [`evidencias/05_estado_sin_movimientos.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/05_estado_sin_movimientos.png)
-  6. Demostración de módulo restringido para Recepción: [`evidencias/06_dashboard_recepcionista_sin_reportes.png`](file:///E:/ALBERTH%20ALM/DOCUMENTOS/PROYECTOS/AGILE_DEVELOPMENT/Sistema_Estacionamiento/docs/modulos/ingresosRecaudados/evidencias/06_dashboard_recepcionista_sin_reportes.png)
+

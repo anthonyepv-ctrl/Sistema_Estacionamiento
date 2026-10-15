@@ -64,8 +64,12 @@ Verificar el registro de ingreso (UPAO-6 / UPAO-37..40): login por rol, detecci�
 
 > **Integración frontend ↔ backend:** verificada (el formulario llama a `POST /api/ingresos` y muestra las respuestas 201 / 400 / 409). **Defectos depurados y resueltos.**
 
-## Evidencia
+## Evidencias y Trazabilidad en GitHub
 
-- **Video** (Playwright, local, **no se sube**): `evidencia-UPAO-41-ingreso.webm` (cubre los 11 casos).
+- **Video** (Playwright, local): `evidencia-UPAO-41-ingreso.webm` (cubre los casos de prueba).
 - **Capturas**: login/menú, detección de placa, registro y duplicado.
-- Adjuntar en Jira (**UPAO-41**) y enlazar los commits de UPAO-37..40.
+- **Commits y Merges en GitHub:**
+  - Commit de corrección Poka-Yoke (DEF-03): [`af688f4`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/af688f4)
+  - Merge Commit a `develop`: [`fbd04f9`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/fbd04f9)
+  - Rama de depuración: [`feature/depuracion-validacion-placa-tipo`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/feature/depuracion-validacion-placa-tipo)
+
