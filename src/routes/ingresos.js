@@ -46,9 +46,20 @@ router.post('/', async (req, res) => {
   }
 
   const placa = normalizarPlaca(placaRaw);
+  const alfanumerico = String(placaRaw ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
   if (!placa) {
     return res.status(400).json({ error: 'Ingrese la placa del vehículo.' });
+  }
+
+  // Validación de coherencia estricta entre formato de placa y tipo de vehículo seleccionado (Prevención de errores humanos / Poka-Yoke)
+  const analisis = analizarPlaca(alfanumerico);
+  if (analisis.tipo !== tipo) {
+    const esperado = analisis.tipo === 'auto' ? 'Automóvil / Camioneta' : 'Motocicleta';
+    const seleccionado = tipo === 'auto' ? 'Automóvil / Camioneta' : 'Motocicleta';
+    return res.status(400).json({
+      error: `Incoherencia de vehículo: la placa ${placa} corresponde a ${esperado} según la norma oficial MTC, no puede registrarse como ${seleccionado}.`
+    });
   }
 
   if (!config.regex.test(placa)) {

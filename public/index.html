@@ -185,6 +185,22 @@
           </div>
         </div>
 
+        <!-- Módulo de Reporte de Ingresos Diarios (UPAO-17 / UPAO-53 - Rol Dueño) -->
+        <div class="module-card card-primary" id="card-modulo-reportes">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Reporte de Ingresos</h2>
+            </div>
+            <p>Consulta la recaudación por fecha, desglose de pagos físicos y digitales y detalle de transacciones.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -584,6 +600,150 @@
       </div>
     </section>
 
+    <!-- ----------------------------------------------------------------------
+         7. PANTALLA DE REPORTE DE INGRESOS DIARIOS (UPAO-17 / UPAO-53)
+         ---------------------------------------------------------------------- -->
+    <section id="view-reportes" class="view-section">
+      <!-- Navegación de retorno -->
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu-reportes">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Ingresos diarios</h1>
+        <p>Consulta la recaudación registrada por fecha y método de pago.</p>
+      </div>
+
+      <!-- Barra de Filtro de Fecha -->
+      <div class="card card-filtro-reporte">
+        <div class="filtro-reporte-grid">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="input-fecha-reporte" class="form-label">
+              <span>Fecha de consulta</span>
+            </label>
+            <div class="input-with-button">
+              <input
+                type="date"
+                id="input-fecha-reporte"
+                class="input-control"
+              >
+              <button type="button" id="btn-consultar-reporte" class="btn btn-primary">
+                Consultar
+              </button>
+            </div>
+            <span class="field-error" id="fecha-reporte-error" style="display: none;">Seleccione una fecha válida que no sea futura.</span>
+          </div>
+          <div class="filtro-fecha-info">
+            <span class="caption">Fecha consultada:</span>
+            <span class="mono fecha-tag" id="label-fecha-peruana">--/--/----</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Recaudación por Método de Pago & Desglose Físico / Digital -->
+      <div class="reporte-summary-grid">
+        <!-- Tarjeta Efectivo (Físico) -->
+        <div class="card card-metodo-resumen metodo-efectivo" id="card-filtro-efectivo" role="button" tabindex="0" title="Clic para filtrar transacciones en Efectivo">
+          <div class="card-metodo-header">
+            <div class="metodo-icon-wrapper efectivo-bg">💵</div>
+            <div class="metodo-badge badge-fisico">Dinero Físico</div>
+          </div>
+          <div class="card-metodo-body">
+            <span class="caption">Total Efectivo</span>
+            <h3 class="mono" id="reporte-total-efectivo">S/ 0.00</h3>
+          </div>
+          <div class="card-metodo-footer">
+            <span class="caption" id="reporte-count-efectivo">0 cobros</span>
+          </div>
+        </div>
+
+        <!-- Tarjeta Yape (Digital) -->
+        <div class="card card-metodo-resumen metodo-yape" id="card-filtro-yape" role="button" tabindex="0" title="Clic para filtrar transacciones con Yape">
+          <div class="card-metodo-header">
+            <div class="metodo-icon-wrapper yape-bg">📱</div>
+            <div class="metodo-badge badge-digital">Dinero Digital</div>
+          </div>
+          <div class="card-metodo-body">
+            <span class="caption">Total Yape</span>
+            <h3 class="mono" id="reporte-total-yape">S/ 0.00</h3>
+          </div>
+          <div class="card-metodo-footer">
+            <span class="caption" id="reporte-count-yape">0 cobros</span>
+          </div>
+        </div>
+
+        <!-- Tarjeta Monto Total General Destacada -->
+        <div class="card card-total-general">
+          <div class="card-total-header">
+            <span class="badge badge-accent mono">Consolidado Diario</span>
+          </div>
+          <div class="card-total-body">
+            <span class="caption" style="color: #cbd5e1;">Monto Total General</span>
+            <h2 class="mono" id="reporte-total-general">S/ 0.00</h2>
+          </div>
+          <!-- Barra proporcional visual de Desglose Físico vs Digital -->
+          <div class="desglose-progress-wrapper">
+            <div class="desglose-progress-bar">
+              <div class="progress-fisico" id="bar-fisico" style="width: 50%;" title="Físico"></div>
+              <div class="progress-digital" id="bar-digital" style="width: 50%;" title="Digital"></div>
+            </div>
+            <div class="desglose-labels">
+              <span class="caption" id="lbl-pct-fisico" style="color: #cbd5e1;">💵 0% Físico</span>
+              <span class="caption" id="lbl-pct-digital" style="color: #cbd5e1;">📱 0% Digital</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalle de Transacciones -->
+      <div class="card card-table" style="margin-top: 24px;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2>Detalle de transacciones</h2>
+            <p class="caption">Cobros registrados en la fecha consultada</p>
+          </div>
+          <!-- Componentes interactivos de filtrado por método de pago -->
+          <div class="filter-pills" id="filter-pills-container">
+            <button type="button" class="btn-pill active" data-metodo="todos" id="pill-filtro-todos">
+              Todos (<span id="pill-count-todos">0</span>)
+            </button>
+            <button type="button" class="btn-pill" data-metodo="Efectivo" id="pill-filtro-efectivo">
+              💵 Efectivo
+            </button>
+            <button type="button" class="btn-pill" data-metodo="Yape" id="pill-filtro-yape">
+              📱 Yape
+            </button>
+          </div>
+        </div>
+        <div class="accent-bar-sm"></div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Placa</th>
+                <th>Tipo de vehículo</th>
+                <th>Hora de salida</th>
+                <th>Método de pago</th>
+                <th style="text-align: right;">Monto cobrado</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-reportes-body">
+              <!-- Se llena dinámicamente con JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Estado sin movimientos según especificación -->
+        <div class="empty-state-info" id="reporte-vacio" style="display: none;">
+          <div class="empty-state-icon">ℹ️</div>
+          <p class="empty-state-text">No se registran movimientos ni recaudación para la fecha seleccionada</p>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- ========================================================================
@@ -596,5 +756,6 @@
   <!-- Lógica JavaScript (Vainilla) -->
   <script src="js/app.js"></script>
   <script src="js/aforo.js"></script>
+  <script src="js/reportes.js"></script>
 </body>
 </html>
