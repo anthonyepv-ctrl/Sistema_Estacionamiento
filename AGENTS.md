@@ -113,7 +113,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
    - `chore:`, `test:`, `refactor:` según corresponda.
 4. Push de la rama: `git push origin feature/nombre-rama`.
 5. Abrir **Pull Request** hacia `develop`, con **al menos 1 revisor**; merge tras aprobación y verificaciones.
-6. **Integración a `main`:** la rama `main` **solo** se actualiza con un merge desde `develop` (nunca directamente desde ramas `feature/` o `chore/`), y únicamente al cierre de la tarea de configuración *Integración final al repositorio en GitHub* (ej. UPAO-36) con autorización. Antes de ese merge, `develop` debe tener todas las ramas del sprint integradas y sin conflictos.
+6. **Integración a `main` (Estrategia Blue / Green):** La rama `develop` actúa como ambiente **Blue (Staging)** para pruebas continuas integradas. La rama `main` actúa como ambiente **Green (Producción)** y **solo** se actualiza con un Pull Request desde `develop` (nunca directamente desde ramas `feature/` o `chore/`), únicamente al cierre y validación exitosa de la historia (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)). Antes de ese merge, `develop` debe estar verificado sin defectos abiertos.
 
 ---
 
@@ -135,7 +135,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 - **Proyecto / clave:** `UPAO`.
 - **URL del tablero:** _TODO (pendiente de confirmar)_.
-- **Metodología:** trabajo por **sprints** (actual: **Sprint 1**).
+- **Metodología:** trabajo por **sprints** (actual: **Sprint 2**).
 - **Tipos de incidencia:** `Epic`, `Historia`, `Subtask`.
 - **Estados del flujo:** `Por hacer` → `En curso` → `Listo`.
 - **Prioridad por defecto:** `Medium`.
@@ -150,17 +150,28 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | UPAO-27 | Administración y Supervisión del Negocio |
 | UPAO-28 | Manejo de Reserva Web |
 
-### Historias del Sprint 1
+### Historias del Sprint 1 (Completadas — 100% Listo)
 
 | Clave | Historia | Estado | SP | Épica |
 | --- | --- | --- | --- | --- |
-| UPAO-16 | Configurar tarifas | En curso | 3 | Administración y Supervisión del Negocio |
-| UPAO-6 | Registrar ingreso | Por hacer | 2 | Operación y Control de la cochera |
-| UPAO-7 | Registrar salida | Por hacer | 3 | Operación y Control de la cochera |
-| UPAO-11 | Ver estado de espacios | Por hacer | 1 | Operación y Control de la cochera |
-| UPAO-17 | Consultar ingresos recaudados | Por hacer | 2 | Administración y Supervisión del Negocio |
+| UPAO-16 | Configurar tarifas | Listo | 3 | Administración y Supervisión del Negocio |
+| UPAO-6 | Registrar ingreso | Listo | 2 | Operación y Control de la cochera |
+| UPAO-7 | Registrar salida | Listo | 3 | Operación y Control de la cochera |
+| UPAO-11 | Ver estado de espacios | Listo | 1 | Operación y Control de la cochera |
+| UPAO-17 | Consultar ingresos recaudados | Listo | 2 | Administración y Supervisión del Negocio |
 
-> Backlog futuro (sin sprint asignado): UPAO-8 Buscar reservas, UPAO-9 Adjuntar notas, UPAO-18 Gráficos de ingresos, UPAO-19 Consultar nivel de ocupación, UPAO-20 Ver espacios disponibles, UPAO-21 Realizar reserva, UPAO-22 Anular reserva, UPAO-23 Consultar historial de estados.
+### Historias del Sprint 2 (En curso)
+
+| Clave | Historia | Estado | SP | Épica |
+| --- | --- | --- | --- | --- |
+| UPAO-9 | Adjuntar notas | Por hacer | 2 | Operación y Control de la cochera |
+| UPAO-18 | Gráficos de ingresos | Por hacer | 5 | Administración y Supervisión del Negocio |
+| UPAO-19 | Consultar nivel de ocupación | Por hacer | 2 | Administración y Supervisión del Negocio |
+| UPAO-20 | Ver espacios disponibles | Por hacer | 1 | Manejo de Reserva Web |
+
+> Backlog futuro (sin sprint asignado): UPAO-8 Buscar reservas, UPAO-21 Realizar reserva, UPAO-22 Anular reserva, UPAO-23 Consultar historial de estados.
+
+> **Estrategia Blue / Green:** La rama `develop` despliega en el ambiente **Blue (Staging)** para pruebas continuas; la rama `main` despliega en el ambiente **Green (Producción)** solo al validar cada historia (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
 
 ### Convenciones de Jira
 
