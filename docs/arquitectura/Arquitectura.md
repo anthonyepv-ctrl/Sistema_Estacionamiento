@@ -21,12 +21,15 @@ Sistema web **cliente-servidor**: el backend sirve la interfaz y la API REST en 
 - La base de datos es **PostgreSQL gestionado en Neon**, compartida por el equipo.
 - El despliegue demo se hace en **Render** (plan free) desde la rama `main`, con `render.yaml`.
 
-## 2. Entornos
+## 2. Entornos y Estrategia Blue / Green
 
 | Entorno | Aplicación | Base de datos | Ejecución |
 | --- | --- | --- | --- |
 | Local (desarrollo) | `npm run dev` → http://localhost:3000 | Neon (compartida) | `DATABASE_URL` en `.env` |
-| Demo (nube) | Render (plan free, rama `main`) | Neon (compartida) | `render.yaml`; `DATABASE_URL` como variable secreta en Render |
+| **Blue (Staging / Pruebas)** | Render `cochera-staging` (plan free) | Neon (branch `staging`) | Rama `develop`; despliegue automático continuo de HUs |
+| **Green (Producción / Demo)** | Render `cochera-sp` (plan free) | Neon (branch `main`) | Rama `main`; release oficial tras validar la HU en Blue |
+
+> Detalle completo de configuración y plantilla de pruebas en [`Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](Estrategia_Ambientes_Blue_Green_y_Pruebas.md).
 
 ## 3. Estructura del proyecto
 
