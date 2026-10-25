@@ -1,0 +1,483 @@
+================================================================================
+SUBTAREAS PARA EL SPRINT 2 — SISTEMA DE GESTIÓN DE COCHERA (JIRA)
+Todas las subtareas responden estrictamente a los Criterios de Aceptación.
+================================================================================
+
+
+================================================================================
+HISTORIA 1: UPAO-9 — Adjuntar notas (2 SP)
+Épica: UPAO-26 (Operación y Control de la cochera)
+Rol: Recepcionista
+Criterios de Aceptación:
+- Campo opcional "Notas / Observaciones del vehículo" en módulo de Ingresos.
+- Admite texto libre hasta 250 caracteres.
+- Permite registrar si está vacío o solo contiene espacios.
+- Vinculación permanente e inmutable a la estadía (no editable ni eliminable).
+- Registro automático de ID recepcionista y timestamp en segundo plano.
+- Muestra destacada de la nota en el módulo de Salidas antes del cobro.
+================================================================================
+
+--- SUBTAREA 1.1 (Configuración de Entornos) ---
+Resumen:
+Configuración de entornos Blue/Green y estandarización de reglas de pruebas
+
+Tipo de Tarea:
+Configuración
+
+Prioridad:
+Medium
+
+Estimación original:
+4h
+
+Descripción:
+* Configuración y separación de ambientes de trabajo para el Sprint 2:
+  - Ambiente Green (Producción): oficial en Render conectado a la rama 'main' y base de datos productiva Neon.
+  - Ambiente Blue (Staging): servicio secundario en Render conectado a la rama 'develop' para integración continua.
+* Creación de la rama de base de datos 'staging' en Neon (Copy-on-Write) para aislar la data de pruebas.
+* Formalización de reglas en el repositorio:
+  - 'docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md' con flujo y arquitectura.
+  - Actualización de AGENTS.md con la prohibición de merge directo a main sin previa validación en Blue.
+  - Plantilla estándar obligatoria de pruebas en Markdown ('plan-pruebas.md') con Defect Log y enlaces a GitHub.
+
+
+--- SUBTAREA 1.2 (Análisis y Diseño) ---
+Resumen:
+Análisis y diseño del registro y visualización de notas vehiculares
+
+Tipo de Tarea:
+Análisis y Diseño
+
+Prioridad:
+Medium
+
+Estimación original:
+3h
+
+Descripción:
+* Definir el campo de datos 'notas' (VARCHAR 250, opcional) en el modelo relacional de la tabla 'estadia'.
+* Diseñar la regla de inmutabilidad: una vez confirmado el ingreso, el contenido de la nota no podrá editarse ni eliminarse.
+* Diseñar el mecanismo de auditoría en segundo plano para registrar automáticamente el ID del recepcionista y la fecha/hora exacta.
+* Diseñar el flujo de visualización de la nota para que al buscar un vehículo en el módulo de "Registro de Salidas" se muestre de forma destacada antes de cobrar.
+
+
+--- SUBTAREA 1.3 (Prototipado) ---
+Resumen:
+Prototipar campo de notas en formulario de ingreso y vista destacada en salida
+
+Tipo de Tarea:
+Prototipado
+
+Prioridad:
+Medium
+
+Estimación original:
+4h
+
+Descripción:
+* Prototipar en la pantalla de "Registrar Ingreso" un campo de texto dedicado 'Notas / Observaciones del vehículo' (opcional) con contador visual interactivo de caracteres (0/250).
+* Asegurar que el formulario permita el envío si el campo queda vacío o solo contiene espacios.
+* Diseñar en el panel "Resumen de Salida" una tarjeta o contenedor visual destacado que muestre la nota registrada durante el ingreso para que el recepcionista constate el estado físico del auto antes de liberarlo.
+
+
+--- SUBTAREA 1.4 (Codificación) ---
+Resumen:
+Programar lógica y persistencia de notas vehiculares en ingreso y salida
+
+Tipo de Tarea:
+Codificación
+
+Prioridad:
+Medium
+
+Estimación original:
+6h
+
+Descripción:
+* Actualizar el esquema Prisma con el campo 'nota' en la entidad 'Estadia' y generar migración.
+* Modificar 'POST /api/ingresos' para aceptar la nota opcional, sanitizar espacios en blanco, truncar o validar límite de 250 caracteres y asociar el ID del recepcionista autenticado.
+* Modificar 'GET /api/salidas/activos' para que retorne la nota registrada junto a los datos del vehículo.
+* Asegurar a nivel de API que no existan endpoints que permitan actualizar (PUT/PATCH) o borrar la nota una vez guardada.
+
+
+--- SUBTAREA 1.5 (Pruebas y Depuración) ---
+Resumen:
+Probar y depurar registro, inmutabilidad y visualización de notas
+
+Tipo de Tarea:
+Test
+
+Prioridad:
+Medium
+
+Estimación original:
+4h
+
+Descripción:
+* Ejecutar casos de prueba funcionales:
+  - Ingreso con nota válida (máximo 250 caracteres) y verificación de persistencia en base de datos.
+  - Ingreso con campo de notas vacío o con espacios en blanco (debe procesar con éxito sin errores).
+  - Intento de superar 250 caracteres (bloqueo visual y rechazo en backend).
+  - Verificación en la pantalla de salida de que la nota se muestre claramente al seleccionar el vehículo.
+  - Verificación de inmutabilidad (la nota no puede modificarse tras confirmarse el ingreso).
+* Documentar resultados en 'docs/modulos/ingreso/plan-pruebas.md' con Defect Log y video MP4 grabado con Playwright.
+
+
+--- SUBTAREA 1.6 (Integración y Despliegue) ---
+Resumen:
+Integración y despliegue del módulo de notas en ambiente Blue
+
+Tipo de Tarea:
+Configuración
+
+Prioridad:
+Medium
+
+Estimación original:
+2h
+
+Descripción:
+* Apertura y revisión de Pull Request hacia la rama 'develop' con la plantilla del equipo.
+* Verificación de compilación, generación de cliente Prisma y resolución de conflictos.
+* Despliegue automático y verificación final de la funcionalidad en el ambiente Blue (Staging en Render).
+
+
+
+================================================================================
+HISTORIA 2: UPAO-18 — Gráficos de ingresos (5 SP)
+Épica: UPAO-27 (Administración y Supervisión del Negocio)
+Rol: Dueño
+Criterios de Aceptación:
+- Selector de mes y año (mes actual por defecto, bloqueo de meses futuros).
+- Gráfico de barras o líneas diario (Eje X: días del mes, Eje Y: total en soles).
+- Gráfico circular/dona por método de pago (Efectivo, Yape/Plin, Tarjeta).
+- Formato monetario estricto 'S/ 0.00' en todos los ejes y tooltips.
+- Manejo de meses sin ventas con mensaje: "No se registran ingresos para el período seleccionado".
+- Exportación de los datos financieros a archivo CSV o Excel.
+================================================================================
+
+--- SUBTAREA 2.1 (Análisis y Diseño) ---
+Resumen:
+Análisis y diseño de métricas estadísticas mensuales y exportación
+
+Tipo de Tarea:
+Análisis y Diseño
+
+Prioridad:
+Medium
+
+Estimación original:
+4h
+
+Descripción:
+* Definir la estructura de consulta SQL/Prisma para agrupar cobros por día del mes y por método de pago (Efectivo vs. Yape) considerando zona horaria de Perú (-05:00).
+* Diseñar las validaciones de consulta: carga por defecto del mes actual y restricción estricta de meses futuros.
+* Especificar el formato de exportación de datos financieros a formato CSV/Excel (columnas: Fecha, Placa, Tipo, Método, Monto).
+* Diseñar el comportamiento visual cuando un mes no presente cobros registrados ("No se registran ingresos para el período seleccionado").
+
+
+--- SUBTAREA 2.2 (Prototipado) ---
+Resumen:
+Prototipar dashboard interactivo con gráficos estadísticos y selector de período
+
+Tipo de Tarea:
+Prototipado
+
+Prioridad:
+Medium
+
+Estimación original:
+6h
+
+Descripción:
+* Prototipar en la vista del dueño el selector interactivo de mes y año con bloqueo dinámico de meses futuros.
+* Diseñar el componente para el gráfico de barras/líneas diario (Eje X: días del 1 al 31; Eje Y: recaudación en S/).
+* Diseñar el componente de gráfico circular (pastel/dona) que represente la proporción de ingresos por método de pago.
+* Implementar formato numérico en tooltips con moneda peruana (S/ 0.00).
+* Diseñar el botón de acción "Exportar a CSV/Excel" y el contenedor para el estado sin movimientos.
+
+
+--- SUBTAREA 2.3 (Codificación) ---
+Resumen:
+Programar API de agregaciones mensuales y generación de reportes descargables
+
+Tipo de Tarea:
+Codificación
+
+Prioridad:
+Medium
+
+Estimación original:
+10h
+
+Descripción:
+* Desarrollar endpoint 'GET /api/reportes/graficos-mes?mes=MM&anio=YYYY' con validación de meses futuros (HTTP 400).
+* Implementar algoritmos de agregación que retornen la serie diaria de montos y el consolidado por método de pago.
+* Integrar visualización en frontend mediante SVG accesible o biblioteca ligera sin dependencias pesadas.
+* Desarrollar endpoint o función en cliente para exportar la data del mes consultado en formato CSV/Excel con cabeceras formateadas.
+* Programar el renderizado del mensaje informativo cuando la recaudación del mes sea cero.
+
+
+--- SUBTAREA 2.4 (Pruebas y Depuración) ---
+Resumen:
+Probar y depurar gráficos estadísticos, selector de fecha y exportación
+
+Tipo de Tarea:
+Test
+
+Prioridad:
+Medium
+
+Estimación original:
+6h
+
+Descripción:
+* Ejecutar pruebas funcionales:
+  - Carga automática del mes en curso y cálculo exacto de la sumatoria diaria vs. total mensual.
+  - Bloqueo de selección de meses posteriores a la fecha actual.
+  - Consulta de meses sin transacciones: comprobar que no rompa la interfaz y muestre el mensaje oficial.
+  - Verificación del formato monetario 'S/ 0.00' en ejes, tarjetas y leyendas de los gráficos.
+  - Comprobación de la descarga y contenido del archivo CSV exportado.
+* Elaborar 'plan-pruebas.md' con Defect Log y video demostrativo MP4 con Playwright.
+
+
+--- SUBTAREA 2.5 (Integración y Despliegue) ---
+Resumen:
+Integración y despliegue del módulo de gráficos en ambiente Blue
+
+Tipo de Tarea:
+Configuración
+
+Prioridad:
+Medium
+
+Estimación original:
+2h
+
+Descripción:
+* Pull Request a la rama 'develop', revisión de código y aseguramiento de no regresión en reportes diarios previos.
+* Despliegue y verificación de visualización en vivo en el ambiente Blue (Staging).
+
+
+
+================================================================================
+HISTORIA 3: UPAO-19 — Consultar nivel de ocupación (2 SP)
+Épica: UPAO-27 (Administración y Supervisión del Negocio)
+Rol: Dueño
+Criterios de Aceptación:
+- Selector de Fecha Inicio y Fecha Fin (bloqueo si Inicio > Fin o fechas futuras).
+- Tarjetas de resumen con total de vehículos (autos/motos) y aforo máximo simultáneo alcanzado.
+- Gráfico de barras por bloques horarios (ej. 8am-10am, 10am-12pm) para horas pico.
+- Manejo de rango sin movimientos (contadores en 0 y mensaje informativo).
+- Exportación de los datos de ocupación a formato Excel o PDF.
+================================================================================
+
+--- SUBTAREA 3.1 (Análisis y Diseño) ---
+Resumen:
+Análisis y diseño del cálculo de ocupación y distribución horaria de aforo
+
+Tipo de Tarea:
+Análisis y Diseño
+
+Prioridad:
+Medium
+
+Estimación original:
+3h
+
+Descripción:
+* Diseñar el algoritmo para calcular la concurrencia simultánea máxima alcanzada en un rango de fechas cruzando entradas y salidas.
+* Definir la estructura de agregación por bloques horarios (ej. 08:00-10:00, 10:00-12:00, etc.) para identificar horas pico.
+* Establecer las validaciones de rango: Fecha Inicio <= Fecha Fin y ambas <= Fecha actual.
+* Especificar la estructura de exportación a PDF/Excel para el reporte de ocupación.
+
+
+--- SUBTAREA 3.2 (Prototipado) ---
+Resumen:
+Prototipar interfaz de rango de fechas, tarjetas de métricas y gráfico de horas pico
+
+Tipo de Tarea:
+Prototipado
+
+Prioridad:
+Medium
+
+Estimación original:
+4h
+
+Descripción:
+* Diseñar formulario con selectores de Fecha Inicio y Fecha Fin y botón de consulta.
+* Diseñar tarjetas de métricas resumen: 'Total Vehículos Ingresados' (desglosado en autos y motos) y 'Aforo Máximo Simultáneo'.
+* Prototipar gráfico de barras que represente la afluencia vehicular distribuida por intervalos de horas.
+* Diseñar el mensaje de estado sin movimientos (contadores en cero) y botón de exportación.
+
+
+--- SUBTAREA 3.3 (Codificación) ---
+Resumen:
+Programar controladores de afluencia por bloques horarios y concurrencia máxima
+
+Tipo de Tarea:
+Codificación
+
+Prioridad:
+Medium
+
+Estimación original:
+6h
+
+Descripción:
+* Crear endpoint 'GET /api/reportes/ocupacion?inicio=YYYY-MM-DD&fin=YYYY-MM-DD'.
+* Validar que la fecha inicial no supere la final ni sean fechas futuras (retornar HTTP 400).
+* Implementar cálculo de vehículos activos simultáneos en memoria/base de datos y sumatoria total de entradas del período.
+* Generar los datos agrupados por bloques horarios para alimentar el gráfico de horas pico.
+* Implementar la exportación del reporte de ocupación a formato descargable (Excel/CSV).
+
+
+--- SUBTAREA 3.4 (Pruebas y Depuración) ---
+Resumen:
+Probar y depurar cálculo de horas pico, validación de fechas y concurrencia
+
+Tipo de Tarea:
+Test
+
+Prioridad:
+Medium
+
+Estimación original:
+4h
+
+Descripción:
+* Pruebas de validación de fechas: ingresar inicio mayor a fin y fechas futuras (verificar mensaje de error).
+* Pruebas de cálculo de aforo máximo concurrente con datos de múltiples vehículos en cochera al mismo tiempo.
+* Verificación de la distribución correcta de vehículos en las barras de bloques horarios.
+* Prueba de rango sin movimientos (verificar visualización de ceros y mensaje informativo).
+* Documentación en 'plan-pruebas.md' con Defect Log y video demostrativo MP4.
+
+
+--- SUBTAREA 3.5 (Integración y Despliegue) ---
+Resumen:
+Integración y despliegue del módulo de ocupación en ambiente Blue
+
+Tipo de Tarea:
+Configuración
+
+Prioridad:
+Medium
+
+Estimación original:
+2h
+
+Descripción:
+* Pull Request a 'develop', revisión con el equipo y validación en el servidor Blue (Staging).
+
+
+
+================================================================================
+HISTORIA 4: UPAO-20 — Ver espacios disponibles (1 SP)
+Épica: UPAO-28 (Manejo de Reserva Web)
+Rol: Conductor
+Criterios de Aceptación:
+- Consulta previa de disponibilidad de espacios antes de realizar reserva.
+- Dos paneles independientes (Autos y Motos) con capacidad total y cupos disponibles en texto.
+- Fórmula de cálculo: (Capacidad Total) - (En cochera) - (Reservas vigentes). Mínimo 0, nunca negativo.
+- Actualización en tiempo real.
+- Indicador visual rojo "Aforo lleno" y bloqueo de botones si los cupos llegan a cero.
+- Vista pública (no exige login para ver), pero clic en "Reservar" redirige a Login si no tiene sesión.
+================================================================================
+
+--- SUBTAREA 4.1 (Análisis y Diseño) ---
+Resumen:
+Análisis y diseño de la vista pública de disponibilidad y fórmula de aforo
+
+Tipo de Tarea:
+Análisis y Diseño
+
+Prioridad:
+Medium
+
+Estimación original:
+2h
+
+Descripción:
+* Especificar la fórmula de cálculo: 'Disponibles = Capacidad Total - En Cochera - Reservas Vigentes', asegurando piso matemático (Math.max(0, disponibles) para evitar números negativos).
+* Diseñar la regla de acceso público: la disponibilidad debe consultarse sin necesidad de sesión activa.
+* Diseñar la regla de seguridad/redirección: si un usuario no autenticado hace clic en el botón "Reservar", el sistema debe redirigirlo a la pantalla de Login.
+* Especificar la regla de aforo cero: si la disponibilidad llega a 0, el panel debe cambiar a estado crítico (rojo, texto "Aforo lleno" y deshabilitar botón de reserva).
+
+
+--- SUBTAREA 4.2 (Prototipado) ---
+Resumen:
+Prototipar interfaz pública de disponibilidad con indicadores de cupos y alertas
+
+Tipo de Tarea:
+Prototipado
+
+Prioridad:
+Medium
+
+Estimación original:
+3h
+
+Descripción:
+* Diseñar vista pública responsiva y limpia (accesible para conductores desde dispositivos móviles y escritorio).
+* Crear dos paneles o tarjetas independientes: uno para Autos y otro para Motos, indicando claramente la Capacidad Total y los Espacios Disponibles en texto.
+* Diseñar el cambio de estilos dinámico cuando los cupos se agoten: borde/fondo rojo, insignia "Aforo lleno" y botón de acción deshabilitado.
+* Diseñar botón "Reservar espacio" en cada tarjeta.
+
+
+--- SUBTAREA 4.3 (Codificación) ---
+Resumen:
+Programar endpoint público de disponibilidad y lógica de protección de reservas
+
+Tipo de Tarea:
+Codificación
+
+Prioridad:
+Medium
+
+Estimación original:
+4h
+
+Descripción:
+* Desarrollar endpoint público 'GET /api/publico/disponibilidad' que retorne cupos totales, ocupados y disponibles para autos y motos aplicando la fórmula establecida y la restricción de mínimo 0.
+* Integrar actualización en frontend para reflejar en tiempo real los cambios generados por ingresos o salidas.
+* Programar la lógica de interacción del botón "Reservar": verificar si el usuario tiene token/sesión; si no tiene sesión activa, redirigir inmediatamente a la pantalla de Login.
+* Bloquear los botones de acción si el contador de disponibilidad es igual a cero.
+
+
+--- SUBTAREA 4.4 (Pruebas y Depuración) ---
+Resumen:
+Probar y depurar vista pública de disponibilidad, fórmula de cupos y redirección
+
+Tipo de Tarea:
+Test
+
+Prioridad:
+Medium
+
+Estimación original:
+3h
+
+Descripción:
+* Validar que la vista cargue correctamente sin haber iniciado sesión.
+* Verificar que la fórmula de cálculo nunca retorne números negativos ante sobrecupo de prueba.
+* Simular llenado de cochera hasta disponibilidad 0: verificar cambio de color a rojo, etiqueta "Aforo lleno" y botón bloqueado.
+* Probar el clic en "Reservar": verificar que usuarios sin login sean redirigidos a la pantalla de autenticación.
+* Generar 'plan-pruebas.md' con matriz de pruebas, Defect Log y video demostrativo MP4.
+
+
+--- SUBTAREA 4.5 (Integración y Despliegue) ---
+Resumen:
+Integración y despliegue de la vista pública de aforo en ambiente Blue
+
+Tipo de Tarea:
+Configuración
+
+Prioridad:
+Medium
+
+Estimación original:
+1h
+
+Descripción:
+* Pull Request a la rama 'develop', validación en el servidor Blue (Staging) y verificación de compatibilidad con los módulos existentes.

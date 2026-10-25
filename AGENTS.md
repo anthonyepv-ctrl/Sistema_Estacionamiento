@@ -308,6 +308,9 @@ npx skills add usestrix/strix@api-security-testing -g -y
 - Respetar la guía de estilos y las validaciones peruanas descritas arriba.
 - **No** hacer `commit`, `push` ni abrir PR si no se solicita explícitamente.
 - No inventar reglas de negocio: si falta información, preguntar o dejar `TODO`.
+- **Estrategia Blue / Green (§7):** El desarrollo e integración continua se realiza exclusivamente en **Blue (Staging / rama `develop`)**. Prohibido fusionar o desplegar directamente a **Green (Producción / rama `main`)** hasta que la historia de usuario esté 100% completada, depurada y validada en Blue (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
+- **Pruebas y Defect Log:** Toda subtarea de test debe generar su archivo `plan-pruebas.md` en `docs/modulos/<modulo>/` siguiendo la plantilla oficial (matriz de casos, Defect Log y enlaces a GitHub y video MP4).
+- **Entorno de datos:** El `.env` local y los tests deben apuntar a la base de datos de **Staging** (Neon `staging`), nunca alterar la base de datos de producción.
 - Mantener la estructura de carpetas simple; no agregar dependencias sin justificarlo.
 
 ---
