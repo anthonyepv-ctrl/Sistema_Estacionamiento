@@ -79,3 +79,8 @@ La tabla del ingreso **ya existe** en el modelo: es **`estadia`** (creada en UPA
 - [Modelo de datos](../../datos/Modelo_de_Datos.md) y [diagrama ER](../../datos/diagrama-er.erd).
 
 > El control de aforo (por totales y entradas activas) y la API se definen en UPAO-38 y UPAO-40.
+
+## 7. Registro de notas vehiculares (Sprint 2 — UPAO-9 / UPAO-58)
+
+Se incorpora el campo opcional e inmutable `nota` (`VARCHAR(250) NULLABLE`) dentro de la entidad `estadia` para el respaldo legal ante reclamos por daños preexistentes.
+- Especificación técnica completa, contratos de API y diagramas de secuencia: [`analisis-notas.md`](analisis-notas.md).
