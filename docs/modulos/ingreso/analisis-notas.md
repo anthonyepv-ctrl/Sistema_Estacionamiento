@@ -1,14 +1,5 @@
 # Análisis y Diseño — Registro de Notas Vehiculares (UPAO-58 / UPAO-9)
 
-**Historia de Usuario:** `UPAO-9` — Adjuntar notas (2 Story Points)  
-**Subtarea:** `UPAO-58` — Análisis y diseño del registro de notas vehiculares (5h)  
-**Épica:** `UPAO-26` — Operación y Control de la cochera  
-**Responsable asignado:** ALBERTH JAIR FLORES LEONARDO  
-**Fecha:** 24/10/2026  
-**Estado:** Documentado y Aprobado
-
----
-
 ## 1. Objetivo y Justificación
 
 ### 1.1. Objetivo
@@ -273,3 +264,20 @@ Esta definición técnica servirá como base directa para la subtarea de pruebas
 - Subtask vinculada: **`UPAO-58`** (Análisis y diseño del registro de notas vehiculares).
 - Parent Story: **`UPAO-9`** (Adjuntar notas).
 - Entregable: Archivo de especificación `docs/modulos/ingreso/analisis-notas.md` versionado en Git.
+
+
+---
+
+## 10. Registro de Concreción y Entregables de la Subtarea (UPAO-58)
+
+| Entregable Concreto | Ubicación / Archivo | Estado | Descripción del Resultado |
+|---|---|:---:|---|
+| **1. Modelo de Datos Relacional** | [`docs/datos/Modelo_de_Datos.md`](../../datos/Modelo_de_Datos.md) | ✅ Concretado | Se incorporó formalmente el campo `nota VARCHAR(250) NULLABLE` en la tabla `estadia`. |
+| **2. Diagrama ER Gráfico** | [`docs/datos/diagrama-er.erd`](../../datos/diagrama-er.erd) | ✅ Concretado | Se actualizó la entidad `ESTADIA` en el editor visual ERD con el nuevo atributo y su metadata. |
+| **3. Diagrama ERD Visual (Mermaid)** | [`docs/modulos/ingreso/analisis-notas.md`](#31-diagrama-entidad-relación-erd) | ✅ Concretado | Diagrama interactivo renderizable en GitHub con relaciones de auditoría y catálogos. |
+| **4. Contratos de API & Seguridad** | [`docs/modulos/ingreso/analisis-notas.md`](#6-especificación-de-contratos-de-la-api) | ✅ Concretado | Definición de endpoints `POST /api/ingresos` y `GET /api/salidas/activos` e inmutabilidad garantizada. |
+| **5. Lineamientos de UI / UX** | [`docs/modulos/ingreso/analisis-notas.md`](#7-lineamientos-de-interfaz-ui--ux) | ✅ Concretado | Especificación del `<textarea>`, contador dinámico `0/250` y tarjeta ámbar en salida. |
+| **6. Matriz de Pruebas Prevista** | [`docs/modulos/ingreso/analisis-notas.md`](#8-criterios-para-la-fase-de-pruebas-matriz-de-casos-de-prueba-previstos) | ✅ Concretado | 7 casos de prueba funcionales definidos para validar el cumplimiento de criterios. |
+| **7. Integración en Git** | Rama `develop` | ✅ Concretado | Commits integrados a la rama base de staging. |
+
+> **Siguiente subtarea planificada:** **Subtarea 1.3 (Prototipado)** — Maquetación del campo en el formulario de ingreso y contenedor de alertas en salida en `public/`.
