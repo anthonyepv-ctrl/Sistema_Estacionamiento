@@ -9,5 +9,6 @@ Puntos críticos:
 
 - **Scrum / alcance (§8):** solo lo planificado del sprint en curso; sin funcionalidad de HUs anteriores ni futuras.
 - **Skills y flujo (§10):** `graphify`, Spec Kit, Prisma, UI/UX, testing, code-review.
-- **Documentación (§11):** documentar todo cambio importante en la misma rama; sin doc, no está terminado.
+- **Ambientes Blue / Green (§7):** desarrollar e integrar sobre Blue (`develop`); no tocar Green (`main`) hasta validar la historia completa.
+- **Documentación y Pruebas (§11):** documentar todo cambio en la misma rama con `plan-pruebas.md` (defect log y video MP4); sin doc, no está terminado.
 - **Git:** no hacer `commit`, `push` ni PR sin autorización.
