@@ -39,8 +39,53 @@ En la operación diaria de cocheras comerciales se presentan reclamos infundados
 
 ## 3. Modelo de Datos y Esquema Relacional
 
-La columna se incorpora dentro de la tabla **`estadia`**, la cual ya centraliza las transacciones de entrada y salida del sistema:
+### 3.1. Diagrama Entidad-Relación (ERD)
+El modelo relacional vincula la nota directamente a la entidad `ESTADIA` como atributo de observación física del vehículo, auditado por el `USUARIO` en turno:
 
+```mermaid
+erDiagram
+    USUARIO ||--o{ ESTADIA : "registra (auditoria)"
+    TIPO_VEHICULO ||--o{ ESTADIA : "clasifica"
+    TARIFA ||--o{ ESTADIA : "aplica"
+    PAGO |o--|| ESTADIA : "liquida"
+
+    ESTADIA {
+        int id_estadia PK "SERIAL"
+        string placa "VARCHAR(10)"
+        int id_tipo_vehiculo FK "tipo_vehiculo"
+        int id_tarifa FK "tarifa"
+        int id_usuario FK "usuario (auditoria)"
+        datetime hora_ingreso "TIMESTAMP (auditoria)"
+        datetime hora_salida "TIMESTAMP (NULL = activa)"
+        string nota "VARCHAR(250) NULL (NUEVO - Observaciones)"
+    }
+
+    USUARIO {
+        int id_usuario PK
+        string nombre
+        string usuario
+        string rol
+    }
+
+    TIPO_VEHICULO {
+        int id_tipo_vehiculo PK
+        string nombre
+    }
+
+    TARIFA {
+        int id_tarifa PK
+        decimal precio_hora
+        decimal precio_fraccion
+    }
+
+    PAGO {
+        int id_pago PK
+        decimal monto
+        datetime fecha_hora
+    }
+```
+
+### 3.2. Estructura de la Tabla Modificada (`estadia`)
 ```text
 ┌────────────────────────────────────────────────────────┐
 │                        ESTADIA                         │
@@ -56,7 +101,7 @@ La columna se incorpora dentro de la tabla **`estadia`**, la cual ya centraliza 
 └────────────────────────────────────────────────────────┘
 ```
 
-### 3.1. Definición en Prisma Schema (`prisma/schema.prisma`)
+### 3.3. Definición en Prisma Schema (`prisma/schema.prisma`)
 ```prisma
 model Estadia {
   id              Int          @id @default(autoincrement()) @map("id_estadia")

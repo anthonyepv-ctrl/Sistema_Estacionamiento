@@ -72,6 +72,7 @@ Registro de ingresos y salidas (tabla central).
 | `id_pago` | INTEGER | FK → `pago`, UNIQUE, NULL (se completa al cobrar) |
 | `hora_ingreso` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
 | `hora_salida` | TIMESTAMP | NULL mientras la estadía está activa |
+| `nota` | VARCHAR(250) | NULL (observaciones/daños físicos al ingresar; opcional e inmutable) |
 
 Índices/restricciones adicionales:
 
