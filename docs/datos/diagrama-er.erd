@@ -123,7 +123,8 @@
           "yilMUi0z0GX7kxPsER13f",
           "UHZBcUk4pp6MydfX0KI2T",
           "8VrDC04p8TvpkyfqJcxu1",
-          "USSga0KtX0ShXt3i3XVpX"
+          "USSga0KtX0ShXt3i3XVpX",
+          "nota_col_estadia_u900"
         ],
         "seqColumnIds": [
           "Aptf1_5JiYe1pmNx85hP_",
@@ -138,7 +139,8 @@
           "USSga0KtX0ShXt3i3XVpX",
           "lSS1DQOtYHjwX4GZdYhNz",
           "9IWKqqwHWcbTQPCNKA_Sb",
-          "hZCdjek0fNcT1ZEHoQM19"
+          "hZCdjek0fNcT1ZEHoQM19",
+          "nota_col_estadia_u900"
         ],
         "ui": {
           "x": 204.6298,
@@ -149,7 +151,7 @@
           "color": ""
         },
         "meta": {
-          "updateAt": 1791229120995,
+          "updateAt": 1792905927732,
           "createAt": 1791225959351
         }
       },
@@ -982,6 +984,26 @@
         "meta": {
           "updateAt": 1791228679257,
           "createAt": 1791228679257
+        }
+      },
+      "nota_col_estadia_u900": {
+        "id": "nota_col_estadia_u900",
+        "tableId": "BVDUEFXzMvXVzC4apqnLk",
+        "name": "nota",
+        "comment": "Observaciones de daños físicos al ingreso (opcional, max 250)",
+        "dataType": "VARCHAR(250)",
+        "default": "NULL",
+        "options": 0,
+        "ui": {
+          "keys": 0,
+          "widthName": 60,
+          "widthComment": 120,
+          "widthDataType": 80,
+          "widthDefault": 60
+        },
+        "meta": {
+          "updateAt": 1792905927732,
+          "createAt": 1792905927732
         }
       }
     },
