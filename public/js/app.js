@@ -598,7 +598,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function cargarSalida() {
-    activos = await pedirApi('/api/ingresos/activos');
+    try {
+      activos = await pedirApi('/api/salidas/activos');
+    } catch (_) {
+      activos = await pedirApi('/api/ingresos/activos');
+    }
     tarifasSalida = await pedirApi('/api/tarifas');
     activoSeleccionado = null;
     if (inputBuscarPlaca) inputBuscarPlaca.value = '';

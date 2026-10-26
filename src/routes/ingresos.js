@@ -38,7 +38,7 @@ function normalizarPlaca(valor) {
 }
 
 router.post('/', async (req, res) => {
-  const { placa: placaRaw, tipo } = req.body || {};
+  const { placa: placaRaw, tipo, nota, idUsuario, usuario: nombreUsuario } = req.body || {};
   const config = TIPO_VEHICULO[tipo];
 
   if (!config) {
@@ -64,6 +64,19 @@ router.post('/', async (req, res) => {
 
   if (!config.regex.test(placa)) {
     return res.status(400).json({ error: 'Ingrese una placa válida según el formato peruano (ej. ABC-123 o 1234-5A).' });
+  }
+
+  // Sanitización y validación del campo opcional nota (máx. 250 caracteres)
+  let notaFinal = null;
+  if (nota !== undefined && nota !== null) {
+    if (typeof nota !== 'string') {
+      return res.status(400).json({ error: 'La nota debe ser una cadena de texto válida.' });
+    }
+    const notaTrimmed = nota.trim();
+    if (notaTrimmed.length > 250) {
+      return res.status(400).json({ error: 'La nota no puede exceder los 250 caracteres.' });
+    }
+    notaFinal = notaTrimmed.length > 0 ? notaTrimmed : null;
   }
 
   try {
@@ -100,7 +113,19 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'No hay una tarifa vigente para este tipo de vehículo.' });
     }
 
-    const usuario = await prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
+    let usuario = null;
+    if (idUsuario) {
+      usuario = await prisma.usuario.findUnique({ where: { id: Number(idUsuario) } });
+    } else if (nombreUsuario) {
+      usuario = await prisma.usuario.findUnique({ where: { usuario: String(nombreUsuario).trim() } });
+    }
+
+    if (!usuario) {
+      usuario = await prisma.usuario.findFirst({
+        where: { rol: 'RECEPCIONISTA' },
+        orderBy: { id: 'asc' }
+      }) || await prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
+    }
 
     if (!usuario) {
       return res.status(500).json({ error: 'No hay un usuario configurado para registrar el ingreso.' });
@@ -111,7 +136,8 @@ router.post('/', async (req, res) => {
         placa,
         idTipoVehiculo: tipoVehiculo.id,
         idTarifa: tarifa.id,
-        idUsuario: usuario.id
+        idUsuario: usuario.id,
+        nota: notaFinal
       }
     });
 
@@ -120,6 +146,9 @@ router.post('/', async (req, res) => {
       placa: estadia.placa,
       tipo: tipoVehiculo.nombre,
       horaIngreso: estadia.horaIngreso,
+      nota: estadia.nota,
+      idUsuario: usuario.id,
+      usuario: usuario.nombre,
       mensaje: `Ingreso registrado: Placa [${placa}]`
     });
   } catch (error) {
@@ -136,7 +165,10 @@ router.get('/activos', async (req, res) => {
   try {
     const estadias = await prisma.estadia.findMany({
       where: { horaSalida: null },
-      include: { tipoVehiculo: true },
+      include: {
+        tipoVehiculo: true,
+        usuario: true
+      },
       orderBy: { horaIngreso: 'desc' }
     });
 
@@ -145,7 +177,9 @@ router.get('/activos', async (req, res) => {
         id: estadia.id,
         placa: estadia.placa,
         tipo: estadia.tipoVehiculo.nombre,
-        horaIngreso: estadia.horaIngreso
+        horaIngreso: estadia.horaIngreso,
+        nota: estadia.nota ?? null,
+        usuarioIngreso: estadia.usuario ? estadia.usuario.nombre : null
       }))
     );
   } catch (error) {

@@ -31,6 +31,37 @@ function calcularTiempoYCobro(horaIngreso, horaSalida, precioHora, precioFraccio
   };
 }
 
+// Endpoint para listar vehículos activos en cochera para el módulo de salida
+router.get('/activos', async (req, res) => {
+  try {
+    const estadias = await prisma.estadia.findMany({
+      where: { horaSalida: null },
+      include: {
+        tipoVehiculo: true,
+        usuario: true,
+        tarifa: true
+      },
+      orderBy: { horaIngreso: 'desc' }
+    });
+
+    return res.json(
+      estadias.map((estadia) => ({
+        id: estadia.id,
+        placa: estadia.placa,
+        tipo: estadia.tipoVehiculo.nombre,
+        horaIngreso: estadia.horaIngreso,
+        tarifaHora: estadia.tarifa ? Number(estadia.tarifa.precioHora).toFixed(2) : null,
+        tarifaFraccion: estadia.tarifa ? Number(estadia.tarifa.precioFraccion).toFixed(2) : null,
+        nota: estadia.nota ?? null,
+        usuarioIngreso: estadia.usuario ? estadia.usuario.nombre : null
+      }))
+    );
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'No se pudieron obtener los vehículos activos para salida.' });
+  }
+});
+
 router.get('/metodos-pago', async (req, res) => {
   try {
     for (const nombre of METODOS_PERMITIDOS) {
