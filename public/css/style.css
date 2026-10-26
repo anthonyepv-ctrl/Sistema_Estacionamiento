@@ -1104,6 +1104,25 @@ select.input-control {
   padding: 8px 12px;
 }
 
+.nota-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.contador-nota {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.contador-nota.limite {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* 2. Módulo de Salida: Callout de Nota */
 .salida-nota-container {
   margin: 12px 0;
