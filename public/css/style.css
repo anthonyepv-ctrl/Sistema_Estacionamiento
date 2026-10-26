@@ -1081,3 +1081,77 @@ select.input-control {
   margin: 0 auto;
 }
 
+
+/* ==========================================================================
+   UPAO-9: CAMPO DE NOTAS / OBSERVACIONES (INGRESO Y SALIDA)
+   ========================================================================== */
+
+/* 1. Módulo de Ingreso: Notas */
+.caption-opcional {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text2);
+  margin-left: 4px;
+}
+
+.textarea-nota {
+  resize: vertical;
+  min-height: 58px;
+  max-height: 140px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 8px 12px;
+}
+
+/* 2. Módulo de Salida: Callout de Nota */
+.salida-nota-container {
+  margin: 12px 0;
+}
+
+.callout-nota {
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.callout-nota-alerta {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  border-left: 4px solid var(--accent);
+  padding: 10px 14px;
+}
+
+.callout-nota-header {
+  margin-bottom: 4px;
+}
+
+.callout-nota-titulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400E;
+  letter-spacing: 0.01em;
+}
+
+.callout-nota-texto {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1F2937;
+  line-height: 1.45;
+  margin: 0;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.callout-nota-neutro {
+  background: #F9FAFB;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text2);
+  font-size: 12px;
+}
+
+.callout-nota-texto-neutro {
+  color: var(--text2);
+  font-style: italic;
+}
