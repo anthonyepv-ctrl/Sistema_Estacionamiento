@@ -344,6 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRegistrarIngreso = document.getElementById('btn-registrar-ingreso');
   const previewPlaca = document.getElementById('preview-placa');
   const previewTipo = document.getElementById('preview-tipo');
+  const inputNotaIngreso = document.getElementById('input-nota-ingreso');
 
   const PLACA_REGEX = {
     auto: /^[A-Z0-9]{3}-?[A-Z0-9]{3}$/,
@@ -431,6 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function limpiarFormularioIngreso() {
     inputPlaca.value = '';
     selectTipoIngreso.value = 'auto';
+    if (inputNotaIngreso) inputNotaIngreso.value = '';
     limpiarErrores(inputPlaca);
     actualizarVistaPrevia();
     inputPlaca.focus();
@@ -504,6 +506,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const placa = inputPlaca.value.trim();
       const tipo = selectTipoIngreso.value;
+      const notaValor = inputNotaIngreso ? inputNotaIngreso.value.trim() : '';
+
+      const datosIngreso = {
+        placa,
+        tipo,
+        nota: notaValor.length > 0 ? notaValor : null
+      };
 
       if (btnRegistrarIngreso) {
         btnRegistrarIngreso.classList.add('loading');
@@ -513,8 +522,14 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const ingreso = await pedirApi('/api/ingresos', {
           method: 'POST',
-          body: JSON.stringify({ placa, tipo })
+          body: JSON.stringify(datosIngreso)
         });
+
+        if (notaValor.length > 0) {
+          guardarNotaLocal(placa, notaValor);
+        } else {
+          eliminarNotaLocal(placa);
+        }
 
         mostrarToast(ingreso.mensaje || `Ingreso registrado: Placa [${placa}]`);
         limpiarFormularioIngreso();
@@ -545,6 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectMetodoPago = document.getElementById('select-metodo-pago');
   const btnRegistrarSalida = document.getElementById('btn-registrar-salida');
   const btnCancelarSalida = document.getElementById('btn-cancelar-salida');
+  const salidaNotaContainer = document.getElementById('salida-nota-container');
 
   let activos = [];
   let tarifasSalida = [];
@@ -582,7 +598,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function cargarSalida() {
-    activos = await pedirApi('/api/ingresos/activos');
+    try {
+      activos = await pedirApi('/api/salidas/activos');
+    } catch (_) {
+      activos = await pedirApi('/api/ingresos/activos');
+    }
     tarifasSalida = await pedirApi('/api/tarifas');
     activoSeleccionado = null;
     if (inputBuscarPlaca) inputBuscarPlaca.value = '';
@@ -626,12 +646,85 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function guardarNotaLocal(placa, nota) {
+    try {
+      const limpia = String(placa || '').replace(/[^A-Z0-9]/g, '');
+      if (!limpia) return;
+      if (nota && nota.trim().length > 0) {
+        localStorage.setItem(`cochera_nota_${limpia}`, nota.trim());
+      } else {
+        localStorage.removeItem(`cochera_nota_${limpia}`);
+      }
+    } catch (_) {}
+  }
+
+  function obtenerNotaLocal(placa) {
+    try {
+      const limpia = String(placa || '').replace(/[^A-Z0-9]/g, '');
+      if (!limpia) return '';
+      return localStorage.getItem(`cochera_nota_${limpia}`) || '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function eliminarNotaLocal(placa) {
+    try {
+      const limpia = String(placa || '').replace(/[^A-Z0-9]/g, '');
+      if (limpia) localStorage.removeItem(`cochera_nota_${limpia}`);
+    } catch (_) {}
+  }
+
+  function renderNotaSalida(activo) {
+    if (!salidaNotaContainer) return;
+
+    salidaNotaContainer.innerHTML = '';
+    if (!activo) return;
+
+    const notaApi = typeof activo.nota === 'string' ? activo.nota.trim() : '';
+    const notaLocal = obtenerNotaLocal(activo.placa);
+    const nota = notaApi || notaLocal;
+
+    if (nota.length > 0) {
+      const card = document.createElement('div');
+      card.className = 'callout-nota callout-nota-alerta';
+
+      const header = document.createElement('div');
+      header.className = 'callout-nota-header';
+
+      const titulo = document.createElement('span');
+      titulo.className = 'callout-nota-titulo';
+      titulo.textContent = 'Observación registrada al ingreso:';
+
+      header.appendChild(titulo);
+
+      const texto = document.createElement('p');
+      texto.className = 'callout-nota-texto';
+      texto.textContent = nota;
+
+      card.appendChild(header);
+      card.appendChild(texto);
+      salidaNotaContainer.appendChild(card);
+    } else {
+      const neutro = document.createElement('div');
+      neutro.className = 'callout-nota-neutro';
+
+      const texto = document.createElement('span');
+      texto.className = 'callout-nota-texto-neutro';
+      texto.textContent = 'Sin observaciones registradas';
+
+      neutro.appendChild(texto);
+      salidaNotaContainer.appendChild(neutro);
+    }
+  }
+
   function mostrarResumen(activo) {
     if (!salidaResumen || !salidaVacio) return;
 
     if (!activo) {
       salidaResumen.style.display = 'none';
       salidaVacio.style.display = '';
+      if (salidaNotaContainer) salidaNotaContainer.innerHTML = '';
       return;
     }
 
@@ -642,6 +735,8 @@ document.addEventListener('DOMContentLoaded', () => {
     salidaTipo.textContent = activo.tipo;
     salidaHoraEntrada.textContent = formatearHora(activo.horaIngreso);
     salidaTiempo.textContent = `${cobro.horas} h ${cobro.minutos} min`;
+
+    renderNotaSalida(activo);
 
     if (tarifa) {
       salidaTarifa.textContent = `S/ ${tarifa.precioHora.toFixed(2)} /h + S/ ${tarifa.precioFraccion.toFixed(2)} fracción`;
@@ -737,6 +832,8 @@ document.addEventListener('DOMContentLoaded', () => {
             metodoPago: metodo
           })
         });
+
+        eliminarNotaLocal(activoSeleccionado.placa);
 
         mostrarToast(respuesta.mensaje || 'Salida registrada exitosamente.');
         await cargarSalida();

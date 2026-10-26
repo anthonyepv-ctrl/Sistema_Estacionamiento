@@ -381,6 +381,21 @@
               <span class="caption">Se preselecciona automáticamente según la placa (editable)</span>
             </div>
 
+            <!-- Notas / Observaciones del Vehículo (UPAO-9) -->
+            <div class="form-group">
+              <label for="input-nota-ingreso" class="form-label">
+                <span>Notas / Observaciones del vehículo</span>
+                <span class="caption-opcional">(Opcional)</span>
+              </label>
+              <textarea
+                id="input-nota-ingreso"
+                class="input-control textarea-nota"
+                rows="2"
+                placeholder="Ej. Rayón en puerta derecha, abolladuras, estado físico (opcional)..."
+              ></textarea>
+              <span class="caption">Observaciones físicas del estado del vehículo</span>
+            </div>
+
             <div class="form-actions">
               <button type="submit" id="btn-registrar-ingreso" class="btn btn-success" style="flex: 2;">
                 Registrar Ingreso
@@ -502,6 +517,10 @@
               <span class="caption">Tiempo transcurrido</span>
               <span class="preview-value mono" id="salida-tiempo">—</span>
             </div>
+
+            <!-- Observación Registrada al Ingreso (UPAO-9) -->
+            <div id="salida-nota-container" class="salida-nota-container"></div>
+
             <div class="preview-row">
               <span class="caption">Tarifa aplicada</span>
               <span class="preview-value mono" id="salida-tarifa">—</span>
