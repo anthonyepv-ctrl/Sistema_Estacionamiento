@@ -391,9 +391,13 @@
                 id="input-nota-ingreso"
                 class="input-control textarea-nota"
                 rows="2"
+                maxlength="250"
                 placeholder="Ej. Rayón en puerta derecha, abolladuras, estado físico (opcional)..."
               ></textarea>
-              <span class="caption">Observaciones físicas del estado del vehículo</span>
+              <div class="nota-footer">
+                <span class="caption">Observaciones físicas del estado del vehículo</span>
+                <span id="contador-nota" class="contador-nota mono">0/250</span>
+              </div>
             </div>
 
             <div class="form-actions">

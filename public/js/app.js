@@ -345,6 +345,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const previewPlaca = document.getElementById('preview-placa');
   const previewTipo = document.getElementById('preview-tipo');
   const inputNotaIngreso = document.getElementById('input-nota-ingreso');
+  const contadorNota = document.getElementById('contador-nota');
+
+  function actualizarContadorNota() {
+    if (!inputNotaIngreso || !contadorNota) return;
+    const largo = inputNotaIngreso.value.length;
+    contadorNota.textContent = `${largo}/250`;
+    contadorNota.classList.toggle('limite', largo >= 250);
+  }
+
+  if (inputNotaIngreso) {
+    inputNotaIngreso.addEventListener('input', actualizarContadorNota);
+  }
 
   const PLACA_REGEX = {
     auto: /^[A-Z0-9]{3}-?[A-Z0-9]{3}$/,
@@ -433,6 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inputPlaca.value = '';
     selectTipoIngreso.value = 'auto';
     if (inputNotaIngreso) inputNotaIngreso.value = '';
+    actualizarContadorNota();
     limpiarErrores(inputPlaca);
     actualizarVistaPrevia();
     inputPlaca.focus();
