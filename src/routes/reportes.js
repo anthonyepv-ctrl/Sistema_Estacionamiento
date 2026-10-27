@@ -264,6 +264,117 @@ async function consultarPagosPeriodo(anio, mes) {
 }
 
 /**
+ * Función central de agregación estadística (UPAO-18 / UPAO-65 / UPAO-66).
+ * Calcula totales, serie diaria por método de pago, concurrencia horaria y consolidado por método.
+ */
+async function generarReporteGraficos(periodo, anio, mes) {
+  const { pagos, rango } = await consultarPagosPeriodo(anio, mes);
+  const metodos = new Map();
+  const dias = new Map();
+  const meses = new Map();
+  const horas = new Map();
+  let totalGeneral = 0;
+
+  for (const pago of pagos) {
+    const monto = redondear(pago.monto);
+    const partes = obtenerPartesPeru(new Date(pago.fechaHora));
+    const metodo = normalizarMetodo(pago.metodoPago ? pago.metodoPago.nombre : null);
+    totalGeneral = redondear(totalGeneral + monto);
+
+    if (!metodos.has(metodo)) metodos.set(metodo, { nombre: metodo, monto: 0, cantidad: 0 });
+    const itemMetodo = metodos.get(metodo);
+    itemMetodo.monto = redondear(itemMetodo.monto + monto);
+    itemMetodo.cantidad += 1;
+
+    const claveDia = `${partes.anio}-${partes.mes}-${partes.dia}`;
+    if (!dias.has(claveDia)) dias.set(claveDia, { monto: 0, vehiculos: 0 });
+    const itemDia = dias.get(claveDia);
+    itemDia.monto = redondear(itemDia.monto + monto);
+    itemDia.vehiculos += 1;
+
+    if (!meses.has(partes.mes)) meses.set(partes.mes, { monto: 0, vehiculos: 0 });
+    const itemMes = meses.get(partes.mes);
+    itemMes.monto = redondear(itemMes.monto + monto);
+    itemMes.vehiculos += 1;
+
+    if (partes.hora >= 6 && partes.hora <= 23) {
+      if (!horas.has(partes.hora)) horas.set(partes.hora, { vehiculos: 0, monto: 0 });
+      const itemHora = horas.get(partes.hora);
+      itemHora.vehiculos += 1;
+      itemHora.monto = redondear(itemHora.monto + monto);
+    }
+  }
+
+  const porMetodo = [...metodos.values()]
+    .map((item) => ({
+      ...item,
+      porcentaje: totalGeneral > 0 ? redondear((item.monto / totalGeneral) * 100) : 0
+    }))
+    .sort((a, b) => b.monto - a.monto);
+
+  const totalEfectivo = redondear(porMetodo.find((item) => item.nombre.toLowerCase().includes('efectivo')) ? porMetodo.find((item) => item.nombre.toLowerCase().includes('efectivo')).monto : 0);
+  const totalYape = redondear(porMetodo.find((item) => item.nombre.toLowerCase().includes('yape')) ? porMetodo.find((item) => item.nombre.toLowerCase().includes('yape')).monto : 0);
+  const porcentajeEfectivo = totalGeneral > 0 ? redondear((totalEfectivo / totalGeneral) * 100) : 0;
+  const porcentajeYape = totalGeneral > 0 ? redondear((totalYape / totalGeneral) * 100) : 0;
+
+  let serieDiaria = [];
+  if (periodo === 'mensual') {
+    serieDiaria = Array.from({ length: rango.ultimoDia }, (_, indice) => {
+      const dia = indice + 1;
+      const item = dias.get(`${anio}-${mes}-${dia}`) || { monto: 0, vehiculos: 0 };
+      return { dia, monto: item.monto, efectivo: 0, yape: 0, vehiculos: item.vehiculos };
+    });
+
+    for (const pago of pagos) {
+      const partes = obtenerPartesPeru(new Date(pago.fechaHora));
+      const metodo = normalizarMetodo(pago.metodoPago ? pago.metodoPago.nombre : null).toLowerCase();
+      const fila = serieDiaria[partes.dia - 1];
+      if (!fila) continue;
+      if (metodo.includes('efectivo')) fila.efectivo = redondear(fila.efectivo + redondear(pago.monto));
+      if (metodo.includes('yape')) fila.yape = redondear(fila.yape + redondear(pago.monto));
+    }
+  }
+
+  let serieMensual = [];
+  if (periodo === 'anual') {
+    serieMensual = MESES_ES.map((nombre, indice) => {
+      const numeroMes = indice + 1;
+      const item = meses.get(numeroMes) || { monto: 0, vehiculos: 0 };
+      return { mes: numeroMes, nombre, monto: item.monto, vehiculos: item.vehiculos };
+    });
+  }
+
+  const concurrenciaHoraria = Array.from({ length: 18 }, (_, indice) => {
+    const hora = indice + 6;
+    const item = horas.get(hora) || { vehiculos: 0, monto: 0 };
+    return { hora, vehiculos: item.vehiculos, monto: item.monto };
+  });
+
+  const etiquetaPeriodo = periodo === 'anual' ? `Año ${anio}` : `${MESES_ES[mes - 1]} ${anio}`;
+
+  return {
+    periodo,
+    anio,
+    mes,
+    etiquetaPeriodo,
+    tieneDatos: pagos.length > 0,
+    mensaje: pagos.length > 0 ? null : 'No se registran ingresos para el período seleccionado',
+    totales: {
+      totalGeneral,
+      totalEfectivo,
+      totalYape,
+      concurrenciaTotal: pagos.length,
+      porcentajeEfectivo,
+      porcentajeYape,
+      porMetodo
+    },
+    serieDiaria,
+    concurrenciaHoraria,
+    serieMensual
+  };
+}
+
+/**
  * GET /api/reportes/graficos?periodo=mensual|anual&anio=YYYY&mes=MM
  * Datos reales para el dashboard estadístico del dueño (UPAO-18 / UPAO-65).
  */
@@ -276,112 +387,34 @@ router.get('/graficos', async (req, res) => {
   const { periodo, anio, mes } = validacion;
 
   try {
-    const { pagos, rango } = await consultarPagosPeriodo(anio, mes);
-    const metodos = new Map();
-    const dias = new Map();
-    const meses = new Map();
-    const horas = new Map();
-    let totalGeneral = 0;
-
-    for (const pago of pagos) {
-      const monto = redondear(pago.monto);
-      const partes = obtenerPartesPeru(new Date(pago.fechaHora));
-      const metodo = normalizarMetodo(pago.metodoPago ? pago.metodoPago.nombre : null);
-      totalGeneral = redondear(totalGeneral + monto);
-
-      if (!metodos.has(metodo)) metodos.set(metodo, { nombre: metodo, monto: 0, cantidad: 0 });
-      const itemMetodo = metodos.get(metodo);
-      itemMetodo.monto = redondear(itemMetodo.monto + monto);
-      itemMetodo.cantidad += 1;
-
-      const claveDia = `${partes.anio}-${partes.mes}-${partes.dia}`;
-      if (!dias.has(claveDia)) dias.set(claveDia, { monto: 0, vehiculos: 0 });
-      const itemDia = dias.get(claveDia);
-      itemDia.monto = redondear(itemDia.monto + monto);
-      itemDia.vehiculos += 1;
-
-      if (!meses.has(partes.mes)) meses.set(partes.mes, { monto: 0, vehiculos: 0 });
-      const itemMes = meses.get(partes.mes);
-      itemMes.monto = redondear(itemMes.monto + monto);
-      itemMes.vehiculos += 1;
-
-      if (partes.hora >= 6 && partes.hora <= 23) {
-        if (!horas.has(partes.hora)) horas.set(partes.hora, { vehiculos: 0, monto: 0 });
-        const itemHora = horas.get(partes.hora);
-        itemHora.vehiculos += 1;
-        itemHora.monto = redondear(itemHora.monto + monto);
-      }
-    }
-
-    const porMetodo = [...metodos.values()]
-      .map((item) => ({
-        ...item,
-        porcentaje: totalGeneral > 0 ? redondear((item.monto / totalGeneral) * 100) : 0
-      }))
-      .sort((a, b) => b.monto - a.monto);
-
-    const totalEfectivo = redondear(porMetodo.find((item) => item.nombre.toLowerCase().includes('efectivo')) ? porMetodo.find((item) => item.nombre.toLowerCase().includes('efectivo')).monto : 0);
-    const totalYape = redondear(porMetodo.find((item) => item.nombre.toLowerCase().includes('yape')) ? porMetodo.find((item) => item.nombre.toLowerCase().includes('yape')).monto : 0);
-    const porcentajeEfectivo = totalGeneral > 0 ? redondear((totalEfectivo / totalGeneral) * 100) : 0;
-    const porcentajeYape = totalGeneral > 0 ? redondear((totalYape / totalGeneral) * 100) : 0;
-
-    let serieDiaria = [];
-    if (periodo === 'mensual') {
-      serieDiaria = Array.from({ length: rango.ultimoDia }, (_, indice) => {
-        const dia = indice + 1;
-        const item = dias.get(`${anio}-${mes}-${dia}`) || { monto: 0, vehiculos: 0 };
-        return { dia, monto: item.monto, efectivo: 0, yape: 0, vehiculos: item.vehiculos };
-      });
-
-      for (const pago of pagos) {
-        const partes = obtenerPartesPeru(new Date(pago.fechaHora));
-        const metodo = normalizarMetodo(pago.metodoPago ? pago.metodoPago.nombre : null).toLowerCase();
-        const fila = serieDiaria[partes.dia - 1];
-        if (!fila) continue;
-        if (metodo.includes('efectivo')) fila.efectivo = redondear(fila.efectivo + redondear(pago.monto));
-        if (metodo.includes('yape')) fila.yape = redondear(fila.yape + redondear(pago.monto));
-      }
-    }
-
-    let serieMensual = [];
-    if (periodo === 'anual') {
-      serieMensual = MESES_ES.map((nombre, indice) => {
-        const numeroMes = indice + 1;
-        const item = meses.get(numeroMes) || { monto: 0, vehiculos: 0 };
-        return { mes: numeroMes, nombre, monto: item.monto, vehiculos: item.vehiculos };
-      });
-    }
-
-    const concurrenciaHoraria = Array.from({ length: 18 }, (_, indice) => {
-      const hora = indice + 6;
-      const item = horas.get(hora) || { vehiculos: 0, monto: 0 };
-      return { hora, vehiculos: item.vehiculos, monto: item.monto };
-    });
-
-    const etiquetaPeriodo = periodo === 'anual' ? `Año ${anio}` : `${MESES_ES[mes - 1]} ${anio}`;
-
-    return res.json({
-      periodo,
-      anio,
-      mes,
-      etiquetaPeriodo,
-      tieneDatos: pagos.length > 0,
-      totales: {
-        totalGeneral,
-        totalEfectivo,
-        totalYape,
-        concurrenciaTotal: pagos.length,
-        porcentajeEfectivo,
-        porcentajeYape,
-        porMetodo
-      },
-      serieDiaria,
-      concurrenciaHoraria,
-      serieMensual
-    });
+    const resultado = await generarReporteGraficos(periodo, anio, mes);
+    return res.json(resultado);
   } catch (error) {
     console.error('Error al obtener gráficos estadísticos:', error);
     return res.status(500).json({ error: 'No se pudieron obtener los datos estadísticos.' });
+  }
+});
+
+/**
+ * GET /api/reportes/graficos-mes?mes=MM&anio=YYYY
+ * Endpoint específico de agregaciones mensuales (UPAO-18 / UPAO-66).
+ * Valida meses futuros con HTTP 400 y retorna la serie diaria y consolidado por método de pago.
+ */
+router.get('/graficos-mes', async (req, res) => {
+  req.query.periodo = 'mensual';
+  const validacion = validarPeriodo(req);
+  if (validacion.error) {
+    return res.status(400).json({ error: validacion.error });
+  }
+
+  const { anio, mes } = validacion;
+
+  try {
+    const resultado = await generarReporteGraficos('mensual', anio, mes);
+    return res.json(resultado);
+  } catch (error) {
+    console.error('Error al obtener agregaciones mensuales (graficos-mes):', error);
+    return res.status(500).json({ error: 'No se pudieron obtener los datos estadísticos mensuales.' });
   }
 });
 
