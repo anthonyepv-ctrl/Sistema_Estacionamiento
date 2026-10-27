@@ -201,6 +201,22 @@
           </div>
         </div>
 
+        <!-- Módulo de Gráficos Estadísticos (UPAO-18 / UPAO-65 - Rol Dueño) -->
+        <div class="module-card card-primary" id="card-modulo-estadisticas">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><circle cx="7" cy="15" r="1"/><circle cx="11" cy="11" r="1"/><circle cx="14" cy="14" r="1"/><circle cx="19" cy="8" r="1"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Gráficos Estadísticos</h2>
+            </div>
+            <p>Analice la recaudación mensual y anual, la concurrencia y la distribución por método de pago.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -767,6 +783,110 @@
       </div>
     </section>
 
+    <!-- ----------------------------------------------------------------------
+         8. PANTALLA DE GRÁFICOS ESTADÍSTICOS (UPAO-18 / UPAO-65)
+         ---------------------------------------------------------------------- -->
+    <section id="view-estadisticas" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu-estadisticas">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Estadísticas y Concurrencia</h1>
+        <p>Análisis gráfico de recaudación económica y demanda vehicular</p>
+      </div>
+
+      <div class="card card-filtro-estadisticas">
+        <div class="estadisticas-toolbar">
+          <div class="form-group estadisticas-campo">
+            <span class="form-label">Vista</span>
+            <div class="modo-toggle" role="group" aria-label="Tipo de período">
+              <button type="button" class="modo-btn active" id="modo-mensual">Mensual</button>
+              <button type="button" class="modo-btn" id="modo-anual">Anual</button>
+            </div>
+          </div>
+          <div class="form-group estadisticas-campo">
+            <label for="select-anio-estadisticas" class="form-label"><span>Año</span></label>
+            <select id="select-anio-estadisticas" class="input-control"></select>
+          </div>
+          <div class="form-group estadisticas-campo" id="grupo-mes-estadisticas">
+            <label for="select-mes-estadisticas" class="form-label"><span>Mes</span></label>
+            <select id="select-mes-estadisticas" class="input-control"></select>
+          </div>
+          <div class="form-group estadisticas-campo estadisticas-acciones-campo">
+            <span class="form-label">Acciones</span>
+            <div class="estadisticas-acciones">
+              <button type="button" id="btn-consultar-estadisticas" class="btn btn-primary">Consultar</button>
+              <button type="button" id="btn-exportar-estadisticas" class="btn btn-secondary" title="Exportar a CSV/Excel">📥 Exportar CSV</button>
+            </div>
+          </div>
+        </div>
+        <span class="field-error" id="error-periodo-estadisticas" style="display: none;"></span>
+      </div>
+
+      <div class="metricas-grid">
+        <div class="card metrica-card">
+          <span class="caption">Recaudación Total</span>
+          <h3 class="mono" id="metrica-total">S/ 0.00</h3>
+          <span class="metrica-sub" id="metrica-periodo">—</span>
+        </div>
+        <div class="card metrica-card metrica-efectivo">
+          <span class="caption">Total Efectivo</span>
+          <h3 class="mono" id="metrica-efectivo">S/ 0.00</h3>
+          <span class="metrica-sub" id="metrica-pct-efectivo">0.0%</span>
+        </div>
+        <div class="card metrica-card metrica-yape">
+          <span class="caption">Total Yape</span>
+          <h3 class="mono" id="metrica-yape">S/ 0.00</h3>
+          <span class="metrica-sub" id="metrica-pct-yape">0.0%</span>
+        </div>
+        <div class="card metrica-card">
+          <span class="caption">Total Vehículos</span>
+          <h3 class="mono" id="metrica-vehiculos">0</h3>
+          <span class="metrica-sub">atendidos</span>
+        </div>
+      </div>
+
+      <div class="charts-grid" id="charts-grid-estadisticas">
+        <div class="card chart-card chart-card-barras">
+          <div class="card-header">
+            <h2 id="titulo-grafico-barras">Ingresos Diarios del Mes</h2>
+            <p class="caption" id="subtitulo-grafico-barras">Eje X: días del mes · Eje Y: recaudación (S/)</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          <div class="chart-wrapper" id="chart-barras"></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <h2>Distribución por Método</h2>
+            <p class="caption">Proporción de ingresos: Efectivo vs. Yape</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          <div class="chart-wrapper" id="chart-dona"></div>
+        </div>
+
+        <div class="card chart-card chart-card-horas">
+          <div class="card-header">
+            <h2>Concurrencia Vehicular por Horas</h2>
+            <p class="caption">Afluencia por hora para detectar horas punta</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          <div class="chart-wrapper" id="chart-horas"></div>
+        </div>
+      </div>
+
+      <div class="empty-state-estadisticas" id="estadisticas-vacio" style="display: none;">
+        <div class="empty-state-icon">📊</div>
+        <p class="empty-state-text">No se registran ingresos para el período seleccionado</p>
+        <p class="caption">No existen transacciones ni cobros de vehículos en el período indicado. Puede seleccionar un mes o año anterior para revisar el histórico del negocio.</p>
+      </div>
+
+      <div id="chart-tooltip" class="chart-tooltip" style="display: none;"></div>
+    </section>
+
   </main>
 
   <!-- ========================================================================
@@ -780,5 +900,6 @@
   <script src="js/app.js"></script>
   <script src="js/aforo.js"></script>
   <script src="js/reportes.js"></script>
+  <script src="js/estadisticas.js"></script>
 </body>
 </html>

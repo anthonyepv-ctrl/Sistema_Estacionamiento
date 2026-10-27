@@ -62,12 +62,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardSalida = document.getElementById('card-modulo-salida');
     const cardAforo = document.getElementById('card-modulo-aforo');
     const cardReportes = document.getElementById('card-modulo-reportes');
+    const cardEstadisticas = document.getElementById('card-modulo-estadisticas');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
     if (cardSalida) cardSalida.style.display = esRecepcionista ? '' : 'none';
     if (cardAforo) cardAforo.style.display = (esDueno || esRecepcionista) ? '' : 'none';
     if (cardReportes) cardReportes.style.display = esDueno ? '' : 'none';
+    if (cardEstadisticas) cardEstadisticas.style.display = esDueno ? '' : 'none';
   }
 
   function mostrarToast(mensaje, esError = false) {
