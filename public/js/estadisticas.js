@@ -1,16 +1,12 @@
 /**
  * Módulo de Gráficos Estadísticos (UPAO-18 / UPAO-65)
  * Dashboard interactivo para el rol DUEÑO: selector de período, métricas,
- * gráficos y exportación CSV. Datos demo hasta la integración de la API.
+ * gráficos y exportación CSV conectados a la API de reportes.
  */
 document.addEventListener('DOMContentLoaded', () => {
   const ANIO_MINIMO = 2024;
   const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const MESES_CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  const COLOR_EFECTIVO = '#1E3A8A';
-  const COLOR_YAPE = '#10B981';
-  const TIPO_AUTO = 'Automóvil / Camioneta';
-  const TIPO_MOTO = 'Motocicleta';
 
   const cardModulo = document.getElementById('card-modulo-estadisticas');
   const btnBack = document.getElementById('btn-back-to-menu-estadisticas');
@@ -44,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tooltip = document.getElementById('chart-tooltip');
 
   let modo = 'mensual';
-  let transacciones = [];
+  let datos = null;
   let periodo = { anio: 0, mes: 0 };
 
   function ahoraPeru() {
@@ -69,187 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${(Number(valor) || 0).toFixed(1)}%`;
   }
 
-  function formatearFechaHora(fecha) {
-    return new Date(fecha).toLocaleString('es-PE', {
-      timeZone: 'America/Lima',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }).replace(',', '');
-  }
-
   function formatearDia(anio, mes, dia) {
     return `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${anio}`;
-  }
-
-  function crearRng(semilla) {
-    let estado = semilla >>> 0;
-    return () => {
-      estado |= 0;
-      estado = (estado + 0x6D2B79F5) | 0;
-      let t = Math.imul(estado ^ (estado >>> 15), 1 | estado);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-  function letra(rng) {
-    return LETRAS[Math.floor(rng() * LETRAS.length)];
-  }
-
-  function digito(rng) {
-    return String(Math.floor(rng() * 10));
-  }
-
-  function generarPlaca(rng, esAuto) {
-    if (esAuto) {
-      return `${letra(rng)}${letra(rng)}${letra(rng)}-${digito(rng)}${digito(rng)}${digito(rng)}`;
-    }
-    if (rng() < 0.5) {
-      return `${digito(rng)}${digito(rng)}${digito(rng)}${digito(rng)}-${letra(rng)}${letra(rng)}`;
-    }
-    return `${letra(rng)}${letra(rng)}${letra(rng)}-${digito(rng)}${digito(rng)}${digito(rng)}${digito(rng)}`;
-  }
-
-  function generarMes(anio, mes) {
-    if (anio < 2026 || anio > HOY.anio) return [];
-    if (anio === HOY.anio && mes > HOY.mes) return [];
-
-    const rng = crearRng(anio * 100 + mes);
-    const diasDelMes = new Date(anio, mes, 0).getDate();
-    const ultimoDia = anio === HOY.anio && mes === HOY.mes ? HOY.dia : diasDelMes;
-    const lista = [];
-    let id = 1;
-
-    for (let dia = 1; dia <= ultimoDia; dia += 1) {
-      const fechaDia = new Date(anio, mes - 1, dia);
-      const esFinDeSemana = fechaDia.getDay() === 0 || fechaDia.getDay() === 6;
-      const cantidad = 5 + Math.floor(rng() * 6) + (esFinDeSemana ? 3 : 0);
-
-      for (let i = 0; i < cantidad; i += 1) {
-        const esAuto = rng() < 0.7;
-        const hora = 7 + Math.floor(rng() * 15);
-        const minuto = Math.floor(rng() * 60);
-        const metodo = rng() < 0.62 ? 'Efectivo' : 'Yape';
-        const monto = Math.round((esAuto ? 5 + rng() * 25 : 3 + rng() * 9) * 2) / 2;
-        const fecha = new Date(
-          `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}T${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}:00-05:00`
-        );
-
-        lista.push({
-          id: id++,
-          fecha,
-          anio,
-          mes,
-          dia,
-          hora,
-          placa: generarPlaca(rng, esAuto),
-          tipo: esAuto ? TIPO_AUTO : TIPO_MOTO,
-          metodo,
-          monto
-        });
-      }
-    }
-
-    return lista;
-  }
-
-  function obtenerTransacciones(anio, mes) {
-    if (mes !== null) return generarMes(anio, mes);
-
-    const lista = [];
-    for (let m = 1; m <= 12; m += 1) {
-      if (anio === HOY.anio && m > HOY.mes) break;
-      lista.push(...generarMes(anio, m));
-    }
-    return lista;
-  }
-
-  function calcularTotales(lista) {
-    let efectivo = 0;
-    let yape = 0;
-
-    lista.forEach((item) => {
-      if (item.metodo === 'Efectivo') efectivo += item.monto;
-      else yape += item.monto;
-    });
-
-    const total = efectivo + yape;
-
-    return {
-      total,
-      efectivo,
-      yape,
-      vehiculos: lista.length,
-      pctEfectivo: total > 0 ? (efectivo / total) * 100 : 0,
-      pctYape: total > 0 ? (yape / total) * 100 : 0
-    };
-  }
-
-  function serieDiaria(lista, anio, mes) {
-    const dias = new Date(anio, mes, 0).getDate();
-    const serie = Array.from({ length: dias }, (_, indice) => ({
-      dia: indice + 1,
-      monto: 0,
-      efectivo: 0,
-      yape: 0,
-      vehiculos: 0
-    }));
-
-    lista.forEach((item) => {
-      const fila = serie[item.dia - 1];
-      if (!fila) return;
-      fila.monto += item.monto;
-      fila.vehiculos += 1;
-      if (item.metodo === 'Efectivo') fila.efectivo += item.monto;
-      else fila.yape += item.monto;
-    });
-
-    return serie;
-  }
-
-  function serieMensual(lista) {
-    const serie = MESES_CORTOS.map((nombre, indice) => ({
-      mes: indice + 1,
-      nombre,
-      monto: 0,
-      efectivo: 0,
-      yape: 0,
-      vehiculos: 0
-    }));
-
-    lista.forEach((item) => {
-      const fila = serie[item.mes - 1];
-      if (!fila) return;
-      fila.monto += item.monto;
-      fila.vehiculos += 1;
-      if (item.metodo === 'Efectivo') fila.efectivo += item.monto;
-      else fila.yape += item.monto;
-    });
-
-    return serie;
-  }
-
-  function serieHoraria(lista) {
-    const serie = Array.from({ length: 18 }, (_, indice) => ({
-      hora: indice + 6,
-      vehiculos: 0,
-      monto: 0
-    }));
-
-    lista.forEach((item) => {
-      if (item.hora < 6 || item.hora > 23) return;
-      const fila = serie[item.hora - 6];
-      fila.vehiculos += 1;
-      fila.monto += item.monto;
-    });
-
-    return serie;
   }
 
   function poblarAnios() {
@@ -314,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (errorPeriodo) errorPeriodo.style.display = 'none';
   }
 
-  function consultar() {
+  async function consultar() {
     if (!selectAnio || !selectMes) return;
 
     const anio = Number(selectAnio.value);
@@ -330,33 +147,56 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    ocultarErrorPeriodo();
-
     periodo = { anio, mes: modo === 'mensual' ? mes : null };
-    transacciones = obtenerTransacciones(anio, periodo.mes);
 
-    renderMetricas();
-    renderGraficos();
-    renderEstadoExportacion();
+    if (btnConsultar) {
+      btnConsultar.disabled = true;
+      btnConsultar.textContent = 'Consultando...';
+    }
+
+    try {
+      const parametros = new URLSearchParams({ periodo: modo, anio: String(anio) });
+      if (modo === 'mensual') parametros.set('mes', String(mes));
+
+      const respuesta = await fetch(`/api/reportes/graficos?${parametros.toString()}`);
+      const data = await respuesta.json().catch(() => ({}));
+
+      if (!respuesta.ok) {
+        throw new Error(data.error || 'No se pudieron obtener los datos estadísticos.');
+      }
+
+      datos = data;
+      ocultarErrorPeriodo();
+    } catch (error) {
+      datos = null;
+      mostrarErrorPeriodo(error.message);
+    } finally {
+      if (btnConsultar) {
+        btnConsultar.disabled = false;
+        btnConsultar.textContent = 'Consultar';
+      }
+      renderMetricas();
+      renderGraficos();
+      renderEstadoExportacion();
+    }
   }
 
   function renderMetricas() {
-    const totales = calcularTotales(transacciones);
-    const etiquetaPeriodo = modo === 'anual'
-      ? `Año ${periodo.anio}`
-      : `${MESES[periodo.mes - 1]} ${periodo.anio}`;
+    const totales = datos && datos.totales
+      ? datos.totales
+      : { totalGeneral: 0, totalEfectivo: 0, totalYape: 0, concurrenciaTotal: 0, porcentajeEfectivo: 0, porcentajeYape: 0 };
 
-    if (metricaTotal) metricaTotal.textContent = formatearMoneda(totales.total);
-    if (metricaEfectivo) metricaEfectivo.textContent = formatearMoneda(totales.efectivo);
-    if (metricaYape) metricaYape.textContent = formatearMoneda(totales.yape);
-    if (metricaVehiculos) metricaVehiculos.textContent = totales.vehiculos.toLocaleString('es-PE');
-    if (metricaPeriodo) metricaPeriodo.textContent = etiquetaPeriodo;
-    if (metricaPctEfectivo) metricaPctEfectivo.textContent = formatearPorcentaje(totales.pctEfectivo);
-    if (metricaPctYape) metricaPctYape.textContent = formatearPorcentaje(totales.pctYape);
+    if (metricaTotal) metricaTotal.textContent = formatearMoneda(totales.totalGeneral);
+    if (metricaEfectivo) metricaEfectivo.textContent = formatearMoneda(totales.totalEfectivo);
+    if (metricaYape) metricaYape.textContent = formatearMoneda(totales.totalYape);
+    if (metricaVehiculos) metricaVehiculos.textContent = Number(totales.concurrenciaTotal || 0).toLocaleString('es-PE');
+    if (metricaPeriodo) metricaPeriodo.textContent = datos && datos.etiquetaPeriodo ? datos.etiquetaPeriodo : '—';
+    if (metricaPctEfectivo) metricaPctEfectivo.textContent = formatearPorcentaje(totales.porcentajeEfectivo);
+    if (metricaPctYape) metricaPctYape.textContent = formatearPorcentaje(totales.porcentajeYape);
   }
 
   function renderGraficos() {
-    const tieneDatos = transacciones.length > 0;
+    const tieneDatos = !!(datos && datos.tieneDatos);
 
     if (chartsGrid) chartsGrid.style.display = tieneDatos ? '' : 'none';
     if (estadoVacio) estadoVacio.style.display = tieneDatos ? 'none' : '';
@@ -368,19 +208,17 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const totales = calcularTotales(transacciones);
-
     if (modo === 'anual') {
-      const serie = serieMensual(transacciones);
+      const serie = datos.serieMensual || [];
       dibujarBarras(
         contBarras,
-        serie.map((fila) => fila.nombre),
+        serie.map((fila) => MESES_CORTOS[fila.mes - 1]),
         serie.map((fila) => fila.monto),
         serie.map((fila) => `<strong>${MESES[fila.mes - 1]} ${periodo.anio}</strong><br>${formatearMoneda(fila.monto)} · ${fila.vehiculos} vehículos`),
         'money'
       );
     } else {
-      const serie = serieDiaria(transacciones, periodo.anio, periodo.mes);
+      const serie = datos.serieDiaria || [];
       dibujarBarras(
         contBarras,
         serie.map((fila) => String(fila.dia)),
@@ -390,9 +228,9 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
 
-    dibujarDona(contDona, totales);
+    dibujarDona(contDona, datos.totales);
 
-    const horaria = serieHoraria(transacciones);
+    const horaria = datos.concurrenciaHoraria || [];
     dibujarBarras(
       contHoras,
       horaria.map((fila) => `${String(fila.hora).padStart(2, '0')}:00`),
@@ -404,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderEstadoExportacion() {
     if (!btnExportar) return;
-    const tieneDatos = transacciones.length > 0;
+    const tieneDatos = !!(datos && datos.tieneDatos);
     btnExportar.disabled = !tieneDatos;
     btnExportar.classList.toggle('export-deshabilitado', !tieneDatos);
     btnExportar.title = tieneDatos ? 'Exportar a CSV/Excel' : 'No hay datos disponibles para exportar';
@@ -487,54 +325,64 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function colorMetodo(nombre) {
+    const texto = String(nombre || '').toLowerCase();
+    if (texto.includes('efectivo')) return '#1E3A8A';
+    if (texto.includes('yape')) return '#10B981';
+    if (texto.includes('pos')) return '#F59E0B';
+    return '#6B7280';
+  }
+
   function dibujarDona(contenedor, totales) {
     if (!contenedor) return;
 
+    const items = Array.isArray(totales.porMetodo) && totales.porMetodo.length > 0
+      ? totales.porMetodo
+      : [
+        { nombre: 'Efectivo', monto: totales.totalEfectivo, porcentaje: totales.porcentajeEfectivo },
+        { nombre: 'Yape', monto: totales.totalYape, porcentaje: totales.porcentajeYape }
+      ];
+    const total = Number(totales.totalGeneral) || 0;
     const tamano = 220;
     const centro = 110;
     const radio = 76;
     const grosor = 28;
     const circunferencia = 2 * Math.PI * radio;
-    const proporcionEfectivo = totales.total > 0 ? totales.efectivo / totales.total : 0;
-    const arcoEfectivo = circunferencia * proporcionEfectivo;
-    const arcoYape = circunferencia - arcoEfectivo;
+    let acumulado = 0;
+    let segmentos = '';
 
-    let svg = `<svg viewBox="0 0 ${tamano} ${tamano}" class="chart-svg dona-svg" role="img" aria-label="Distribución por método de pago">`;
-    svg += `<circle cx="${centro}" cy="${centro}" r="${radio}" fill="none" stroke="#E5E7EB" stroke-width="${grosor}" />`;
+    items.forEach((item, indice) => {
+      const proporcion = total > 0 ? (Number(item.monto) || 0) / total : 0;
+      const arco = circunferencia * proporcion;
+      if (arco > 0.01) {
+        segmentos += `<circle class="dona-segmento" data-idx="${indice}" cx="${centro}" cy="${centro}" r="${radio}" fill="none" stroke="${colorMetodo(item.nombre)}" stroke-width="${grosor}" stroke-dasharray="${arco} ${circunferencia - arco}" stroke-dashoffset="${-acumulado}" transform="rotate(-90 ${centro} ${centro})" />`;
+      }
+      acumulado += arco;
+    });
 
-    if (totales.total > 0) {
-      svg += `<circle class="dona-segmento" data-metodo="Efectivo" cx="${centro}" cy="${centro}" r="${radio}" fill="none" stroke="${COLOR_EFECTIVO}" stroke-width="${grosor}" stroke-dasharray="${arcoEfectivo} ${circunferencia - arcoEfectivo}" transform="rotate(-90 ${centro} ${centro})" />`;
-      svg += `<circle class="dona-segmento" data-metodo="Yape" cx="${centro}" cy="${centro}" r="${radio}" fill="none" stroke="${COLOR_YAPE}" stroke-width="${grosor}" stroke-dasharray="${arcoYape} ${circunferencia - arcoYape}" stroke-dashoffset="${-arcoEfectivo}" transform="rotate(-90 ${centro} ${centro})" />`;
-    }
+    const svg = `<svg viewBox="0 0 ${tamano} ${tamano}" class="chart-svg dona-svg" role="img" aria-label="Distribución por método de pago">
+      <circle cx="${centro}" cy="${centro}" r="${radio}" fill="none" stroke="#E5E7EB" stroke-width="${grosor}" />
+      ${segmentos}
+      <text x="${centro}" y="${centro - 6}" text-anchor="middle" class="dona-centro-label">TOTAL</text>
+      <text x="${centro}" y="${centro + 16}" text-anchor="middle" class="dona-centro-valor mono">${formatearMoneda(total)}</text>
+    </svg>`;
 
-    svg += `<text x="${centro}" y="${centro - 6}" text-anchor="middle" class="dona-centro-label">TOTAL</text>`;
-    svg += `<text x="${centro}" y="${centro + 16}" text-anchor="middle" class="dona-centro-valor mono">${formatearMoneda(totales.total)}</text>`;
-    svg += '</svg>';
-
-    const leyenda = `
-      <div class="dona-leyenda">
+    const leyenda = `<div class="dona-leyenda">
+      ${items.map((item) => `
         <div class="dona-item">
-          <span class="dona-dot" style="background:${COLOR_EFECTIVO}"></span>
-          <span class="dona-item-label">Efectivo</span>
-          <span class="dona-item-valor mono">${formatearMoneda(totales.efectivo)}</span>
-          <span class="dona-item-pct mono">${formatearPorcentaje(totales.pctEfectivo)}</span>
-        </div>
-        <div class="dona-item">
-          <span class="dona-dot" style="background:${COLOR_YAPE}"></span>
-          <span class="dona-item-label">Yape</span>
-          <span class="dona-item-valor mono">${formatearMoneda(totales.yape)}</span>
-          <span class="dona-item-pct mono">${formatearPorcentaje(totales.pctYape)}</span>
-        </div>
-      </div>`;
+          <span class="dona-dot" style="background:${colorMetodo(item.nombre)}"></span>
+          <span class="dona-item-label">${item.nombre}</span>
+          <span class="dona-item-valor mono">${formatearMoneda(item.monto)}</span>
+          <span class="dona-item-pct mono">${formatearPorcentaje(item.porcentaje)}</span>
+        </div>`).join('')}
+    </div>`;
 
     contenedor.innerHTML = svg + leyenda;
 
     contenedor.querySelectorAll('.dona-segmento').forEach((segmento) => {
-      const metodo = segmento.getAttribute('data-metodo');
-      const monto = metodo === 'Efectivo' ? totales.efectivo : totales.yape;
-      const porcentaje = metodo === 'Efectivo' ? totales.pctEfectivo : totales.pctYape;
+      const item = items[Number(segmento.getAttribute('data-idx'))];
       segmento.addEventListener('mouseenter', (evento) => {
-        mostrarTooltip(evento, `<strong>${metodo}</strong><br>${formatearMoneda(monto)} · ${formatearPorcentaje(porcentaje)}`);
+        mostrarTooltip(evento, `<strong>${item.nombre}</strong><br>${formatearMoneda(item.monto)} · ${formatearPorcentaje(item.porcentaje)}`);
       });
       segmento.addEventListener('mousemove', moverTooltip);
       segmento.addEventListener('mouseleave', ocultarTooltip);
@@ -542,41 +390,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function exportarCsv() {
-    if (transacciones.length === 0) return;
+    if (!datos || !datos.tieneDatos) return;
 
-    const totales = calcularTotales(transacciones);
-    const filas = [['Fecha', 'Placa', 'Tipo', 'Método', 'Monto']];
-    const ordenadas = transacciones.slice().sort((a, b) => a.fecha - b.fecha);
+    const parametros = new URLSearchParams({ periodo: modo, anio: String(periodo.anio) });
+    if (modo === 'mensual') parametros.set('mes', String(periodo.mes));
 
-    ordenadas.forEach((item) => {
-      filas.push([
-        formatearFechaHora(item.fecha),
-        item.placa,
-        item.tipo,
-        item.metodo,
-        formatearMoneda(item.monto)
-      ]);
-    });
-
-    filas.push(['TOTAL RECAUDADO', '', '', '', formatearMoneda(totales.total)]);
-    filas.push(['TOTAL EFECTIVO', '', '', '', formatearMoneda(totales.efectivo)]);
-    filas.push(['TOTAL YAPE', '', '', '', formatearMoneda(totales.yape)]);
-    filas.push(['TOTAL VEHÍCULOS ATENDIDOS', '', '', '', String(totales.vehiculos)]);
-
-    const contenido = `\uFEFF${filas.map((fila) => fila.map((valor) => `"${String(valor).replace(/"/g, '""')}"`).join(',')).join('\r\n')}`;
-    const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
     const enlace = document.createElement('a');
-
-    enlace.href = url;
-    enlace.download = modo === 'anual'
-      ? `reporte_ingresos_${periodo.anio}.csv`
-      : `reporte_ingresos_${periodo.anio}_${String(periodo.mes).padStart(2, '0')}.csv`;
-
+    enlace.href = `/api/reportes/exportar?${parametros.toString()}`;
+    enlace.download = '';
     document.body.appendChild(enlace);
     enlace.click();
     enlace.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   if (cardModulo) {
@@ -586,9 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (viewEstadisticas) viewEstadisticas.classList.add('active');
       if (selectAnio) selectAnio.value = String(HOY.anio);
       poblarMeses();
-      if (modo === 'mensual' && selectMes) {
-        selectMes.value = String(HOY.mes);
-      }
+      if (modo === 'mensual' && selectMes) selectMes.value = String(HOY.mes);
       consultar();
     });
   }
