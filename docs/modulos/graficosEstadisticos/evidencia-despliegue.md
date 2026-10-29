@@ -1,28 +1,57 @@
 # Evidencia de Despliegue en Ambiente Blue (Staging) — Módulo Gráficos de Ingresos (UPAO-68 / Historia UPAO-18 / Sprint 2)
 
-**Fecha de Integración:** 29/10/2026  
+**Fecha de Integración y Despliegue:** 29/10/2026  
 **Ambiente:** Blue (Staging / Pre-producción) en Render  
 **Base de Datos en la Nube:** PostgreSQL en Neon (Rama `staging`, SSL activo)  
-**Rama Git Base:** `develop`  
 **Historia de Usuario Asociada:** UPAO-18 (*Gráficos de ingresos* — 5 Story Points)  
 **Épica:** UPAO-27 (*Administración y Supervisión del Negocio*)
 
 ---
 
-## 1. Enlaces Principales del Despliegue
+## 1. Enlaces Principales del Despliegue y Repositorio
 
-| Recurso | Descripción | Enlace / Identificador |
+| Recurso | Descripción | Enlace Directo |
 |---|---|---|
-| **Ambiente Blue en Vivo (Staging)** | Servicio web desplegado en Render conectado a la BD Staging | [https://sistema-estacionamiento-yk2d.onrender.com](https://sistema-estacionamiento-yk2d.onrender.com) |
-| **Rama `develop` (Staging)** | Código integrado y sincronizado del Sprint 2 | [anthonyepv-ctrl/Sistema_Estacionamiento (develop)](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/develop) |
-| **Repositorio GitHub** | Repositorio oficial del proyecto | [anthonyepv-ctrl/Sistema_Estacionamiento](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento) |
-| **Ambiente Green (Producción)** | Aislado e intacto en rama `main` (despliegue futuro al cierre de Sprint) | [https://cochera-sp.onrender.com](https://cochera-sp.onrender.com) |
+| **Rama con Todos los Cambios (`develop`)** | Rama integrada del Sprint 2 con todo el módulo de gráficos y no regresión | [anthonyepv-ctrl/Sistema_Estacionamiento (Rama develop)](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/develop) |
+| **Rama de la Subtarea UPAO-68** | Rama feature aislada de la subtarea de despliegue | [feature/UPAO-68-despliegue-ambiente-blue](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/feature/UPAO-68-despliegue-ambiente-blue) |
+| **Comparativa de Cambios (`develop` vs `main`)** | Diff completo de todos los archivos y módulos incorporados frente a producción | [Diff develop...main en GitHub](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/compare/main...develop) |
+| **Commit de Integración y Despliegue** | Commit desplegado en Render Staging (`052df01`) | [Commit `052df01`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/052df01) |
+| **Ambiente Blue en Vivo (Staging)** | Servicio web desplegado en Render conectado a Neon Staging | [https://sistema-estacionamiento-yk2d.onrender.com](https://sistema-estacionamiento-yk2d.onrender.com) |
+| **Ambiente Green (Producción)** | Aislado e intacto en rama `main` (despliegue final al cierre de sprint) | [https://cochera-sp.onrender.com](https://cochera-sp.onrender.com) |
 
 ---
 
-## 2. Evidencias de Pruebas, Calidad y No Regresión
+## 2. Captura y Verificación del Despliegue en Render (Ambiente Blue)
 
-Todas las suites de prueba fueron ejecutadas localmente y validadas contra la base de datos de Neon Staging con 100% de éxito antes del despliegue:
+El despliegue fue ejecutado y validado en el Web Service de Render **`Sistema_Estacionamiento`** sobre la rama **`develop`**:
+
+![Captura de Despliegue Exitoso en Render](evidencias/despliegue_render_blue_upao68.png)
+
+### Ficha Técnica del Despliegue en Render:
+
+* **ID de Despliegue (Deploy ID):** `dep-dbhobo8ae00c73e9rpq0`
+* **Entorno / Workspace:** `cochera-sp-stating` / `develop`
+* **Estado del Servicio:** `Deploy succeeded | Live` (Activo y saludable)
+* **Fecha y Hora de Despliegue:** 29 de octubre de 2026, 12:44:01 PM GMT-5
+* **Duración del Proceso de Build:** 50.6 segundos
+* **Commit Fuente Desplegado:** [`052df01`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/052df01)
+* **Mensaje del Commit:** `docs(reportes): integracion, evidencia de despliegue en ambiente Blue y suite de no regresion (UPAO-68)`
+* **Logs Clave del Build & Deploy:**
+  ```text
+  Prisma schema loaded from prisma/schema.prisma
+  ✔ Generated Prisma Client (v6.19.3) to ./node_modules/@prisma/client in 56ms
+  ==> Uploading build...
+  ==> Build successful 🚀
+  ==> Deploying...
+  ==> Running 'node server.js'
+  Servidor disponible en http://localhost:3000
+  ```
+
+---
+
+## 3. Evidencias de Pruebas, Calidad y No Regresión
+
+Todas las suites de prueba fueron ejecutadas y validadas con 100% de éxito antes del pase al ambiente Blue:
 
 | Recurso / Suite | Tipo de Evidencia | Ubicación en Repositorio |
 |---|---|---|
@@ -32,7 +61,7 @@ Todas las suites de prueba fueron ejecutadas localmente y validadas contra la ba
 | **Suite de API y Agregación** | 6 pruebas unitarias/integración de agregaciones y validación defensiva | [`tests/test-graficos-mes.js`](../../../tests/test-graficos-mes.js) |
 | **Suite de Aseguramiento de No Regresión** | 5 verificaciones de compatibilidad con módulos previos (diario, aforo, salidas) | [`tests/test-no-regresion.js`](../../../tests/test-no-regresion.js) |
 
-### 2.1. Resultados de la Suite de No Regresión (REG-01 a REG-05)
+### 3.1. Resultados de la Suite de No Regresión (REG-01 a REG-05)
 
 ```text
 --- Verificando Aseguramiento de No Regresión (UPAO-68) ---
@@ -54,9 +83,9 @@ Todas las suites de prueba fueron ejecutadas localmente y validadas contra la ba
 
 ---
 
-## 3. Verificación de Funcionamiento en Vivo en Ambiente Blue
+## 4. Verificación de Funcionamiento en Vivo en Ambiente Blue
 
-Pruebas en vivo ejecutadas contra la instancia en Render (`sistema-estacionamiento-yk2d.onrender.com`):
+Pruebas en vivo ejecutadas contra la instancia en Render (`https://sistema-estacionamiento-yk2d.onrender.com`):
 
 1. **Autenticación con Rol DUEÑO (Control de Acceso):**
    * Endpoint: `POST https://sistema-estacionamiento-yk2d.onrender.com/api/auth/login`
@@ -74,7 +103,7 @@ Pruebas en vivo ejecutadas contra la instancia en Render (`sistema-estacionamien
 
 ---
 
-## 4. Trazabilidad Completa de Subtareas de la Historia UPAO-18
+## 5. Trazabilidad Completa de Subtareas de la Historia UPAO-18
 
 La Historia de Usuario **UPAO-18: Gráficos de ingresos** (5 SP) cumplió rigurosamente el ciclo de vida de desarrollo de software acordado:
 
@@ -84,16 +113,16 @@ La Historia de Usuario **UPAO-18: Gráficos de ingresos** (5 SP) cumplió riguro
 | **UPAO-65** | Prototipado | Dashboard visual interactivo, componentes Chart.js y tabs temporal/método de pago | Commit [`31e87d8`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/31e87d8) (PR #20) |
 | **UPAO-66** | Codificación | Endpoint `/api/reportes/graficos-mes`, validación defensiva y agregación SQL | Commit [`ba7d714`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/ba7d714) |
 | **UPAO-67** | Test | Pruebas E2E automatizadas, grabación de video MP4 y Defect Log resuelto | Commit [`4f3d113`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/4f3d113) |
-| **UPAO-68** | Configuración | Aseguramiento de no regresión, despliegue y validación en ambiente Blue (Staging) | Este documento (`evidencia-despliegue.md`) |
+| **UPAO-68** | Configuración | Aseguramiento de no regresión, despliegue y validación en ambiente Blue (Staging) | Este documento (`evidencia-despliegue.md`) y Captura Render |
 
 ---
 
-## 5. Instrucciones para Actualización de Despliegue en Render (Ambiente Blue)
+## 6. Procedimiento para Futuros Despliegues en Render (Ambiente Blue)
 
-El servicio `sistema-estacionamiento-yk2d` en Render se encuentra configurado con disparador manual para optimización de cuota gratuita:
+El servicio `Sistema_Estacionamiento` en Render se encuentra configurado con disparador manual:
 
 1. Ingresar a [Render Dashboard](https://dashboard.render.com).
-2. Seleccionar el servicio **`sistema-estacionamiento-yk2d`**.
+2. Seleccionar el servicio **`Sistema_Estacionamiento`** (dentro del entorno `cochera-sp-stating`).
 3. Hacer clic en el botón superior derecho **`Manual Deploy`**.
-4. Seleccionar la opción **`Deploy latest commit`** (o **`Clear build cache & deploy`** si se requiere regenerar el cliente de Prisma).
+4. Seleccionar la opción **`Deploy latest commit`** (o **`Clear build cache & deploy`** si hubo cambios en Prisma).
 5. Render compilará la rama `develop` y pondrá a disposición inmediata las últimas actualizaciones sin interrumpir el ambiente Green.
