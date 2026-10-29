@@ -16,7 +16,8 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "node prisma/seed.js",
-    "test:e2e": "node tests/e2e-ingreso.js"
+    "test:e2e": "node tests/e2e-ingreso.js",
+    "test:graficos": "node tests/e2e-graficos-estadisticos.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

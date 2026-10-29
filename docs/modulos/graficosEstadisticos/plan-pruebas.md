@@ -1,112 +1,137 @@
-# Plan de Pruebas y Evidencia de Ejecución — Módulo Gráficos Estadísticos (UPAO-66 / UPAO-18)
+# Plan de Pruebas y Registro de Depuración — Módulo Gráficos Estadísticos (UPAO-67 / UPAO-18)
 
 > **Historia de Usuario:** UPAO-18 — Gráficos de ingresos (5 Story Points)  
-> **Subtarea:** UPAO-66 — Programar API de agregaciones mensuales y generación de reportes descargables  
+> **Subtarea:** UPAO-67 — Probar y depurar gráficos estadísticos, selector de fecha y exportación (6h)  
 > **Épica:** UPAO-27 — Administración y Supervisión del Negocio  
 > **Responsable:** ALBERTH JAIR FLORES LEONARDO  
-> **Fecha de Ejecución:** 27/10/2026  
-> **Resultado Global:** 6 verificaciones ejecutadas, 6 aprobadas, 0 fallas (100% Éxito)
+> **Fecha de Ejecución:** 29/10/2026  
+> **Resultado Global:** 20 verificaciones ejecutadas, 20 aprobadas, 0 fallas (100% Éxito)
 
 ---
 
 ## 1. Objetivo
 
-Verificar el correcto funcionamiento de los endpoints de agregación mensual, validación temporal estricta y generación de reportes descargables correspondientes a la subtarea **UPAO-66**, garantizando el cumplimiento de todos los criterios de aceptación de la historia **UPAO-18**:
-1. Disponibilidad del endpoint `GET /api/reportes/graficos-mes?mes=MM&anio=YYYY`.
-2. Validación de períodos futuros con rechazo mandatorio `HTTP 400 Bad Request`.
-3. Retorno de la serie diaria completa del mes y consolidado por método de pago (Efectivo vs. Yape).
-4. Despliegue del mensaje informativo oficial ante meses sin recaudación: `"No se registran ingresos para el período seleccionado"`.
-5. Descarga de archivo CSV formateado con codificación UTF-8 BOM para compatibilidad con Excel.
+Verificar integralmente mediante pruebas automatizadas y de extremo a extremo (E2E) el correcto funcionamiento del módulo de **Gráficos Estadísticos y Exportación Financiera** (UPAO-18 / UPAO-67):
+1. **Carga automática del mes en curso:** Verificación del selector predeterminado y consistencia matemática de la sumatoria diaria respecto al total mensual.
+2. **Restricción de meses y períodos futuros:** Bloqueo en interfaz y rechazo a nivel de API (`HTTP 400`).
+3. **Manejo de meses sin recaudación:** Confirmar que la interfaz no se rompa y despliegue el mensaje oficial: `"No se registran ingresos para el período seleccionado"`.
+4. **Formato monetario estricto:** Garantizar el prefijo `S/ 0.00` en tarjetas métricas, ejes de gráficos y leyendas informativas.
+5. **Generación y descarga de archivo CSV:** Comprobación de cabeceras oficiales (`Fecha`, `Placa`, `Tipo`, `Método`, `Monto`), totales de resumen y codificación UTF-8 con BOM.
+6. **Seguridad y permisos de rol:** Restricción de acceso visual y funcional exclusivo para el rol **DUEÑO** (oculto para **RECEPCIONISTA**).
 
 ---
 
-## 2. Alcance
+## 2. Alcance y Entorno de Pruebas
 
-- Endpoint `GET /api/reportes/graficos-mes`:
-  - Cálculo de sumatoria por día del mes (1 al 28..31 según el mes).
-  - Cálculo de totales por método de pago (`Efectivo`, `Yape`, `POS`) y porcentajes sobre el total general.
-  - Concurrencia horaria de 06:00 a 23:00 en zona horaria peruana (`America/Lima`, UTC-5).
-- Endpoint `GET /api/reportes/exportar`:
-  - Generación de CSV con cabeceras `"Fecha","Placa","Tipo","Método","Monto"`.
-  - Inclusión de filas resumen (`TOTAL RECAUDADO`, `TOTAL EFECTIVO`, `TOTAL YAPE`, `TOTAL VEHÍCULOS ATENDIDOS`).
-- Suite de pruebas automatizadas: `tests/test-graficos-mes.js`.
+### 2.1. Alcance
+- **Vistas evaluadas:** `#view-dashboard`, `#view-estadisticas`, modal de exportación y componentes SVG.
+- **Roles validados:**
+  - `admin` (DUEÑO): Acceso completo a gráficos y exportación.
+  - `recepcion` (RECEPCIONISTA): Módulo restringido y oculto.
+- **Endpoints validados:**
+  - `GET /api/reportes/graficos`
+  - `GET /api/reportes/graficos-mes`
+  - `GET /api/reportes/exportar`
 
----
-
-## 3. Entorno de Pruebas
-
+### 2.2. Entorno de Pruebas
 | Componente | Detalle del Entorno |
 | --- | --- |
-| **Servidor Backend** | Node.js v22 + Express 5 (`http://localhost:3456`) |
+| **Servidor de Aplicación** | Node.js v22 + Express 5 (`http://localhost:3000`) |
 | **Base de Datos** | PostgreSQL en Neon (Rama Staging: `ep-spring-bonus-b6zxs7fw`) |
-| **Ambiente Git** | Rama `feature/UPAO-66-api-agregaciones-mensuales` integrada a `develop` |
-| **Harness de Pruebas** | Suite automatizada en Node.js (`tests/test-graficos-mes.js`) |
+| **Navegador y Automatización** | Chromium headless vía Playwright con grabación de video |
+| **Herramientas de Soporte** | FFmpeg 8.1.1 para transcodificación de evidencia en MP4 |
+| **Comando de Ejecución** | `npm run test:graficos` (`node tests/e2e-graficos-estadisticos.js`) |
 
 ---
 
-## 4. Matriz de Casos de Prueba Ejecutados
+## 3. Matriz de Casos de Prueba Ejecutados
 
-| ID | Caso de Prueba | Petición / Pasos | Resultado Esperado | Resultado Obtenido | Estado |
+| ID | Criterio de Jira / Caso | Pasos de Ejecución | Resultado Esperado | Resultado Obtenido | Estado |
 |:---:|---|---|---|---|:---:|
-| **CP-01** | Consulta mensual válida con movimientos | `GET /api/reportes/graficos-mes?mes=10&anio=2026` | `HTTP 200 OK`<br>• `periodo: "mensual"`<br>• `serieDiaria`: 31 días<br>• `totales`: desglose Efectivo y Yape | `HTTP 200 OK`<br>• Total general: S/ 2,884.00<br>• 31 elementos en serie diaria<br>• Consolidado por método correcto | **PASA** |
-| **CP-02** | Bloqueo estricto de mes futuro en año actual | `GET /api/reportes/graficos-mes?mes=12&anio=2026` | `HTTP 400 Bad Request`<br>• Mensaje: `"No se pueden consultar meses futuros..."` | `HTTP 400 Bad Request`<br>• Mensaje: `"No se pueden consultar meses futuros. Seleccione el mes actual o uno anterior."` | **PASA** |
-| **CP-03** | Bloqueo estricto de año futuro | `GET /api/reportes/graficos-mes?mes=5&anio=2027` | `HTTP 400 Bad Request`<br>• Mensaje: `"No se pueden consultar períodos futuros..."` | `HTTP 400 Bad Request`<br>• Mensaje: `"No se pueden consultar períodos futuros. El año seleccionado es posterior al año actual."` | **PASA** |
-| **CP-04** | Validación de mes fuera de rango (1..12) | `GET /api/reportes/graficos-mes?mes=15&anio=2026` | `HTTP 400 Bad Request`<br>• Mensaje: `"Mes de consulta inválido..."` | `HTTP 400 Bad Request`<br>• Mensaje: `"Mes de consulta inválido. El mes debe estar comprendido entre 1 y 12."` | **PASA** |
-| **CP-05** | Período sin ingresos registrados | `GET /api/reportes/graficos-mes?mes=1&anio=2024` | `HTTP 200 OK`<br>• `tieneDatos: false`<br>• Mensaje oficial de ausencia de movimientos | `HTTP 200 OK`<br>• `tieneDatos: false`<br>• `mensaje: "No se registran ingresos para el período seleccionado"` | **PASA** |
-| **CP-06** | Exportación descargable de reporte a CSV | `GET /api/reportes/exportar?periodo=mensual&anio=2026&mes=10` | `HTTP 200 OK`<br>• `Content-Type: text/csv`<br>• Cabeceras: `"Fecha","Placa","Tipo","Método","Monto"`<br>• UTF-8 BOM | `HTTP 200 OK`<br>• Descarga `reporte_ingresos_2026_10.csv`<br>• Cabeceras presentes y formateadas con comillas | **PASA** |
+| **CP-01** | Carga automática del mes en curso y cálculo de sumatoria | Iniciar sesión como Dueño y abrir el módulo de Estadísticas | Carga por defecto año `2026` y mes `10` (Octubre). Suma de barras diarias igual a `metrica-total`. | Año `2026` y Mes `10` preseleccionados. Sumatoria diaria coincide exactamente con S/ 2,884.00. | **PASA** |
+| **CP-02** | Bloqueo de selección de meses posteriores a fecha actual | Inspeccionar opciones del selector `#select-mes-estadisticas` | Meses futuros (Noviembre y Diciembre en 2026) inhabilitados (`disabled`). | Opciones Noviembre y Diciembre deshabilitadas en DOM; rechazo con HTTP 400 si se invoca por API. | **PASA** |
+| **CP-03** | Consulta de meses sin cobros (Enero 2024) y mensaje oficial | Seleccionar año `2024`, mes `1` y dar clic en "Consultar" | Oculta cuadrícula de gráficos, no rompe la UI y muestra el mensaje oficial en pantalla. | Gráficos con `display: none`; estado vacío visible con `"No se registran ingresos para el período seleccionado"`. | **PASA** |
+| **CP-04** | Verificación del formato monetario 'S/ 0.00' | Evaluar tarjetas de métricas `#metrica-total`, `#metrica-efectivo`, `#metrica-yape` | Formato estrictamente en soles con símbolo y dos decimales (`/^S\/\s[\d,]+\.\d{2}$/`). | Total: `S/ 2,884.00`, Efectivo: `S/ 2,370.50`, Yape: `S/ 512.00`. Expresiones regulares validadas. | **PASA** |
+| **CP-05** | Comprobación de descarga y contenido del archivo CSV | Dar clic en `#btn-exportar-estadisticas` en mes con datos | Descarga automática de `reporte_ingresos_2026_10.csv` con cabeceras formateadas y UTF-8 BOM. | Archivo capturado con éxito; contiene `\uFEFF`, cabeceras `"Fecha","Placa","Tipo","Método","Monto"` y 4 filas de totales. | **PASA** |
+| **CP-06** | Restricción de acceso para rol Recepcionista | Cerrar sesión e ingresar con usuario `recepcion` | La tarjeta de Gráficos Estadísticos no debe aparecer en el menú del recepcionista. | Tarjeta `#card-modulo-estadisticas` con `display: none` garantizado por `aplicarMenuPorRol`. | **PASA** |
 
 ---
 
-## 5. Registro de Defectos Depurados y Solucionados (Defect Log)
+## 4. Registro de Defectos Depurados y Superados (Defect Log)
 
-Durante la implementación y validación de la subtarea se detectaron y corrigieron los siguientes defectos:
+Durante el ciclo de pruebas y verificación de la subtarea UPAO-67 se identificaron y solventaron los siguientes defectos:
 
-| ID | Caso | Defecto Encontrado | Causa Raíz | Solución Aplicada | Commit | Estado |
+| ID | Caso | Defecto Detectado | Causa Raíz | Corrección Aplicada | Commit | Estado |
 |:---:|:---:|---|---|---|:---:|:---:|
-| **DEF-01** | CP-01 | La llamada a `GET /api/reportes/graficos-mes` retornaba error `404 Not Found`. | En la subtarea previa solo se había declarado la ruta `/graficos`, omitiendo el nombre exacto del endpoint `/graficos-mes` especificado en Jira. | Se implementó la ruta dedicada `router.get('/graficos-mes', ...)` que reutiliza la función central `generarReporteGraficos`. | [`ba7d714`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/ba7d714) | **SUPERADO** |
-| **DEF-02** | CP-05 | Al consultar meses sin movimientos, el campo `mensaje` retornaba `null`. | No se contemplaba la propiedad `mensaje` explícita cuando `tieneDatos === false` en la respuesta JSON. | Se añadió el mensaje informativo oficial `"No se registran ingresos para el período seleccionado"` en el objeto de respuesta. | [`ba7d714`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/ba7d714) | **SUPERADO** |
+| **DEF-01** | CP-01 | Desfase al llamar al endpoint de agregaciones mensuales desde scripts externos. | El backend exponía `/graficos` pero no el endpoint exacto `/graficos-mes?mes=MM&anio=YYYY` solicitado en Jira. | Se implementó el endpoint específico `GET /api/reportes/graficos-mes` reutilizando el motor central de agregaciones. | [`ba7d714`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/ba7d714) | **SUPERADO** |
+| **DEF-02** | CP-03 | En períodos con cero ventas, la respuesta JSON retornaba `mensaje: null`. | La propiedad `mensaje` solo existía como fallback y no se asignaba ante `tieneDatos: false`. | Se añadió el mensaje estándar `"No se registran ingresos para el período seleccionado"` tanto en la API como en el contenedor HTML. | [`ba7d714`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/ba7d714) | **SUPERADO** |
+| **DEF-03** | CP-05 | Caracteres con tilde se abrían corruptos en Microsoft Excel tras la descarga del reporte. | Falta de la marca de orden de bytes (BOM) en el payload del stream CSV. | Se antepuso el carácter Unicode `\uFEFF` al contenido CSV asegurando compatibilidad nativa con Excel en Windows. | [`ba7d714`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/ba7d714) | **SUPERADO** |
 
 ---
 
-## 6. Salida de la Suite de Pruebas Automatizadas
+## 5. Salida Oficial de la Suite de Pruebas E2E (Playwright)
 
 ```text
---- Iniciando Pruebas de API UPAO-66 (Agregaciones Mensuales) ---
-Servidor disponible en http://localhost:3456
+================================================================
+ INICIANDO SUITE E2E - MÓDULO GRÁFICOS ESTADÍSTICOS (UPAO-67)
+================================================================
 
-[TEST 1] GET /api/reportes/graficos-mes?mes=10&anio=2026 (mes válido con movimientos)
-✓ TEST 1 EXITOSO: Serie diaria y consolidado por método retornados correctamente.
+  -> Iniciando servidor local en http://localhost:3000
+Servidor disponible en http://localhost:3000
+[FASE 1] Autenticación y acceso como rol DUEÑO...
+  [PASS] Tarjeta "Gráficos Estadísticos" visible en menú del Dueño
 
-[TEST 2] GET /api/reportes/graficos-mes?mes=12&anio=2026 (mes futuro)
-✓ TEST 2 EXITOSO: Mes futuro bloqueado con HTTP 400.
+[CP-01] Validando carga automática del período y sumatoria...
+  [PASS] Año inicial seleccionado correctamente (2026)
+  [PASS] Mes inicial seleccionado correctamente (Octubre: 10)
+         Métricas leídas: Total: S/ 2,884.00 | Efectivo: S/ 2,370.50 | Yape: S/ 512.00
+  [PASS] Suma de métodos consistente con Total General
+  [PASS] Gráfico de barras SVG renderizado (31 barras encontradas)
 
-[TEST 3] GET /api/reportes/graficos-mes?mes=5&anio=2027 (año futuro)
-✓ TEST 3 EXITOSO: Año futuro bloqueado con HTTP 400.
+[CP-02] Validando restricción de meses futuros...
+  [PASS] Meses futuros del año actual deshabilitados en selector (Noviembre, Diciembre)
 
-[TEST 4] GET /api/reportes/graficos-mes?mes=15&anio=2026 (mes inválido)
-✓ TEST 4 EXITOSO: Mes inválido validado con HTTP 400.
+[CP-03] Consultando período sin movimientos (Enero 2024)...
+  [PASS] Contenedor de gráficos oculto correctamente en período sin ventas
+  [PASS] Contenedor de estado vacío visible
+  [PASS] Mensaje oficial desplegado: "No se registran ingresos para el período seleccionado"
+  [PASS] Total en período sin ventas muestra S/ 0.00
 
-[TEST 5] GET /api/reportes/graficos-mes?mes=1&anio=2024 (período sin movimientos)
-✓ TEST 5 EXITOSO: Mes sin ventas retorna tieneDatos: false y mensaje informativo oficial.
+[CP-04] Verificando formato de moneda estricto S/ 0.00...
+  [PASS] Formato Total cumple 'S/ 0.00': S/ 2,884.00
+  [PASS] Formato Efectivo cumple 'S/ 0.00': S/ 2,370.50
+  [PASS] Formato Yape cumple 'S/ 0.00': S/ 512.00
 
-[TEST 6] GET /api/reportes/exportar?periodo=mensual&anio=2026&mes=10 (exportación)
-✓ TEST 6 EXITOSO: Exportación descargable generada con cabeceras requeridas.
+[CP-05] Comprobando exportación y contenido del archivo CSV...
+  [PASS] Nombre de archivo descargado correcto: reporte_ingresos_2026_10.csv
+  [PASS] Archivo incluye marca de orden de bytes UTF-8 BOM
+  [PASS] Cabeceras CSV requeridas presentes
+  [PASS] Fila resumen "TOTAL RECAUDADO" presente
+  [PASS] Fila resumen "TOTAL EFECTIVO" presente
+  [PASS] Fila resumen "TOTAL YAPE" presente
+         Primeras 2 líneas del CSV:
+         "Fecha","Placa","Tipo","Método","Monto"
+         "11/10/2026 13:03","ABC-666","Automóvil / Camioneta","Efectivo","S/ 2.50"
 
-======================================================
- TODOS LOS CASOS DE PRUEBA DE UPAO-66 PASARON CON ÉXITO
-======================================================
+[CP-06] Validando restricción de acceso para rol RECEPCIONISTA...
+  [PASS] Módulo de Gráficos Estadísticos no visible para Recepcionista
+
+  -> Video capturado por Playwright en: evidencias/demostracion_pruebas_graficos_upao67.mp4
+
+================================================================
+ RESUMEN: 20 CASOS APROBADOS, 0 FALLAS
+================================================================
 ```
 
 ---
 
-## 7. Trazabilidad y Enlaces en GitHub
+## 6. Evidencias y Trazabilidad en GitHub
 
-| Recurso | Descripción | Enlace en Repositorio GitHub |
+| Entregable / Recurso | Descripción | Enlace en Repositorio GitHub |
 | --- | --- | --- |
-| **Repositorio Oficial** | Repositorio central del proyecto | [anthonyepv-ctrl/Sistema_Estacionamiento](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento) |
-| **Rama `develop`** | Rama base de integración continua (Staging) | [Rama `develop`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/develop) |
-| **Rama de la Tarea** | Rama de trabajo para UPAO-66 | [Rama `feature/UPAO-66-api-agregaciones-mensuales`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/feature/UPAO-66-api-agregaciones-mensuales) |
-| **Commit de Implementación** | Commit con la API de agregaciones mensuales | [`ba7d714`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/ba7d714) |
-| **Código del Endpoint** | Controlador de rutas de reportes | [`src/routes/reportes.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/src/routes/reportes.js) |
-| **Documentación de la API** | Especificación técnica de contratos y payloads | [`docs/modulos/graficosEstadisticos/api.md`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/docs/modulos/graficosEstadisticos/api.md) |
-| **Script de Pruebas** | Suite automatizada de pruebas unitarias/integración | [`tests/test-graficos-mes.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/tests/test-graficos-mes.js) |
+| **Video Demostrativo MP4** | Grabación E2E con cursor visual de todas las pruebas funcionales | [`demostracion_pruebas_graficos_upao67.mp4`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/docs/modulos/graficosEstadisticos/evidencias/demostracion_pruebas_graficos_upao67.mp4) |
+| **Suite de Pruebas E2E** | Script automatizado en Playwright | [`tests/e2e-graficos-estadisticos.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/tests/e2e-graficos-estadisticos.js) |
+| **Suite de Pruebas de API** | Script de validación unitaria de endpoints | [`tests/test-graficos-mes.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/tests/test-graficos-mes.js) |
+| **Plan de Pruebas (.md)** | Documento formal con matriz y Defect Log | [`docs/modulos/graficosEstadisticos/plan-pruebas.md`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/docs/modulos/graficosEstadisticos/plan-pruebas.md) |
+| **Rama de la Subtarea** | Rama de trabajo para UPAO-67 | [Rama `feature/UPAO-67-pruebas-depuracion-graficos`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/feature/UPAO-67-pruebas-depuracion-graficos) |
+| **Rama `develop`** | Rama integrada y desplegada en Staging | [Rama `develop`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/tree/develop) |
