@@ -17,7 +17,8 @@
     "db:studio": "prisma studio",
     "db:seed": "node prisma/seed.js",
     "test:e2e": "node tests/e2e-ingreso.js",
-    "test:graficos": "node tests/e2e-graficos-estadisticos.js"
+    "test:graficos": "node tests/e2e-graficos-estadisticos.js",
+    "test:regresion": "node tests/test-no-regresion.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
