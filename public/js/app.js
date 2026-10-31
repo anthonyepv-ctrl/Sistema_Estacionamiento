@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardAforo = document.getElementById('card-modulo-aforo');
     const cardReportes = document.getElementById('card-modulo-reportes');
     const cardEstadisticas = document.getElementById('card-modulo-estadisticas');
+    const cardOcupacion = document.getElementById('card-modulo-ocupacion');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
@@ -70,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cardAforo) cardAforo.style.display = (esDueno || esRecepcionista) ? '' : 'none';
     if (cardReportes) cardReportes.style.display = esDueno ? '' : 'none';
     if (cardEstadisticas) cardEstadisticas.style.display = esDueno ? '' : 'none';
+    if (cardOcupacion) cardOcupacion.style.display = esDueno ? '' : 'none';
   }
 
   function mostrarToast(mensaje, esError = false) {

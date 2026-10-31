@@ -217,6 +217,22 @@
           </div>
         </div>
 
+        <!-- Módulo de Nivel de Ocupación (UPAO-19 / UPAO-70 - Rol Dueño) -->
+        <div class="module-card card-primary" id="card-modulo-ocupacion">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Nivel de Ocupación</h2>
+            </div>
+            <p>Monitoree la concurrencia simultánea, el aforo pico y los bloques horarios de mayor afluencia.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -887,6 +903,83 @@
       <div id="chart-tooltip" class="chart-tooltip" style="display: none;"></div>
     </section>
 
+    <!-- ----------------------------------------------------------------------
+         9. PANTALLA DE NIVEL DE OCUPACIÓN Y AFLUENCIA (UPAO-19 / UPAO-70)
+         ---------------------------------------------------------------------- -->
+    <section id="view-ocupacion" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu-ocupacion">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Nivel de Ocupación y Afluencia</h1>
+        <p>Monitoreo de concurrencia simultánea, aforo pico y bloques horarios</p>
+      </div>
+
+      <div class="card card-filtro-estadisticas">
+        <div class="estadisticas-toolbar">
+          <div class="form-group estadisticas-campo">
+            <label for="ocupacion-fecha-inicio" class="form-label"><span>Fecha Inicio</span></label>
+            <input type="date" id="ocupacion-fecha-inicio" class="input-control">
+          </div>
+          <div class="form-group estadisticas-campo">
+            <label for="ocupacion-fecha-fin" class="form-label"><span>Fecha Fin</span></label>
+            <input type="date" id="ocupacion-fecha-fin" class="input-control">
+          </div>
+          <div class="form-group estadisticas-campo estadisticas-acciones-campo">
+            <span class="form-label">Acciones</span>
+            <div class="estadisticas-acciones">
+              <button type="button" id="btn-consultar-ocupacion" class="btn btn-primary">Consultar</button>
+              <button type="button" id="btn-exportar-ocupacion" class="btn btn-secondary" title="Exportar a CSV/Excel">📥 Exportar CSV/Excel</button>
+              <button type="button" id="btn-imprimir-ocupacion" class="btn btn-secondary" title="Imprimir o guardar como PDF">🖨️ Imprimir / PDF</button>
+            </div>
+          </div>
+        </div>
+        <span class="field-error" id="error-ocupacion" style="display: none;" role="alert"></span>
+      </div>
+
+      <div class="metricas-grid">
+        <div class="card metrica-card">
+          <span class="caption">Total Vehículos</span>
+          <h3 class="mono" id="ocupacion-total-vehiculos">0</h3>
+          <span class="metrica-sub">en el período</span>
+        </div>
+        <div class="card metrica-card">
+          <span class="caption">Total Autos</span>
+          <h3 class="mono" id="ocupacion-total-autos">0</h3>
+          <span class="metrica-sub" id="ocupacion-pct-autos">0.0% del total</span>
+        </div>
+        <div class="card metrica-card">
+          <span class="caption">Total Motos</span>
+          <h3 class="mono" id="ocupacion-total-motos">0</h3>
+          <span class="metrica-sub" id="ocupacion-pct-motos">0.0% del total</span>
+        </div>
+        <div class="card metrica-card metrica-aforo" id="ocupacion-card-aforo">
+          <span class="caption">Aforo Máximo</span>
+          <h3 class="mono" id="ocupacion-aforo-maximo">0 veh. (0%)</h3>
+          <span class="metrica-sub">Pico simultáneo</span>
+        </div>
+      </div>
+
+      <div class="card chart-card ocupacion-chart-card" id="ocupacion-chart-card">
+        <div class="card-header">
+          <h2>Afluencia por Bloques Horarios</h2>
+          <p class="caption">Ingresos agrupados en franjas de 2 horas (hora Perú)</p>
+        </div>
+        <div class="accent-bar-sm"></div>
+        <div class="chart-wrapper" id="ocupacion-chart"></div>
+      </div>
+
+      <div class="empty-state-estadisticas" id="ocupacion-vacio" style="display: none;">
+        <div class="empty-state-icon">📊</div>
+        <p class="empty-state-text">No se registran movimientos ni ingresos para el período seleccionado</p>
+      </div>
+
+      <div id="ocupacion-tooltip" class="chart-tooltip" style="display: none;"></div>
+    </section>
+
   </main>
 
   <!-- ========================================================================
@@ -901,5 +994,6 @@
   <script src="js/aforo.js"></script>
   <script src="js/reportes.js"></script>
   <script src="js/estadisticas.js"></script>
+  <script src="js/ocupacion.js"></script>
 </body>
 </html>
