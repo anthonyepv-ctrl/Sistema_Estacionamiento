@@ -1323,3 +1323,86 @@ select.input-control {
   .metricas-grid { grid-template-columns: 1fr; }
 }
 .btn:disabled.export-deshabilitado { opacity: 0.5; }
+
+/* ==========================================================================
+   UPAO-19 / UPAO-70: NIVEL DE OCUPACION Y AFLUENCIA
+   ========================================================================== */
+.ocupacion-chart-card {
+  margin-top: 20px;
+}
+
+.metrica-aforo {
+  border-top: 3px solid var(--border);
+}
+
+.metrica-aforo.nivel-optimo { border-top-color: var(--success); }
+.metrica-aforo.nivel-alto { border-top-color: var(--accent); }
+.metrica-aforo.nivel-lleno { border-top-color: var(--danger); }
+
+.metrica-aforo.nivel-optimo h3 { color: var(--success); }
+.metrica-aforo.nivel-alto h3 { color: #B45309; }
+.metrica-aforo.nivel-lleno h3 { color: var(--danger); }
+
+.chart-bar-pico {
+  fill: var(--accent);
+  opacity: 0.95;
+}
+
+.chart-bar-pico:hover {
+  fill: #D97706;
+  opacity: 1;
+}
+
+.chart-peak-label {
+  fill: #92400E;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Geist', 'Segoe UI', Arial, sans-serif;
+}
+
+.ocupacion-chart-card .chart-axis-label {
+  font-size: 9px;
+}
+
+@media print {
+  .app-header,
+  .app-footer,
+  .view-top-bar,
+  .estadisticas-acciones-campo,
+  #toast-container {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .view-section {
+    display: none !important;
+  }
+
+  #view-ocupacion.active {
+    display: block !important;
+  }
+
+  #view-ocupacion {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #view-ocupacion .card {
+    box-shadow: none;
+    border: 1px solid #D1D5DB;
+    break-inside: avoid;
+  }
+
+  #view-ocupacion .card-filtro-estadisticas {
+    border: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  #view-ocupacion .chart-card {
+    page-break-inside: avoid;
+  }
+}
