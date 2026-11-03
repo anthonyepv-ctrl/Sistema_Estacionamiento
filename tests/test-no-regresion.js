@@ -22,7 +22,7 @@ function get(path) {
 }
 
 async function testNoRegresion() {
-  console.log('--- Verificando Aseguramiento de No Regresión (UPAO-68) ---');
+  console.log('--- Verificando Aseguramiento de No Regresión (UPAO-73) ---');
   await new Promise((r) => setTimeout(r, 600));
 
   try {
@@ -59,6 +59,28 @@ async function testNoRegresion() {
     assert.strictEqual(resGraficos.status, 200, 'Endpoint /graficos debe responder 200');
     assert.strictEqual(resGraficosMes.status, 200, 'Endpoint /graficos-mes debe responder 200');
     console.log('✓ REG-05 EXITOSO: Endpoints estadísticos operando al 100%.');
+
+    // 6. Módulo de Nivel de Ocupación y Afluencia (UPAO-19 / UPAO-71 / UPAO-73)
+    console.log('[REG-06] Validando endpoint de Nivel de Ocupación...');
+    const resOcupacion = await get('/api/ocupacion?fechaInicio=2026-10-20&fechaFin=2026-10-30');
+    assert.strictEqual(resOcupacion.status, 200, 'Endpoint /api/ocupacion debe responder 200');
+    assert.ok(resOcupacion.data.resumen, 'Estructura de resumen de ocupación presente');
+    assert.ok(Array.isArray(resOcupacion.data.bloquesHorarios), 'Bloques horarios presentes');
+    console.log('✓ REG-06 EXITOSO: Endpoint de ocupación operando al 100%.');
+
+    // 7. Validación defensiva de fechas en Ocupación
+    console.log('[REG-07] Validando rechazo defensivo en fechas futuras y rangos invertidos...');
+    const resFutura = await get('/api/ocupacion?fechaInicio=2027-01-01&fechaFin=2027-01-05');
+    assert.strictEqual(resFutura.status, 400, 'Debe rechazar fechas futuras con 400');
+    const resInvertida = await get('/api/ocupacion?fechaInicio=2026-10-30&fechaFin=2026-10-20');
+    assert.strictEqual(resInvertida.status, 400, 'Debe rechazar rango invertido con 400');
+    console.log('✓ REG-07 EXITOSO: Validaciones defensivas de ocupación intactas.');
+
+    // 8. Exportación de Ocupación
+    console.log('[REG-08] Validando exportación de ocupación en formato CSV...');
+    const resExport = await get('/api/ocupacion/exportar?fechaInicio=2026-10-20&fechaFin=2026-10-30&formato=csv');
+    assert.strictEqual(resExport.status, 200, 'Endpoint /exportar debe responder 200');
+    console.log('✓ REG-08 EXITOSO: Exportación de ocupación operando al 100%.');
 
     console.log('\n======================================================');
     console.log(' NO SE DETECTARON REGRESIONES EN EL SISTEMA (100% OK)');
