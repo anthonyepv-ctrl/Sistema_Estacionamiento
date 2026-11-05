@@ -82,6 +82,18 @@ async function testNoRegresion() {
     assert.strictEqual(resExport.status, 200, 'Endpoint /exportar debe responder 200');
     console.log('✓ REG-08 EXITOSO: Exportación de ocupación operando al 100%.');
 
+    // 9. Vista Pública de Disponibilidad (UPAO-20)
+    console.log('[REG-09] Validando endpoint público de disponibilidad...');
+    const resPublico = await get('/api/publico/disponibilidad');
+    assert.strictEqual(resPublico.status, 200, 'Disponibilidad pública debe responder 200');
+    assert.ok(resPublico.data.autos, 'Panel de autos presente');
+    assert.ok(resPublico.data.motos, 'Panel de motos presente');
+    assert.ok(resPublico.data.total, 'Consolidado total presente');
+    assert.strictEqual(typeof resPublico.data.autos.disponibles, 'number', 'Cupos de autos numéricos');
+    assert.strictEqual(typeof resPublico.data.motos.disponibles, 'number', 'Cupos de motos numéricos');
+    assert.ok(!('placa' in resPublico.data.autos), 'No expone placas de vehículos');
+    console.log('✓ REG-09 EXITOSO: Endpoint público de disponibilidad operando al 100%.');
+
     console.log('\n======================================================');
     console.log(' NO SE DETECTARON REGRESIONES EN EL SISTEMA (100% OK)');
     console.log('======================================================');

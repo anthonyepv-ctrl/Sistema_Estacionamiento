@@ -271,12 +271,12 @@ flowchart TD
 
 ## 11. Lista de Verificación de Criterios (Conformidad de Diseño)
 
-- [ ] **Fórmula especificada:** `Disponibles = Math.max(0, Capacidad - EnCochera - ReservasVigentes)`.
-- [ ] **Término `reservasVigentes` incluido** con valor `0` en Sprint 2 y listo para UPAO-21.
-- [ ] **Acceso público definido:** `GET /api/publico/disponibilidad` sin autenticación.
-- [ ] **Regla de redirección especificada:** verificación de `localStorage` antes de llamar a la API de reserva.
-- [ ] **Estado crítico especificado:** rojo, etiqueta "Aforo lleno", botón `disabled` + guard JS.
-- [ ] **Estado crítico independiente por tipo** de vehículo.
-- [ ] **Polling de 30 s** definido como mecanismo de actualización en tiempo real.
-- [ ] **Integración con módulos existentes** referenciada (espacios, auth, estilos).
-- [ ] **Sin exposición de datos sensibles** en el endpoint público.
+- [x] **Fórmula especificada:** `Disponibles = Math.max(0, Capacidad - EnCochera - ReservasVigentes)`.
+- [x] **Término `reservasVigentes` incluido** con valor `0` en Sprint 2 y listo para UPAO-21.
+- [x] **Acceso público definido:** `GET /api/publico/disponibilidad` sin autenticación.
+- [x] **Regla de redirección especificada:** verificación de `localStorage` antes de llamar a la API de reserva.
+- [x] **Estado crítico especificado:** rojo, etiqueta "Aforo lleno", botón `disabled` + guard JS.
+- [x] **Estado crítico independiente por tipo** de vehículo.
+- [x] **Polling de 30 s** definido como mecanismo de actualización en tiempo real.
+- [x] **Integración con módulos existentes** referenciada (espacios, auth, estilos).
+- [x] **Sin exposición de datos sensibles** en el endpoint público.
