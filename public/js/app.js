@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const sessionUserBadge = document.getElementById('session-user-badge');
 
   function mostrarPantalla(nombre) {
+    if (nombre !== 'disponibilidad' && window.disponibilidadModulo && typeof window.disponibilidadModulo.detener === 'function') {
+      window.disponibilidadModulo.detener();
+    }
+
     document.querySelectorAll('.view-section').forEach((section) => {
       section.classList.remove('active');
     });
@@ -50,6 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const viewReportes = document.getElementById('view-reportes');
       if (viewReportes) viewReportes.classList.add('active');
       headerUserSection.style.display = 'flex';
+    } else if (nombre === 'disponibilidad') {
+      const viewDisponibilidad = document.getElementById('view-disponibilidad');
+      if (viewDisponibilidad) viewDisponibilidad.classList.add('active');
+      headerUserSection.style.display = rolActual ? 'flex' : 'none';
+      if (window.disponibilidadModulo && typeof window.disponibilidadModulo.iniciar === 'function') {
+        window.disponibilidadModulo.iniciar();
+      }
     }
   }
 
@@ -72,6 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cardReportes) cardReportes.style.display = esDueno ? '' : 'none';
     if (cardEstadisticas) cardEstadisticas.style.display = esDueno ? '' : 'none';
     if (cardOcupacion) cardOcupacion.style.display = esDueno ? '' : 'none';
+    const cardDisponibilidad = document.getElementById('card-modulo-disponibilidad');
+    if (cardDisponibilidad) cardDisponibilidad.style.display = '';
   }
 
   function mostrarToast(mensaje, esError = false) {
@@ -168,6 +181,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
+      rolActual = '';
+      if (sessionUserName) sessionUserName.textContent = '';
+      if (sessionUserRole) sessionUserRole.textContent = '';
+      if (sessionUserBadge) sessionUserBadge.textContent = '';
+      if (window.location.hash === '#disponibilidad') {
+        window.location.hash = '';
+      }
       mostrarPantalla('login');
     });
   }
@@ -863,6 +883,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const btnVerDisponibilidadLogin = document.getElementById('btn-ver-disponibilidad-login');
+  if (btnVerDisponibilidadLogin) {
+    btnVerDisponibilidadLogin.addEventListener('click', () => {
+      mostrarPantalla('disponibilidad');
+    });
+  }
+
+  const cardModuloDisponibilidad = document.getElementById('card-modulo-disponibilidad');
+  if (cardModuloDisponibilidad) {
+    cardModuloDisponibilidad.addEventListener('click', () => {
+      mostrarPantalla('disponibilidad');
+    });
+  }
+
+  window.mostrarPantalla = mostrarPantalla;
+  window.mostrarToast = mostrarToast;
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && viewTarifas.classList.contains('active')) {
       cargarTarifaEnFormulario(selectTipo.value);
@@ -875,5 +912,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  mostrarPantalla('login');
+  if (window.location.hash === '#disponibilidad') {
+    mostrarPantalla('disponibilidad');
+  } else {
+    mostrarPantalla('login');
+  }
+
+  window.addEventListener('hashchange', () => {
+    const viewDisponibilidad = document.getElementById('view-disponibilidad');
+    if (window.location.hash === '#disponibilidad') {
+      mostrarPantalla('disponibilidad');
+    } else if (viewDisponibilidad && viewDisponibilidad.classList.contains('active')) {
+      mostrarPantalla(rolActual ? 'dashboard' : 'login');
+    }
+  });
 });

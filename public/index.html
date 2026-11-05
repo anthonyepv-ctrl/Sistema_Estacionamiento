@@ -103,6 +103,14 @@
             <button type="submit" id="btn-login-submit" class="btn btn-primary btn-block" style="margin-top: 24px;">
               Ingresar al Sistema
             </button>
+
+            <!-- Acceso Conductor: Ver Disponibilidad Pública (UPAO-20) -->
+            <div class="login-publico-divider">
+              <span>o</span>
+            </div>
+            <button type="button" id="btn-ver-disponibilidad-login" class="btn btn-secondary btn-block">
+              Ver Espacios Disponibles (Conductor)
+            </button>
           </form>
         </div>
       </div>
@@ -213,6 +221,22 @@
             <p>Analice la recaudación mensual y anual, la concurrencia y la distribución por método de pago.</p>
             <div class="module-card-action">
               <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Módulo de Vista Pública de Disponibilidad (UPAO-20) -->
+        <div class="module-card card-primary" id="card-modulo-disponibilidad">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Espacios Disponibles</h2>
+            </div>
+            <p>Consulte la vista pública en tiempo real de cupos para autos y motos.</p>
+            <div class="module-card-action">
+              <span>Ver Disponibilidad →</span>
             </div>
           </div>
         </div>
@@ -980,6 +1004,121 @@
       <div id="ocupacion-tooltip" class="chart-tooltip" style="display: none;"></div>
     </section>
 
+    <!-- ----------------------------------------------------------------------
+         10. PANTALLA PÚBLICA DE DISPONIBILIDAD DE ESPACIOS (UPAO-20)
+         ---------------------------------------------------------------------- -->
+    <section id="view-disponibilidad" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-disponibilidad">
+          ← Iniciar Sesión / Acceso de Personal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <div class="publico-badge-pill">
+          <span class="badge badge-primary mono">VISTA PÚBLICA</span>
+          <span class="caption">Consulta en tiempo real para conductores</span>
+        </div>
+        <h1>Disponibilidad de Espacios</h1>
+        <p>Consulte los cupos disponibles antes de llegar al estacionamiento</p>
+      </div>
+
+      <div class="disponibilidad-grid">
+        <!-- Panel 1: Automóviles -->
+        <div class="card disponibilidad-card" id="card-disponibilidad-autos">
+          <div class="card-header">
+            <div class="vehiculo-tipo-header">
+              <span class="vehiculo-icono" aria-hidden="true">🚗</span>
+              <div>
+                <h2>Automóviles</h2>
+                <p class="caption">Autos y camionetas</p>
+              </div>
+            </div>
+            <span class="badge badge-success mono" id="badge-estado-autos">DISPONIBLE</span>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <div class="disponibilidad-info-list">
+            <div class="info-row">
+              <span class="caption">Capacidad total:</span>
+              <span class="info-val mono" id="disp-capacidad-autos">--</span>
+            </div>
+            <div class="info-row">
+              <span class="caption">En cochera:</span>
+              <span class="info-val mono" id="disp-encochera-autos">--</span>
+            </div>
+            <div class="info-row">
+              <span class="caption">Reservas vigentes:</span>
+              <span class="info-val mono" id="disp-reservas-autos">0</span>
+            </div>
+          </div>
+
+          <!-- Caja destacada de cupos disponibles -->
+          <div class="cupos-destacados-box" id="cupos-box-autos">
+            <span class="cupos-numero mono" id="disp-cupos-autos">--</span>
+            <span class="cupos-texto" id="disp-texto-autos">espacios disponibles</span>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-block btn-reservar" id="btn-reservar-autos" data-tipo="autos">
+            Reservar espacio
+          </button>
+
+          <div class="disponibilidad-card-footer">
+            <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-autos">--:--:--</span></span>
+          </div>
+        </div>
+
+        <!-- Panel 2: Motocicletas -->
+        <div class="card disponibilidad-card" id="card-disponibilidad-motos">
+          <div class="card-header">
+            <div class="vehiculo-tipo-header">
+              <span class="vehiculo-icono" aria-hidden="true">🏍</span>
+              <div>
+                <h2>Motocicletas</h2>
+                <p class="caption">Motos lineales y afines</p>
+              </div>
+            </div>
+            <span class="badge badge-success mono" id="badge-estado-motos">DISPONIBLE</span>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <div class="disponibilidad-info-list">
+            <div class="info-row">
+              <span class="caption">Capacidad total:</span>
+              <span class="info-val mono" id="disp-capacidad-motos">--</span>
+            </div>
+            <div class="info-row">
+              <span class="caption">En cochera:</span>
+              <span class="info-val mono" id="disp-encochera-motos">--</span>
+            </div>
+            <div class="info-row">
+              <span class="caption">Reservas vigentes:</span>
+              <span class="info-val mono" id="disp-reservas-motos">0</span>
+            </div>
+          </div>
+
+          <!-- Caja destacada de cupos disponibles -->
+          <div class="cupos-destacados-box" id="cupos-box-motos">
+            <span class="cupos-numero mono" id="disp-cupos-motos">--</span>
+            <span class="cupos-texto" id="disp-texto-motos">espacios disponibles</span>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-block btn-reservar" id="btn-reservar-motos" data-tipo="motos">
+            Reservar espacio
+          </button>
+
+          <div class="disponibilidad-card-footer">
+            <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-motos">--:--:--</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="disponibilidad-aviso-reserva">
+        <span class="aviso-icono" aria-hidden="true">ⓘ</span>
+        <span>Al hacer clic en «Reservar espacio» deberás iniciar sesión con tu cuenta de conductor.</span>
+      </div>
+    </section>
+
   </main>
 
   <!-- ========================================================================
@@ -995,5 +1134,6 @@
   <script src="js/reportes.js"></script>
   <script src="js/estadisticas.js"></script>
   <script src="js/ocupacion.js"></script>
+  <script src="js/disponibilidad.js"></script>
 </body>
 </html>

@@ -1406,3 +1406,205 @@ select.input-control {
     page-break-inside: avoid;
   }
 }
+
+/* ==========================================================================
+   UPAO-20: VISTA PUBLICA DE DISPONIBILIDAD
+   ========================================================================== */
+
+.login-publico-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-publico-divider::before,
+.login-publico-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.publico-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.disponibilidad-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.disponibilidad-card {
+  display: flex;
+  flex-direction: column;
+  border-top: 4px solid var(--primary);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.disponibilidad-card.aforo-lleno {
+  border-color: #FECACA;
+  border-top-color: var(--danger);
+  background: #FEF2F2;
+}
+
+.disponibilidad-card .card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vehiculo-tipo-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vehiculo-icono {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EFF6FF;
+  border-radius: var(--radius-md);
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.disponibilidad-card.aforo-lleno .vehiculo-icono {
+  background: #FEE2E2;
+}
+
+.vehiculo-tipo-header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.disponibilidad-info-list {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.info-val {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.cupos-destacados-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 18px 16px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: var(--radius-md);
+  text-align: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.cupos-numero {
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.cupos-texto {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+}
+
+.cupos-destacados-box.lleno {
+  background: #FEE2E2;
+  border-color: #FECACA;
+}
+
+.cupos-destacados-box.lleno .cupos-numero {
+  color: var(--danger);
+}
+
+.cupos-destacados-box.lleno .cupos-texto {
+  color: #991B1B;
+}
+
+.btn-reservar {
+  margin-top: 16px;
+}
+
+.btn.btn-reservar:disabled,
+.btn.btn-reservar.btn-disabled {
+  background: #E5E7EB;
+  border-color: #E5E7EB;
+  color: #9CA3AF;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.disponibilidad-card-footer {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.disponibilidad-aviso-reserva {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: var(--radius-md);
+  color: var(--primary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.aviso-icono {
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.badge-danger {
+  background: var(--danger);
+  color: #fff;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 640px) {
+  .disponibilidad-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-reservar {
+    width: 100%;
+  }
+
+  .cupos-numero {
+    font-size: 36px;
+  }
+}
