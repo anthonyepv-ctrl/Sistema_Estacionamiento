@@ -149,6 +149,16 @@
     }
   }
 
+  /**
+   * Sesión real del sistema: app.js la publica en window.sesionActual al iniciar sesión
+   * y la limpia al cerrar sesión. No se consulta localStorage porque ni el login ni el
+   * logout escriben ahí.
+   */
+  function haySesionActiva() {
+    const sesion = window.sesionActual;
+    return Boolean(sesion && sesion.rol);
+  }
+
   function manejarAccionReservar(tipo) {
     const data = datosDisponibilidad ? datosDisponibilidad[tipo] : null;
 
@@ -159,18 +169,19 @@
     // Guard de seguridad: Si no hay cupos disponibles, no se permite ninguna acción
     if (disponibles === 0) return;
 
-    // Regla CA-06: Verificación de sesión / identidad antes de permitir la reserva
-    const token = localStorage.getItem('token');
-    const usuario = localStorage.getItem('usuario');
-    const headerUser = document.getElementById('header-user-section');
-    const estaAutenticado = Boolean(token || usuario || (headerUser && headerUser.style.display !== 'none'));
-
-    if (!estaAutenticado) {
-      // Redirigir a Login sin llamar a la API ni mostrar mensajes adicionales
+    // Regla CA-06: sin sesión, "Reservar espacio" lleva a la pantalla de Login
+    if (!haySesionActiva()) {
       limpiarHashDisponibilidad();
       if (typeof window.mostrarPantalla === 'function') {
         window.mostrarPantalla('login');
       }
+      return;
+    }
+
+    // Con sesión iniciada la reserva en línea todavía no existe (Historia UPAO-21),
+    // así que el botón informa en lugar de quedarse mudo.
+    if (typeof window.mostrarToast === 'function') {
+      window.mostrarToast('La reserva en línea aún no está habilitada. Por ahora la disponibilidad es solo informativa.', true);
     }
   }
 
@@ -199,11 +210,10 @@
 
     if (btnVolverDisponibilidad) {
       btnVolverDisponibilidad.addEventListener('click', () => {
-        const headerUser = document.getElementById('header-user-section');
-        const estaAutenticado = headerUser && headerUser.style.display !== 'none';
+        const autenticado = haySesionActiva();
         limpiarHashDisponibilidad();
         if (typeof window.mostrarPantalla === 'function') {
-          window.mostrarPantalla(estaAutenticado ? 'dashboard' : 'login');
+          window.mostrarPantalla(autenticado ? 'dashboard' : 'login');
         }
       });
     }
@@ -215,9 +225,7 @@
       iniciarPolling();
       // Ajustar texto del botón volver según si hay sesión abierta o no
       if (btnVolverDisponibilidad) {
-        const headerUser = document.getElementById('header-user-section');
-        const estaAutenticado = headerUser && headerUser.style.display !== 'none';
-        btnVolverDisponibilidad.textContent = estaAutenticado
+        btnVolverDisponibilidad.textContent = haySesionActiva()
           ? '← Volver al Menú Principal'
           : '← Iniciar Sesión / Acceso de Personal';
       }

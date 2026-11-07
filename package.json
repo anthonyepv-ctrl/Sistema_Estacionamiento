@@ -18,6 +18,9 @@
     "db:seed": "node prisma/seed.js",
     "test:e2e": "node tests/e2e-ingreso.js",
     "test:graficos": "node tests/e2e-graficos-estadisticos.js",
+    "test:disponibilidad": "node tests/e2e-disponibilidad.js",
+    "test:integridad": "node tests/test-integridad-cobro.js",
+    "test:auditoria-seguridad": "node tests/auditoria-seguridad-api.js",
     "test:regresion": "node tests/test-no-regresion.js"
   },
   "prisma": {

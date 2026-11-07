@@ -21,6 +21,22 @@ function get(path) {
   });
 }
 
+function getConCabeceras(path) {
+  return new Promise((resolve, reject) => {
+    http.get(`http://localhost:${PORT}${path}`, (res) => {
+      let data = '';
+      res.on('data', (c) => { data += c; });
+      res.on('end', () => {
+        try {
+          resolve({ status: res.statusCode, headers: res.headers, data: JSON.parse(data) });
+        } catch (e) {
+          resolve({ status: res.statusCode, headers: res.headers, data });
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
 async function testNoRegresion() {
   console.log('--- Verificando Aseguramiento de No Regresión (UPAO-73) ---');
   await new Promise((r) => setTimeout(r, 600));
@@ -93,6 +109,29 @@ async function testNoRegresion() {
     assert.strictEqual(typeof resPublico.data.motos.disponibles, 'number', 'Cupos de motos numéricos');
     assert.ok(!('placa' in resPublico.data.autos), 'No expone placas de vehículos');
     console.log('✓ REG-09 EXITOSO: Endpoint público de disponibilidad operando al 100%.');
+
+    // 10. Invariantes del aforo público (UPAO-77): sin caché, sin negativos, fórmula exacta
+    console.log('[REG-10] Validando invariantes del aforo público...');
+    const resAforo = await getConCabeceras('/api/publico/disponibilidad');
+    assert.ok(
+      String(resAforo.headers['cache-control'] || '').includes('no-store'),
+      'Los cupos no deben poder cachearse (Cache-Control: no-store)'
+    );
+    for (const tipo of ['autos', 'motos']) {
+      const panel = resAforo.data[tipo];
+      assert.ok(panel.disponibles >= 0, `${tipo} no puede reportar cupos negativos`);
+      assert.strictEqual(
+        panel.disponibles,
+        Math.max(0, panel.capacidad - panel.enCochera - panel.reservasVigentes),
+        `${tipo} debe cumplir capacidad - enCochera - reservas con piso en 0`
+      );
+    }
+    assert.strictEqual(
+      typeof resAforo.data.total.otrosEnCochera,
+      'number',
+      'El consolidado debe reportar las estadías de tipos distintos de auto/moto'
+    );
+    console.log('✓ REG-10 EXITOSO: Invariantes del aforo público intactas.');
 
     console.log('\n======================================================');
     console.log(' NO SE DETECTARON REGRESIONES EN EL SISTEMA (100% OK)');

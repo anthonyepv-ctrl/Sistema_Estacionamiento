@@ -1596,6 +1596,28 @@ select.input-control {
 }
 
 @media (max-width: 640px) {
+  .app-header {
+    padding: 0 12px;
+  }
+
+  .header-user-section {
+    gap: 8px;
+  }
+
+  .brand-info p {
+    display: none;
+  }
+
+  .user-meta .user-role {
+    display: none;
+  }
+
+  .btn-logout {
+    padding: 4px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
   .disponibilidad-grid {
     grid-template-columns: 1fr;
   }

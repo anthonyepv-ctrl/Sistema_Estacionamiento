@@ -127,6 +127,18 @@ router.post('/', async (req, res) => {
     );
 
     const resultado = await prisma.$transaction(async (tx) => {
+      // Cierre condicional: únicamente la petición que encuentre la estadía todavía abierta
+      // puede cerrarla. Un segundo envío simultáneo (doble clic) obtiene count = 0 y no
+      // genera un segundo cobro, evitando duplicar la recaudación.
+      const cierre = await tx.estadia.updateMany({
+        where: { id: estadia.id, horaSalida: null },
+        data: { horaSalida }
+      });
+
+      if (cierre.count === 0) {
+        return null;
+      }
+
       const nuevoPago = await tx.pago.create({
         data: {
           idMetodoPago: metodo.id,
@@ -139,10 +151,7 @@ router.post('/', async (req, res) => {
 
       const estadiaActualizada = await tx.estadia.update({
         where: { id: estadia.id },
-        data: {
-          horaSalida,
-          idPago: nuevoPago.id
-        },
+        data: { idPago: nuevoPago.id },
         include: {
           tipoVehiculo: true
         }
@@ -150,6 +159,12 @@ router.post('/', async (req, res) => {
 
       return { nuevoPago, estadiaActualizada };
     });
+
+    if (!resultado) {
+      return res.status(409).json({
+        error: 'La salida de este vehículo ya fue registrada por otra operación. Recargue la lista de vehículos activos.'
+      });
+    }
 
     return res.status(200).json({
       mensaje: `Salida registrada: Placa [${resultado.estadiaActualizada.placa}] · S/ ${cobro.monto.toFixed(2)} · ${metodo.nombre}`,

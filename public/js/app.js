@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         rolActual = sesion.rol;
+        window.sesionActual = { usuario: sesion.usuario, nombre: sesion.nombre, rol: sesion.rol };
 
         if (sessionUserName) sessionUserName.textContent = sesion.nombre;
         if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
@@ -182,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
       rolActual = '';
+      window.sesionActual = null;
       if (sessionUserName) sessionUserName.textContent = '';
       if (sessionUserRole) sessionUserRole.textContent = '';
       if (sessionUserBadge) sessionUserBadge.textContent = '';

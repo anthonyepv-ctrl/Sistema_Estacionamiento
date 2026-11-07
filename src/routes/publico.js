@@ -6,19 +6,28 @@ const router = express.Router();
 
 /**
  * Consulta la cantidad de estadías activas (horaSalida IS NULL) agrupadas por tipo de vehículo.
+ * Se agrupa por idTipoVehiculo en lugar de consultar dos nombres fijos, para no perder de vista
+ * estadías de otros tipos (p. ej. "Reserva Web") que también ocupan un espacio físico.
  */
 async function obtenerEstadiasActivasPorTipo() {
-  const [tipoAuto, tipoMoto] = await Promise.all([
-    prisma.tipoVehiculo.findUnique({ where: { nombre: 'Automóvil / Camioneta' } }),
-    prisma.tipoVehiculo.findUnique({ where: { nombre: 'Motocicleta' } })
+  const [tipos, agrupado] = await Promise.all([
+    prisma.tipoVehiculo.findMany({ select: { id: true, nombre: true } }),
+    prisma.estadia.groupBy({
+      by: ['idTipoVehiculo'],
+      where: { horaSalida: null },
+      _count: { _all: true }
+    })
   ]);
 
-  const [ocupadosAutos, ocupadosMotos] = await Promise.all([
-    tipoAuto ? prisma.estadia.count({ where: { idTipoVehiculo: tipoAuto.id, horaSalida: null } }) : 0,
-    tipoMoto ? prisma.estadia.count({ where: { idTipoVehiculo: tipoMoto.id, horaSalida: null } }) : 0
-  ]);
+  const idPorNombre = new Map(tipos.map((tipo) => [tipo.nombre, tipo.id]));
+  const conteoPorId = new Map(agrupado.map((fila) => [fila.idTipoVehiculo, fila._count._all]));
 
-  return { ocupadosAutos, ocupadosMotos };
+  const ocupadosAutos = conteoPorId.get(idPorNombre.get('Automóvil / Camioneta')) || 0;
+  const ocupadosMotos = conteoPorId.get(idPorNombre.get('Motocicleta')) || 0;
+  const totalActivas = agrupado.reduce((acumulado, fila) => acumulado + fila._count._all, 0);
+  const otrosEnCochera = totalActivas - ocupadosAutos - ocupadosMotos;
+
+  return { ocupadosAutos, ocupadosMotos, otrosEnCochera };
 }
 
 /**
@@ -36,7 +45,7 @@ function calcularDisponibles(capacidad, enCochera, reservasVigentes = 0) {
 router.get('/disponibilidad', async (req, res) => {
   try {
     const capacidad = obtenerCapacidad();
-    const { ocupadosAutos, ocupadosMotos } = await obtenerEstadiasActivasPorTipo();
+    const { ocupadosAutos, ocupadosMotos, otrosEnCochera } = await obtenerEstadiasActivasPorTipo();
 
     // En Sprint 2, la entidad reserva es trabajo futuro (UPAO-21), por lo que reservasVigentes = 0
     const reservasVigentesAutos = 0;
@@ -46,9 +55,19 @@ router.get('/disponibilidad', async (req, res) => {
     const disponiblesMotos = calcularDisponibles(capacidad.capacidadMotos, ocupadosMotos, reservasVigentesMotos);
 
     const totalCapacidad = capacidad.capacidadAutos + capacidad.capacidadMotos;
-    const totalEnCochera = ocupadosAutos + ocupadosMotos;
+    const totalEnCochera = ocupadosAutos + ocupadosMotos + otrosEnCochera;
     const totalReservas = reservasVigentesAutos + reservasVigentesMotos;
     const totalDisponibles = disponiblesAutos + disponiblesMotos;
+
+    if (otrosEnCochera > 0) {
+      console.warn(
+        `[disponibilidad] ${otrosEnCochera} estadía(s) activa(s) de un tipo distinto de "Automóvil / Camioneta" y "Motocicleta". ` +
+        'No se descuentan de los cupos por tipo; revisar la política de aforo (DEF-77-02 del plan de pruebas UPAO-77).'
+      );
+    }
+
+    // Los cupos cambian en segundos: ninguna caché intermedia debe servirlos.
+    res.set('Cache-Control', 'no-store, max-age=0');
 
     return res.json({
       autos: {
@@ -67,7 +86,8 @@ router.get('/disponibilidad', async (req, res) => {
         capacidad: totalCapacidad,
         enCochera: totalEnCochera,
         reservasVigentes: totalReservas,
-        disponibles: totalDisponibles
+        disponibles: totalDisponibles,
+        otrosEnCochera
       },
       ultimaActualizacion: new Date().toISOString()
     });

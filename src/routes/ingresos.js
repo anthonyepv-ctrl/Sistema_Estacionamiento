@@ -86,25 +86,6 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'No está configurado el tipo de vehículo.' });
     }
 
-    const estadiaActiva = await prisma.estadia.findFirst({ where: { placa, horaSalida: null } });
-
-    if (estadiaActiva) {
-      return res.status(409).json({ error: `El vehículo con placa ${placa} ya registra un ingreso activo.` });
-    }
-
-    const capacidadConfig = obtenerCapacidad();
-    const capacidadTipo = tipo === 'auto' ? capacidadConfig.capacidadAutos : capacidadConfig.capacidadMotos;
-
-    const ocupadosTipo = await prisma.estadia.count({
-      where: { idTipoVehiculo: tipoVehiculo.id, horaSalida: null }
-    });
-
-    if (ocupadosTipo >= capacidadTipo) {
-      return res.status(409).json({
-        error: `No hay espacios disponibles para ${tipo === 'auto' ? 'automóviles' : 'motocicletas'}. Aforo completo.`
-      });
-    }
-
     const tarifa = await prisma.tarifa.findFirst({
       where: { idTipoVehiculo: tipoVehiculo.id, estado: true }
     });
@@ -131,14 +112,38 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'No hay un usuario configurado para registrar el ingreso.' });
     }
 
-    const estadia = await prisma.estadia.create({
-      data: {
-        placa,
-        idTipoVehiculo: tipoVehiculo.id,
-        idTarifa: tarifa.id,
-        idUsuario: usuario.id,
-        nota: notaFinal
+    // Registro atómico dentro de una transacción para evitar sobrecupo por concurrencia (DEF-77-10)
+    const estadia = await prisma.$transaction(async (tx) => {
+      const estadiaActiva = await tx.estadia.findFirst({ where: { placa, horaSalida: null } });
+
+      if (estadiaActiva) {
+        const err = new Error(`El vehículo con placa ${placa} ya registra un ingreso activo.`);
+        err.statusCode = 409;
+        throw err;
       }
+
+      const capacidadConfig = obtenerCapacidad();
+      const capacidadTipo = tipo === 'auto' ? capacidadConfig.capacidadAutos : capacidadConfig.capacidadMotos;
+
+      const ocupadosTipo = await tx.estadia.count({
+        where: { idTipoVehiculo: tipoVehiculo.id, horaSalida: null }
+      });
+
+      if (ocupadosTipo >= capacidadTipo) {
+        const err = new Error(`No hay espacios disponibles para ${tipo === 'auto' ? 'automóviles' : 'motocicletas'}. Aforo completo.`);
+        err.statusCode = 409;
+        throw err;
+      }
+
+      return tx.estadia.create({
+        data: {
+          placa,
+          idTipoVehiculo: tipoVehiculo.id,
+          idTarifa: tarifa.id,
+          idUsuario: usuario.id,
+          nota: notaFinal
+        }
+      });
     });
 
     return res.status(201).json({
@@ -152,6 +157,10 @@ router.post('/', async (req, res) => {
       mensaje: `Ingreso registrado: Placa [${placa}]`
     });
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+
     if (error.code === 'P2002') {
       return res.status(409).json({ error: `El vehículo con placa ${placa} ya registra un ingreso activo.` });
     }

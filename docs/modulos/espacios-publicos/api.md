@@ -46,7 +46,8 @@ Ejemplo verificado con datos de staging (05/11/2026):
     "capacidad": 20,
     "enCochera": 12,
     "reservasVigentes": 0,
-    "disponibles": 8
+    "disponibles": 8,
+    "otrosEnCochera": 0
   },
   "ultimaActualizacion": "2026-11-05T16:14:06.601Z"
 }
@@ -59,8 +60,16 @@ Ejemplo verificado con datos de staging (05/11/2026):
 | `enCochera` | Estadías activas (`horaSalida IS NULL`) del tipo. |
 | `reservasVigentes` | Reservas confirmadas no vencidas. En Sprint 2 siempre es `0` porque la tabla `reserva` pertenece a UPAO-21. |
 | `disponibles` | `Math.max(0, capacidad - enCochera - reservasVigentes)`. |
-| `total` | Consolidado de ambos tipos. |
+| `total.enCochera` | Todas las estadías activas, incluidos los tipos fuera de `autos` y `motos`. |
+| `total.otrosEnCochera` | Estadías activas de tipos distintos de "Automóvil / Camioneta" y "Motocicleta" (p. ej. "Reserva Web"). Si es mayor que `0` el servidor emite una advertencia en el log: es un dato de observabilidad para detectar que el aforo por tipo no las está descontando (ver DEF-77-02 en `plan-pruebas.md`). |
 | `ultimaActualizacion` | Momento del cálculo en servidor, en formato ISO 8601 UTC. |
+
+### Cabeceras de la respuesta
+
+| Cabecera | Valor | Motivo |
+| --- | --- | --- |
+| `Content-Type` | `application/json; charset=utf-8` | Estándar. |
+| `Cache-Control` | `no-store, max-age=0` | Los cupos cambian en segundos; ninguna caché intermedia (navegador, proxy o CDN) debe servirlos desactualizados. Antes de la depuración de UPAO-77 esta cabecera no se enviaba (DEF-77-03). |
 
 ---
 
@@ -86,15 +95,17 @@ Ejemplo verificado con datos de staging (05/11/2026):
 
 2. **Capacidad:** se obtiene con `obtenerCapacidad()` desde `src/config/espacios.js`, que lee `src/config/espacios.json` (por defecto 10 autos + 10 motos = 20).
 
-3. **Estadías activas:** se cuentan las filas de `estadia` con `horaSalida IS NULL`, agrupadas por `Automóvil / Camioneta` y `Motocicleta`.
+3. **Estadías activas:** se agrupan con `groupBy(idTipoVehiculo)` todas las filas de `estadia` con `horaSalida IS NULL`. Los tipos "Automóvil / Camioneta" y "Motocicleta" alimentan `autos` y `motos`; cualquier otro tipo se refleja en `total.otrosEnCochera` (antes se descartaba en silencio, DEF-77-02).
 
 4. **Reservas vigentes:** el término existe en la fórmula para no refactorizar cuando se implemente UPAO-21. Durante Sprint 2 se envía `0`.
 
 5. **Datos expuestos:** solo capacidad, ocupación y disponibilidad. No se devuelven placas, usuarios, tarifas ni información sensible.
 
-6. **Actualización:** el endpoint no usa caché; el frontend lo consulta al abrir la vista y cada 30 segundos mediante polling.
+6. **Actualización:** el endpoint envía `Cache-Control: no-store`; el frontend lo consulta al abrir la vista y cada 30 segundos mediante polling.
 
 7. **Acceso público:** la ruta se monta en `server.js` como `app.use('/api/publico', publicoRoutes)` antes del handler 404 y sin middleware de autenticación.
+
+   > **Deuda conocida (DEF-77-07):** el proyecto todavía no tiene middleware de autenticación en ninguna ruta. Este endpoint es público por diseño, pero los internos (`tarifas`, `espacios`, `ingresos`, `salidas`, `reportes`, `ocupacion`) también lo son y no deberían. Ver `plan-pruebas.md` §4.2.
 
 ---
 
