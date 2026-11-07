@@ -103,6 +103,14 @@
             <button type="submit" id="btn-login-submit" class="btn btn-primary btn-block" style="margin-top: 24px;">
               Ingresar al Sistema
             </button>
+
+            <!-- Acceso Conductor: Ver Disponibilidad Pública (UPAO-20) -->
+            <div class="login-publico-divider">
+              <span>o</span>
+            </div>
+            <button type="button" id="btn-ver-disponibilidad-login" class="btn btn-secondary btn-block">
+              Ver Espacios Disponibles (Conductor)
+            </button>
           </form>
         </div>
       </div>
@@ -195,6 +203,54 @@
               <h2>Reporte de Ingresos</h2>
             </div>
             <p>Consulta la recaudación por fecha, desglose de pagos físicos y digitales y detalle de transacciones.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Módulo de Gráficos Estadísticos (UPAO-18 / UPAO-65 - Rol Dueño) -->
+        <div class="module-card card-primary" id="card-modulo-estadisticas">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><circle cx="7" cy="15" r="1"/><circle cx="11" cy="11" r="1"/><circle cx="14" cy="14" r="1"/><circle cx="19" cy="8" r="1"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Gráficos Estadísticos</h2>
+            </div>
+            <p>Analice la recaudación mensual y anual, la concurrencia y la distribución por método de pago.</p>
+            <div class="module-card-action">
+              <span>Abrir Módulo →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Módulo de Vista Pública de Disponibilidad (UPAO-20) -->
+        <div class="module-card card-primary" id="card-modulo-disponibilidad">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Espacios Disponibles</h2>
+            </div>
+            <p>Consulte la vista pública en tiempo real de cupos para autos y motos.</p>
+            <div class="module-card-action">
+              <span>Ver Disponibilidad →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Módulo de Nivel de Ocupación (UPAO-19 / UPAO-70 - Rol Dueño) -->
+        <div class="module-card card-primary" id="card-modulo-ocupacion">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Nivel de Ocupación</h2>
+            </div>
+            <p>Monitoree la concurrencia simultánea, el aforo pico y los bloques horarios de mayor afluencia.</p>
             <div class="module-card-action">
               <span>Abrir Módulo →</span>
             </div>
@@ -381,6 +437,25 @@
               <span class="caption">Se preselecciona automáticamente según la placa (editable)</span>
             </div>
 
+            <!-- Notas / Observaciones del Vehículo (UPAO-9) -->
+            <div class="form-group">
+              <label for="input-nota-ingreso" class="form-label">
+                <span>Notas / Observaciones del vehículo</span>
+                <span class="caption-opcional">(Opcional)</span>
+              </label>
+              <textarea
+                id="input-nota-ingreso"
+                class="input-control textarea-nota"
+                rows="2"
+                maxlength="250"
+                placeholder="Ej. Rayón en puerta derecha, abolladuras, estado físico (opcional)..."
+              ></textarea>
+              <div class="nota-footer">
+                <span class="caption">Observaciones físicas del estado del vehículo</span>
+                <span id="contador-nota" class="contador-nota mono">0/250</span>
+              </div>
+            </div>
+
             <div class="form-actions">
               <button type="submit" id="btn-registrar-ingreso" class="btn btn-success" style="flex: 2;">
                 Registrar Ingreso
@@ -502,6 +577,10 @@
               <span class="caption">Tiempo transcurrido</span>
               <span class="preview-value mono" id="salida-tiempo">—</span>
             </div>
+
+            <!-- Observación Registrada al Ingreso (UPAO-9) -->
+            <div id="salida-nota-container" class="salida-nota-container"></div>
+
             <div class="preview-row">
               <span class="caption">Tarifa aplicada</span>
               <span class="preview-value mono" id="salida-tarifa">—</span>
@@ -744,6 +823,302 @@
       </div>
     </section>
 
+    <!-- ----------------------------------------------------------------------
+         8. PANTALLA DE GRÁFICOS ESTADÍSTICOS (UPAO-18 / UPAO-65)
+         ---------------------------------------------------------------------- -->
+    <section id="view-estadisticas" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu-estadisticas">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Estadísticas y Concurrencia</h1>
+        <p>Análisis gráfico de recaudación económica y demanda vehicular</p>
+      </div>
+
+      <div class="card card-filtro-estadisticas">
+        <div class="estadisticas-toolbar">
+          <div class="form-group estadisticas-campo">
+            <span class="form-label">Vista</span>
+            <div class="modo-toggle" role="group" aria-label="Tipo de período">
+              <button type="button" class="modo-btn active" id="modo-mensual">Mensual</button>
+              <button type="button" class="modo-btn" id="modo-anual">Anual</button>
+            </div>
+          </div>
+          <div class="form-group estadisticas-campo">
+            <label for="select-anio-estadisticas" class="form-label"><span>Año</span></label>
+            <select id="select-anio-estadisticas" class="input-control"></select>
+          </div>
+          <div class="form-group estadisticas-campo" id="grupo-mes-estadisticas">
+            <label for="select-mes-estadisticas" class="form-label"><span>Mes</span></label>
+            <select id="select-mes-estadisticas" class="input-control"></select>
+          </div>
+          <div class="form-group estadisticas-campo estadisticas-acciones-campo">
+            <span class="form-label">Acciones</span>
+            <div class="estadisticas-acciones">
+              <button type="button" id="btn-consultar-estadisticas" class="btn btn-primary">Consultar</button>
+              <button type="button" id="btn-exportar-estadisticas" class="btn btn-secondary" title="Exportar a CSV/Excel">📥 Exportar CSV</button>
+            </div>
+          </div>
+        </div>
+        <span class="field-error" id="error-periodo-estadisticas" style="display: none;"></span>
+      </div>
+
+      <div class="metricas-grid">
+        <div class="card metrica-card">
+          <span class="caption">Recaudación Total</span>
+          <h3 class="mono" id="metrica-total">S/ 0.00</h3>
+          <span class="metrica-sub" id="metrica-periodo">—</span>
+        </div>
+        <div class="card metrica-card metrica-efectivo">
+          <span class="caption">Total Efectivo</span>
+          <h3 class="mono" id="metrica-efectivo">S/ 0.00</h3>
+          <span class="metrica-sub" id="metrica-pct-efectivo">0.0%</span>
+        </div>
+        <div class="card metrica-card metrica-yape">
+          <span class="caption">Total Yape</span>
+          <h3 class="mono" id="metrica-yape">S/ 0.00</h3>
+          <span class="metrica-sub" id="metrica-pct-yape">0.0%</span>
+        </div>
+        <div class="card metrica-card">
+          <span class="caption">Total Vehículos</span>
+          <h3 class="mono" id="metrica-vehiculos">0</h3>
+          <span class="metrica-sub">atendidos</span>
+        </div>
+      </div>
+
+      <div class="charts-grid" id="charts-grid-estadisticas">
+        <div class="card chart-card chart-card-barras">
+          <div class="card-header">
+            <h2 id="titulo-grafico-barras">Ingresos Diarios del Mes</h2>
+            <p class="caption" id="subtitulo-grafico-barras">Eje X: días del mes · Eje Y: recaudación (S/)</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          <div class="chart-wrapper" id="chart-barras"></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <h2>Distribución por Método</h2>
+            <p class="caption">Proporción de ingresos: Efectivo vs. Yape</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          <div class="chart-wrapper" id="chart-dona"></div>
+        </div>
+
+        <div class="card chart-card chart-card-horas">
+          <div class="card-header">
+            <h2>Concurrencia Vehicular por Horas</h2>
+            <p class="caption">Afluencia por hora para detectar horas punta</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          <div class="chart-wrapper" id="chart-horas"></div>
+        </div>
+      </div>
+
+      <div class="empty-state-estadisticas" id="estadisticas-vacio" style="display: none;">
+        <div class="empty-state-icon">📊</div>
+        <p class="empty-state-text">No se registran ingresos para el período seleccionado</p>
+        <p class="caption">No existen transacciones ni cobros de vehículos en el período indicado. Puede seleccionar un mes o año anterior para revisar el histórico del negocio.</p>
+      </div>
+
+      <div id="chart-tooltip" class="chart-tooltip" style="display: none;"></div>
+    </section>
+
+    <!-- ----------------------------------------------------------------------
+         9. PANTALLA DE NIVEL DE OCUPACIÓN Y AFLUENCIA (UPAO-19 / UPAO-70)
+         ---------------------------------------------------------------------- -->
+    <section id="view-ocupacion" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-menu-ocupacion">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Nivel de Ocupación y Afluencia</h1>
+        <p>Monitoreo de concurrencia simultánea, aforo pico y bloques horarios</p>
+      </div>
+
+      <div class="card card-filtro-estadisticas">
+        <div class="estadisticas-toolbar">
+          <div class="form-group estadisticas-campo">
+            <label for="ocupacion-fecha-inicio" class="form-label"><span>Fecha Inicio</span></label>
+            <input type="date" id="ocupacion-fecha-inicio" class="input-control">
+          </div>
+          <div class="form-group estadisticas-campo">
+            <label for="ocupacion-fecha-fin" class="form-label"><span>Fecha Fin</span></label>
+            <input type="date" id="ocupacion-fecha-fin" class="input-control">
+          </div>
+          <div class="form-group estadisticas-campo estadisticas-acciones-campo">
+            <span class="form-label">Acciones</span>
+            <div class="estadisticas-acciones">
+              <button type="button" id="btn-consultar-ocupacion" class="btn btn-primary">Consultar</button>
+              <button type="button" id="btn-exportar-ocupacion" class="btn btn-secondary" title="Exportar a CSV/Excel">📥 Exportar CSV/Excel</button>
+              <button type="button" id="btn-imprimir-ocupacion" class="btn btn-secondary" title="Imprimir o guardar como PDF">🖨️ Imprimir / PDF</button>
+            </div>
+          </div>
+        </div>
+        <span class="field-error" id="error-ocupacion" style="display: none;" role="alert"></span>
+      </div>
+
+      <div class="metricas-grid">
+        <div class="card metrica-card">
+          <span class="caption">Total Vehículos</span>
+          <h3 class="mono" id="ocupacion-total-vehiculos">0</h3>
+          <span class="metrica-sub">en el período</span>
+        </div>
+        <div class="card metrica-card">
+          <span class="caption">Total Autos</span>
+          <h3 class="mono" id="ocupacion-total-autos">0</h3>
+          <span class="metrica-sub" id="ocupacion-pct-autos">0.0% del total</span>
+        </div>
+        <div class="card metrica-card">
+          <span class="caption">Total Motos</span>
+          <h3 class="mono" id="ocupacion-total-motos">0</h3>
+          <span class="metrica-sub" id="ocupacion-pct-motos">0.0% del total</span>
+        </div>
+        <div class="card metrica-card metrica-aforo" id="ocupacion-card-aforo">
+          <span class="caption">Aforo Máximo</span>
+          <h3 class="mono" id="ocupacion-aforo-maximo">0 veh. (0%)</h3>
+          <span class="metrica-sub">Pico simultáneo</span>
+        </div>
+      </div>
+
+      <div class="card chart-card ocupacion-chart-card" id="ocupacion-chart-card">
+        <div class="card-header">
+          <h2>Afluencia por Bloques Horarios</h2>
+          <p class="caption">Ingresos agrupados en franjas de 2 horas (hora Perú)</p>
+        </div>
+        <div class="accent-bar-sm"></div>
+        <div class="chart-wrapper" id="ocupacion-chart"></div>
+      </div>
+
+      <div class="empty-state-estadisticas" id="ocupacion-vacio" style="display: none;">
+        <div class="empty-state-icon">📊</div>
+        <p class="empty-state-text">No se registran movimientos ni ingresos para el período seleccionado</p>
+      </div>
+
+      <div id="ocupacion-tooltip" class="chart-tooltip" style="display: none;"></div>
+    </section>
+
+    <!-- ----------------------------------------------------------------------
+         10. PANTALLA PÚBLICA DE DISPONIBILIDAD DE ESPACIOS (UPAO-20)
+         ---------------------------------------------------------------------- -->
+    <section id="view-disponibilidad" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-disponibilidad">
+          ← Iniciar Sesión / Acceso de Personal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <div class="publico-badge-pill">
+          <span class="badge badge-primary mono">VISTA PÚBLICA</span>
+          <span class="caption">Consulta en tiempo real para conductores</span>
+        </div>
+        <h1>Disponibilidad de Espacios</h1>
+        <p>Consulte los cupos disponibles antes de llegar al estacionamiento</p>
+      </div>
+
+      <div class="disponibilidad-grid">
+        <!-- Panel 1: Automóviles -->
+        <div class="card disponibilidad-card" id="card-disponibilidad-autos">
+          <div class="card-header">
+            <div class="vehiculo-tipo-header">
+              <span class="vehiculo-icono" aria-hidden="true">🚗</span>
+              <div>
+                <h2>Automóviles</h2>
+                <p class="caption">Autos y camionetas</p>
+              </div>
+            </div>
+            <span class="badge badge-success mono" id="badge-estado-autos">DISPONIBLE</span>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <div class="disponibilidad-info-list">
+            <div class="info-row">
+              <span class="caption">Capacidad total:</span>
+              <span class="info-val mono" id="disp-capacidad-autos">--</span>
+            </div>
+            <div class="info-row">
+              <span class="caption">En cochera:</span>
+              <span class="info-val mono" id="disp-encochera-autos">--</span>
+            </div>
+            <div class="info-row">
+              <span class="caption">Reservas vigentes:</span>
+              <span class="info-val mono" id="disp-reservas-autos">0</span>
+            </div>
+          </div>
+
+          <!-- Caja destacada de cupos disponibles -->
+          <div class="cupos-destacados-box" id="cupos-box-autos">
+            <span class="cupos-numero mono" id="disp-cupos-autos">--</span>
+            <span class="cupos-texto" id="disp-texto-autos">espacios disponibles</span>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-block btn-reservar" id="btn-reservar-autos" data-tipo="autos">
+            Reservar espacio
+          </button>
+
+          <div class="disponibilidad-card-footer">
+            <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-autos">--:--:--</span></span>
+          </div>
+        </div>
+
+        <!-- Panel 2: Motocicletas -->
+        <div class="card disponibilidad-card" id="card-disponibilidad-motos">
+          <div class="card-header">
+            <div class="vehiculo-tipo-header">
+              <span class="vehiculo-icono" aria-hidden="true">🏍</span>
+              <div>
+                <h2>Motocicletas</h2>
+                <p class="caption">Motos lineales y afines</p>
+              </div>
+            </div>
+            <span class="badge badge-success mono" id="badge-estado-motos">DISPONIBLE</span>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <div class="disponibilidad-info-list">
+            <div class="info-row">
+              <span class="caption">Capacidad total:</span>
+              <span class="info-val mono" id="disp-capacidad-motos">--</span>
+            </div>
+            <div class="info-row">
+              <span class="caption">En cochera:</span>
+              <span class="info-val mono" id="disp-encochera-motos">--</span>
+            </div>
+            <div class="info-row">
+              <span class="caption">Reservas vigentes:</span>
+              <span class="info-val mono" id="disp-reservas-motos">0</span>
+            </div>
+          </div>
+
+          <!-- Caja destacada de cupos disponibles -->
+          <div class="cupos-destacados-box" id="cupos-box-motos">
+            <span class="cupos-numero mono" id="disp-cupos-motos">--</span>
+            <span class="cupos-texto" id="disp-texto-motos">espacios disponibles</span>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-block btn-reservar" id="btn-reservar-motos" data-tipo="motos">
+            Reservar espacio
+          </button>
+
+          <div class="disponibilidad-card-footer">
+            <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-motos">--:--:--</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="disponibilidad-aviso-reserva">
+        <span class="aviso-icono" aria-hidden="true">ⓘ</span>
+        <span>Al hacer clic en «Reservar espacio» deberás iniciar sesión con una cuenta autorizada. La reserva en línea estará disponible en una próxima entrega.</span>
+      </div>
+    </section>
+
   </main>
 
   <!-- ========================================================================
@@ -757,5 +1132,8 @@
   <script src="js/app.js"></script>
   <script src="js/aforo.js"></script>
   <script src="js/reportes.js"></script>
+  <script src="js/estadisticas.js"></script>
+  <script src="js/ocupacion.js"></script>
+  <script src="js/disponibilidad.js"></script>
 </body>
 </html>

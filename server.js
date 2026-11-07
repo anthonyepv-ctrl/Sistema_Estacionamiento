@@ -9,6 +9,8 @@ const ingresosRoutes = require('./src/routes/ingresos');
 const salidasRoutes = require('./src/routes/salidas');
 const espaciosRoutes = require('./src/routes/espacios');
 const reportesRoutes = require('./src/routes/reportes');
+const ocupacionRoutes = require('./src/routes/ocupacion');
+const publicoRoutes = require('./src/routes/publico');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,7 +23,10 @@ app.use('/api/tarifas', tarifasRoutes);
 app.use('/api/ingresos', ingresosRoutes);
 app.use('/api/salidas', salidasRoutes);
 app.use('/api/espacios', espaciosRoutes);
+app.use('/api/reportes/ocupacion', ocupacionRoutes);
 app.use('/api/reportes', reportesRoutes);
+app.use('/api/ocupacion', ocupacionRoutes);
+app.use('/api/publico', publicoRoutes);
 
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Recurso no encontrado.' });

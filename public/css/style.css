@@ -1081,3 +1081,552 @@ select.input-control {
   margin: 0 auto;
 }
 
+
+/* ==========================================================================
+   UPAO-9: CAMPO DE NOTAS / OBSERVACIONES (INGRESO Y SALIDA)
+   ========================================================================== */
+
+/* 1. Módulo de Ingreso: Notas */
+.caption-opcional {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text2);
+  margin-left: 4px;
+}
+
+.textarea-nota {
+  resize: vertical;
+  min-height: 58px;
+  max-height: 140px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 8px 12px;
+}
+
+.nota-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.contador-nota {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.contador-nota.limite {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* 2. Módulo de Salida: Callout de Nota */
+.salida-nota-container {
+  margin: 12px 0;
+}
+
+.callout-nota {
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.callout-nota-alerta {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  border-left: 4px solid var(--accent);
+  padding: 10px 14px;
+}
+
+.callout-nota-header {
+  margin-bottom: 4px;
+}
+
+.callout-nota-titulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400E;
+  letter-spacing: 0.01em;
+}
+
+.callout-nota-texto {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1F2937;
+  line-height: 1.45;
+  margin: 0;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.callout-nota-neutro {
+  background: #F9FAFB;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text2);
+  font-size: 12px;
+}
+
+.callout-nota-texto-neutro {
+  color: var(--text2);
+  font-style: italic;
+}
+/* ==========================================================================
+   UPAO-18 / UPAO-65: DASHBOARD DE GRAFICOS ESTADISTICOS
+   ========================================================================== */
+.card-filtro-estadisticas { padding: 18px 22px; }
+
+.estadisticas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 18px;
+}
+
+.estadisticas-campo { margin-bottom: 0; min-width: 150px; }
+.estadisticas-campo .input-control { min-width: 150px; }
+.estadisticas-acciones-campo { margin-left: auto; }
+.estadisticas-acciones { display: flex; gap: 10px; }
+
+.modo-toggle {
+  display: inline-flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 3px;
+}
+
+.modo-btn {
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modo-btn:hover { color: var(--text); }
+.modo-btn.active { background: var(--primary); color: #fff; }
+
+.field-error {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--err);
+}
+
+.metricas-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.metrica-card {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metrica-card h3 { font-size: 24px; color: var(--primary); letter-spacing: -0.02em; }
+.metrica-card .metrica-sub { font-size: 12px; color: var(--text2); }
+.metrica-efectivo { border-top: 3px solid var(--primary); }
+.metrica-yape { border-top: 3px solid var(--success); }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+  align-items: stretch;
+}
+
+.chart-card { display: flex; flex-direction: column; }
+.chart-card-barras { grid-column: 1; }
+.chart-card-horas { grid-column: 1 / -1; }
+.chart-wrapper { position: relative; width: 100%; }
+.chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart-grid-line { stroke: var(--border); stroke-width: 1; }
+.chart-axis-label { fill: var(--text2); font-size: 10px; font-family: 'JetBrains Mono', Consolas, monospace; }
+.chart-bar { fill: var(--primary); opacity: 0.85; cursor: pointer; transition: opacity 0.15s ease; }
+.chart-bar:hover { opacity: 1; fill: #2563EB; }
+
+.dona-svg { max-width: 260px; margin: 0 auto; }
+.dona-segmento { cursor: pointer; transition: opacity 0.15s ease; }
+.dona-segmento:hover { opacity: 0.8; }
+.dona-centro-label { fill: var(--text2); font-size: 10px; font-family: 'Geist', 'Segoe UI', Arial, sans-serif; letter-spacing: 0.08em; }
+.dona-centro-valor { fill: var(--text); font-size: 13px; font-weight: 700; }
+.dona-leyenda { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.dona-item { display: grid; grid-template-columns: 10px 1fr auto auto; align-items: center; gap: 8px; font-size: 12px; }
+.dona-dot { width: 10px; height: 10px; border-radius: 50%; }
+.dona-item-label { color: var(--text2); }
+.dona-item-valor { font-weight: 600; color: var(--text); }
+.dona-item-pct { color: var(--text2); min-width: 46px; text-align: right; }
+
+.chart-tooltip {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+  background: #111827;
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  max-width: 240px;
+}
+
+.chart-tooltip strong { font-weight: 700; }
+
+.empty-state-estadisticas {
+  margin-top: 20px;
+  background: #F9FAFB;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 24px;
+  text-align: center;
+}
+
+.empty-state-estadisticas .empty-state-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 8px 0 6px;
+}
+
+.empty-state-estadisticas .caption { max-width: 520px; margin: 0 auto; }
+
+@media (max-width: 1100px) {
+  .metricas-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .chart-card-barras,
+  .chart-card-horas { grid-column: auto; }
+}
+
+@media (max-width: 860px) {
+  .estadisticas-toolbar { align-items: stretch; }
+  .estadisticas-campo { min-width: 100%; }
+  .estadisticas-campo .input-control { width: 100%; }
+  .estadisticas-acciones-campo { margin-left: 0; }
+  .estadisticas-acciones { flex-wrap: wrap; }
+  .estadisticas-acciones .btn { flex: 1; }
+  .metricas-grid { grid-template-columns: 1fr; }
+}
+.btn:disabled.export-deshabilitado { opacity: 0.5; }
+
+/* ==========================================================================
+   UPAO-19 / UPAO-70: NIVEL DE OCUPACION Y AFLUENCIA
+   ========================================================================== */
+.ocupacion-chart-card {
+  margin-top: 20px;
+}
+
+.metrica-aforo {
+  border-top: 3px solid var(--border);
+}
+
+.metrica-aforo.nivel-optimo { border-top-color: var(--success); }
+.metrica-aforo.nivel-alto { border-top-color: var(--accent); }
+.metrica-aforo.nivel-lleno { border-top-color: var(--danger); }
+
+.metrica-aforo.nivel-optimo h3 { color: var(--success); }
+.metrica-aforo.nivel-alto h3 { color: #B45309; }
+.metrica-aforo.nivel-lleno h3 { color: var(--danger); }
+
+.chart-bar-pico {
+  fill: var(--accent);
+  opacity: 0.95;
+}
+
+.chart-bar-pico:hover {
+  fill: #D97706;
+  opacity: 1;
+}
+
+.chart-peak-label {
+  fill: #92400E;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Geist', 'Segoe UI', Arial, sans-serif;
+}
+
+.ocupacion-chart-card .chart-axis-label {
+  font-size: 9px;
+}
+
+@media print {
+  .app-header,
+  .app-footer,
+  .view-top-bar,
+  .estadisticas-acciones-campo,
+  #toast-container {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .view-section {
+    display: none !important;
+  }
+
+  #view-ocupacion.active {
+    display: block !important;
+  }
+
+  #view-ocupacion {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #view-ocupacion .card {
+    box-shadow: none;
+    border: 1px solid #D1D5DB;
+    break-inside: avoid;
+  }
+
+  #view-ocupacion .card-filtro-estadisticas {
+    border: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  #view-ocupacion .chart-card {
+    page-break-inside: avoid;
+  }
+}
+
+/* ==========================================================================
+   UPAO-20: VISTA PUBLICA DE DISPONIBILIDAD
+   ========================================================================== */
+
+.login-publico-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-publico-divider::before,
+.login-publico-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.publico-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.disponibilidad-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.disponibilidad-card {
+  display: flex;
+  flex-direction: column;
+  border-top: 4px solid var(--primary);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.disponibilidad-card.aforo-lleno {
+  border-color: #FECACA;
+  border-top-color: var(--danger);
+  background: #FEF2F2;
+}
+
+.disponibilidad-card .card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vehiculo-tipo-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vehiculo-icono {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EFF6FF;
+  border-radius: var(--radius-md);
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.disponibilidad-card.aforo-lleno .vehiculo-icono {
+  background: #FEE2E2;
+}
+
+.vehiculo-tipo-header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.disponibilidad-info-list {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.info-val {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.cupos-destacados-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 18px 16px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: var(--radius-md);
+  text-align: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.cupos-numero {
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.cupos-texto {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+}
+
+.cupos-destacados-box.lleno {
+  background: #FEE2E2;
+  border-color: #FECACA;
+}
+
+.cupos-destacados-box.lleno .cupos-numero {
+  color: var(--danger);
+}
+
+.cupos-destacados-box.lleno .cupos-texto {
+  color: #991B1B;
+}
+
+.btn-reservar {
+  margin-top: 16px;
+}
+
+.btn.btn-reservar:disabled,
+.btn.btn-reservar.btn-disabled {
+  background: #E5E7EB;
+  border-color: #E5E7EB;
+  color: #9CA3AF;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.disponibilidad-card-footer {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.disponibilidad-aviso-reserva {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: var(--radius-md);
+  color: var(--primary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.aviso-icono {
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.badge-danger {
+  background: var(--danger);
+  color: #fff;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: 0 12px;
+  }
+
+  .header-user-section {
+    gap: 8px;
+  }
+
+  .brand-info p {
+    display: none;
+  }
+
+  .user-meta .user-role {
+    display: none;
+  }
+
+  .btn-logout {
+    padding: 4px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .disponibilidad-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-reservar {
+    width: 100%;
+  }
+
+  .cupos-numero {
+    font-size: 36px;
+  }
+}
