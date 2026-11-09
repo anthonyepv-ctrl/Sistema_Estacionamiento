@@ -109,10 +109,24 @@ async function login(page, usuario, password = '123456') {
     // CP-01: Carga automática del mes en curso y sumatoria exacta
     // -------------------------------------------------------------
     console.log('\n[CP-01] Validando carga automática del período y sumatoria...');
+    const partesHoy = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit'
+    }).formatToParts(new Date());
+    const anioActual = partesHoy.find((p) => p.type === 'year').value;
+    const mesActual = String(Number(partesHoy.find((p) => p.type === 'month').value));
+
     const anioSeleccionado = await page.$eval('#select-anio-estadisticas', (el) => el.value);
     const mesSeleccionado = await page.$eval('#select-mes-estadisticas', (el) => el.value);
-    report(anioSeleccionado === '2026', `Año inicial seleccionado correctamente (${anioSeleccionado})`);
-    report(mesSeleccionado === '10', `Mes inicial seleccionado correctamente (Octubre: ${mesSeleccionado})`);
+    report(anioSeleccionado === anioActual, `Año inicial seleccionado correctamente (${anioSeleccionado})`);
+    report(mesSeleccionado === mesActual, `Mes inicial seleccionado corresponde al mes actual (${mesSeleccionado})`);
+
+    // Consultar mes con datos registrados (Octubre 2026) para validar sumatoria y gráficos
+    await page.selectOption('#select-anio-estadisticas', '2026');
+    await page.waitForTimeout(200);
+    await page.selectOption('#select-mes-estadisticas', '10');
+    await page.waitForTimeout(800);
 
     const textoTotal = await page.$eval('#metrica-total', (el) => el.textContent.trim());
     const textoEfectivo = await page.$eval('#metrica-efectivo', (el) => el.textContent.trim());
@@ -136,10 +150,14 @@ async function login(page, usuario, password = '123456') {
     const mesesDeshabilitados = await page.$$eval('#select-mes-estadisticas option', (opts) =>
       opts.filter((o) => o.disabled).map((o) => o.textContent)
     );
-    report(
-      mesesDeshabilitados.includes('Noviembre') && mesesDeshabilitados.includes('Diciembre'),
-      `Meses futuros del año actual deshabilitados en selector (${mesesDeshabilitados.join(', ')})`
-    );
+    const NOMBRES_MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const mesesFuturosEsperados = NOMBRES_MESES.slice(Number(mesActual));
+    if (mesesFuturosEsperados.length > 0) {
+      const cumpleFuturos = mesesFuturosEsperados.every((m) => mesesDeshabilitados.includes(m));
+      report(cumpleFuturos, `Meses futuros del año actual deshabilitados en selector (${mesesDeshabilitados.join(', ')})`);
+    } else {
+      report(true, 'No hay meses futuros restantes en el año');
+    }
 
     // -------------------------------------------------------------
     // CP-03: Período sin cobros (Enero 2024) y mensaje oficial

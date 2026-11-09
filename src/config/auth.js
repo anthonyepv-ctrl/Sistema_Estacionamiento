@@ -65,8 +65,13 @@ function verificarToken(token) {
 
 function leerTokenDeCabecera(req) {
   const cabecera = req.headers.authorization || '';
-  if (!cabecera.startsWith('Bearer ')) return null;
-  return cabecera.slice(7).trim() || null;
+  if (cabecera.startsWith('Bearer ')) {
+    return cabecera.slice(7).trim() || null;
+  }
+  if (req.query && typeof req.query.token === 'string') {
+    return req.query.token.trim() || null;
+  }
+  return null;
 }
 
 /**

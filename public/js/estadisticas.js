@@ -54,6 +54,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return { anio: obtener('year'), mes: obtener('month'), dia: obtener('day') };
   }
 
+  function obtenerToken() {
+    try {
+      const crudo = sessionStorage.getItem('cochera_sesion');
+      if (!crudo) return null;
+      const sesion = JSON.parse(crudo);
+      return sesion && sesion.token ? sesion.token : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   const HOY = ahoraPeru();
 
   function formatearMoneda(valor) {
@@ -158,7 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const parametros = new URLSearchParams({ periodo: modo, anio: String(anio) });
       if (modo === 'mensual') parametros.set('mes', String(mes));
 
-      const respuesta = await fetch(`/api/reportes/graficos?${parametros.toString()}`);
+      const token = obtenerToken();
+      const respuesta = await fetch(`/api/reportes/graficos?${parametros.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       const data = await respuesta.json().catch(() => ({}));
 
       if (!respuesta.ok) {
@@ -330,8 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function colorMetodo(nombre) {
     const texto = String(nombre || '').toLowerCase();
     if (texto.includes('efectivo')) return '#1E3A8A';
-    if (texto.includes('yape')) return '#10B981';
-    if (texto.includes('pos')) return '#F59E0B';
+    if (texto.includes('yape') || texto.includes('plin')) return '#10B981';
+    if (texto.includes('pos') || texto.includes('tarjeta')) return '#F59E0B';
     return '#6B7280';
   }
 
@@ -394,8 +408,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function exportarCsv() {
     if (!datos || !datos.tieneDatos) return;
 
+    const token = obtenerToken();
     const parametros = new URLSearchParams({ periodo: modo, anio: String(periodo.anio) });
     if (modo === 'mensual') parametros.set('mes', String(periodo.mes));
+    if (token) parametros.set('token', token);
 
     const enlace = document.createElement('a');
     enlace.href = `/api/reportes/exportar?${parametros.toString()}`;

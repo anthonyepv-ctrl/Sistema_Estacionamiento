@@ -39,6 +39,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${valor('year')}-${valor('month')}-${valor('day')}`;
   }
 
+  function obtenerToken() {
+    try {
+      const crudo = sessionStorage.getItem('cochera_sesion');
+      if (!crudo) return null;
+      const sesion = JSON.parse(crudo);
+      return sesion && sesion.token ? sesion.token : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function restarDias(fechaISO, dias) {
     const [anio, mes, dia] = fechaISO.split('-').map(Number);
     const fecha = new Date(Date.UTC(anio, mes - 1, dia));
@@ -114,7 +125,10 @@ document.addEventListener('DOMContentLoaded', () => {
         fechaInicio: rango.inicio,
         fechaFin: rango.fin
       });
-      const respuesta = await fetch(`/api/ocupacion?${parametros.toString()}`);
+      const token = obtenerToken();
+      const respuesta = await fetch(`/api/ocupacion?${parametros.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       const data = await respuesta.json().catch(() => ({}));
 
       if (!respuesta.ok) {
@@ -317,11 +331,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function exportar() {
     if (!datos || datos.sinDatos || !periodoConsultado) return;
 
+    const token = obtenerToken();
     const parametros = new URLSearchParams({
       fechaInicio: periodoConsultado.inicio,
       fechaFin: periodoConsultado.fin,
       formato: 'csv'
     });
+    if (token) parametros.set('token', token);
     const enlace = document.createElement('a');
 
     enlace.href = `/api/ocupacion/exportar?${parametros.toString()}`;
