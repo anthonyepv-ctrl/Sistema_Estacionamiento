@@ -173,6 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch(`/api/reportes/diario?fecha=${fechaISO}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
+        if (res.status === 401) {
+          sessionStorage.removeItem('cochera_sesion');
+          window.location.reload();
+          return;
+        }
         if (res.ok) {
           data = await res.json();
         }

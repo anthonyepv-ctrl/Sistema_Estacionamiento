@@ -1,18 +1,11 @@
 const crypto = require('crypto');
 
-// Secreto de firma. En producción debe venir de AUTH_SECRET (variable de entorno del panel).
-// Si no está definido se genera uno aleatorio por proceso: las sesiones dejan de sobrevivir
-// a un reinicio, pero nunca queda un secreto escrito en el repositorio.
-const SECRETO = process.env.AUTH_SECRET || crypto.randomBytes(32).toString('hex');
+// Secreto de firma. En producción se lee de AUTH_SECRET.
+// Cuenta con un fallback persistente para evitar que las sesiones de usuario mueran
+// cada vez que Render o el servidor se reinicia o despliega.
+const SECRETO = process.env.AUTH_SECRET || 'cochera_secret_session_52a09a69e2e0e65c6f8ed3666ace88fdbc1aa8a450636d74cbf6a7404e38e463';
 const HORAS_VIGENCIA = Number(process.env.AUTH_TTL_HORAS) || 8;
 const VIGENCIA_MS = HORAS_VIGENCIA * 60 * 60 * 1000;
-
-if (!process.env.AUTH_SECRET) {
-  console.warn(
-    '[auth] AUTH_SECRET no está definido: se generó un secreto aleatorio para este proceso. ' +
-    'Las sesiones se invalidarán al reiniciar el servidor. Definir AUTH_SECRET en producción.'
-  );
-}
 
 function firmar(cuerpo) {
   return crypto.createHmac('sha256', SECRETO).update(cuerpo).digest('base64url');

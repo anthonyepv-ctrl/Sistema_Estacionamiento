@@ -129,6 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const respuesta = await fetch(`/api/ocupacion?${parametros.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
+
+      if (respuesta.status === 401) {
+        sessionStorage.removeItem('cochera_sesion');
+        window.location.reload();
+        return;
+      }
+
       const data = await respuesta.json().catch(() => ({}));
 
       if (!respuesta.ok) {
