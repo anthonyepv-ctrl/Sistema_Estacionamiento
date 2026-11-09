@@ -517,6 +517,33 @@ select.input-control {
   font-weight: 600;
 }
 
+.module-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: inline-block;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.module-badge.badge-operacion {
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
+}
+
+.module-badge.badge-finanzas {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.module-badge.badge-logistica {
+  background: rgba(139, 92, 246, 0.12);
+  color: #7C3AED;
+}
+
 .module-card-body p {
   font-size: 13px;
   color: var(--text2);

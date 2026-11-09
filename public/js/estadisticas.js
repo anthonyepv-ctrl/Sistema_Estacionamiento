@@ -230,14 +230,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dibujarDona(contDona, datos.totales);
 
-    const horaria = datos.concurrenciaHoraria || [];
-    dibujarBarras(
-      contHoras,
-      horaria.map((fila) => `${String(fila.hora).padStart(2, '0')}:00`),
-      horaria.map((fila) => fila.vehiculos),
-      horaria.map((fila) => `<strong>Hora ${String(fila.hora).padStart(2, '0')}:00</strong><br>${fila.vehiculos} vehículos · ${formatearMoneda(fila.monto)}`),
-      'count'
-    );
+    if (contHoras) {
+      const horaria = datos.concurrenciaHoraria || [];
+      dibujarBarras(
+        contHoras,
+        horaria.map((fila) => `${String(fila.hora).padStart(2, '0')}:00`),
+        horaria.map((fila) => fila.vehiculos),
+        horaria.map((fila) => `<strong>Hora ${String(fila.hora).padStart(2, '0')}:00</strong><br>${fila.vehiculos} vehículos · ${formatearMoneda(fila.monto)}`),
+        'count'
+      );
+    }
   }
 
   function renderEstadoExportacion() {

@@ -138,6 +138,7 @@
           <div class="module-card-body">
             <div class="module-card-top">
               <h2>Configurar Tarifas</h2>
+              <span class="module-badge badge-operacion">Operación</span>
             </div>
             <p>Visualizar y modificar tarifas por hora y fracción para autos, motos y reservas.</p>
             <div class="module-card-action">
@@ -154,6 +155,7 @@
           <div class="module-card-body">
             <div class="module-card-top">
               <h2>Registrar Ingreso</h2>
+              <span class="module-badge badge-operacion">Operación</span>
             </div>
             <p>Registro rápido de vehículos por placa y tipo, con validación del formato peruano.</p>
             <div class="module-card-action">
@@ -170,6 +172,7 @@
           <div class="module-card-body">
             <div class="module-card-top">
               <h2>Registrar Salida</h2>
+              <span class="module-badge badge-operacion">Operación</span>
             </div>
             <p>Busque el vehículo en cochera, calcule el monto y registre el método de pago.</p>
             <div class="module-card-action">
@@ -185,6 +188,7 @@
           <div class="module-card-body">
             <div class="module-card-top">
               <h2>Visualizar Aforo</h2>
+              <span class="module-badge badge-operacion">Operación</span>
             </div>
             <p>Monitoreo en tiempo real de espacios disponibles y ocupados para autos y motos.</p>
             <div class="module-card-action">
@@ -200,7 +204,8 @@
           </div>
           <div class="module-card-body">
             <div class="module-card-top">
-              <h2>Reporte de Ingresos</h2>
+              <h2>Caja Diaria</h2>
+              <span class="module-badge badge-finanzas">Finanzas</span>
             </div>
             <p>Consulta la recaudación por fecha, desglose de pagos físicos y digitales y detalle de transacciones.</p>
             <div class="module-card-action">
@@ -212,13 +217,14 @@
         <!-- Módulo de Gráficos Estadísticos (UPAO-18 / UPAO-65 - Rol Dueño) -->
         <div class="module-card card-primary" id="card-modulo-estadisticas">
           <div class="module-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><circle cx="7" cy="15" r="1"/><circle cx="11" cy="11" r="1"/><circle cx="14" cy="14" r="1"/><circle cx="19" cy="8" r="1"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
           <div class="module-card-body">
             <div class="module-card-top">
-              <h2>Gráficos Estadísticos</h2>
+              <h2>Estadísticas de Facturación</h2>
+              <span class="module-badge badge-finanzas">Finanzas</span>
             </div>
-            <p>Analice la recaudación mensual y anual, la concurrencia y la distribución por método de pago.</p>
+            <p>Analice la recaudación mensual en soles, comparativa diaria y distribución porcentual por método de pago.</p>
             <div class="module-card-action">
               <span>Abrir Módulo →</span>
             </div>
@@ -233,6 +239,7 @@
           <div class="module-card-body">
             <div class="module-card-top">
               <h2>Espacios Disponibles</h2>
+              <span class="module-badge badge-operacion">Público</span>
             </div>
             <p>Consulte la vista pública en tiempo real de cupos para autos y motos.</p>
             <div class="module-card-action">
@@ -248,7 +255,8 @@
           </div>
           <div class="module-card-body">
             <div class="module-card-top">
-              <h2>Nivel de Ocupación</h2>
+              <h2>Ocupación y Concurrencia</h2>
+              <span class="module-badge badge-logistica">Aforo y Tráfico</span>
             </div>
             <p>Monitoree la concurrencia simultánea, el aforo pico y los bloques horarios de mayor afluencia.</p>
             <div class="module-card-action">
@@ -691,8 +699,8 @@
       </div>
 
       <div class="page-title-group">
-        <h1>Ingresos diarios</h1>
-        <p>Consulta la recaudación registrada por fecha y método de pago.</p>
+        <h1>Caja Diaria</h1>
+        <p>Arqueo de caja y consulta de recaudación registrada por fecha y método de pago.</p>
       </div>
 
       <!-- Barra de Filtro de Fecha -->
@@ -834,8 +842,8 @@
       </div>
 
       <div class="page-title-group">
-        <h1>Estadísticas y Concurrencia</h1>
-        <p>Análisis gráfico de recaudación económica y demanda vehicular</p>
+        <h1>Estadísticas de Facturación</h1>
+        <p>Análisis gráfico de recaudación mensual en soles y distribución de métodos de pago</p>
       </div>
 
       <div class="card card-filtro-estadisticas">
@@ -907,15 +915,6 @@
           <div class="accent-bar-sm"></div>
           <div class="chart-wrapper" id="chart-dona"></div>
         </div>
-
-        <div class="card chart-card chart-card-horas">
-          <div class="card-header">
-            <h2>Concurrencia Vehicular por Horas</h2>
-            <p class="caption">Afluencia por hora para detectar horas punta</p>
-          </div>
-          <div class="accent-bar-sm"></div>
-          <div class="chart-wrapper" id="chart-horas"></div>
-        </div>
       </div>
 
       <div class="empty-state-estadisticas" id="estadisticas-vacio" style="display: none;">
@@ -938,8 +937,8 @@
       </div>
 
       <div class="page-title-group">
-        <h1>Nivel de Ocupación y Afluencia</h1>
-        <p>Monitoreo de concurrencia simultánea, aforo pico y bloques horarios</p>
+        <h1>Ocupación y Concurrencia</h1>
+        <p>Monitoreo de aforo simultáneo, pico máximo y bloques horarios de mayor afluencia</p>
       </div>
 
       <div class="card card-filtro-estadisticas">
