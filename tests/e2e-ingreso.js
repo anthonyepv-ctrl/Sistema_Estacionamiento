@@ -36,6 +36,16 @@ async function limpiarPrueba() {
   }
 }
 
+async function asegurarServidor() {
+  try {
+    const res = await fetch(`${BASE}/api/publico/disponibilidad`);
+    if (res.status) return;
+  } catch (e) {
+    require('../server');
+    await new Promise((r) => setTimeout(r, 800));
+  }
+}
+
 async function login(page, usuario) {
   await page.fill('#login-usuario', usuario);
   await page.fill('#login-password', '123456');
@@ -49,6 +59,7 @@ async function login(page, usuario) {
 }
 
 (async () => {
+  await asegurarServidor();
   await limpiarPrueba();
 
   const browser = await chromium.launch({ headless: !HEADED, slowMo: HEADED ? 350 : 0 });
