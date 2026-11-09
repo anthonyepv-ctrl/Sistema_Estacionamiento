@@ -112,6 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function consultar() {
+    const token = obtenerToken();
+    if (!token) return;
+
     const rango = validarFechas();
     if (!rango) return;
 
@@ -125,14 +128,12 @@ document.addEventListener('DOMContentLoaded', () => {
         fechaInicio: rango.inicio,
         fechaFin: rango.fin
       });
-      const token = obtenerToken();
       const respuesta = await fetch(`/api/ocupacion?${parametros.toString()}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (respuesta.status === 401) {
-        sessionStorage.removeItem('cochera_sesion');
-        window.location.reload();
+        mostrarError('Sesión expirada. Por favor cierre sesión e ingrese nuevamente.');
         return;
       }
 

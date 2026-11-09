@@ -145,6 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
   async function consultar() {
     if (!selectAnio || !selectMes) return;
 
+    const token = obtenerToken();
+    if (!token) return;
+
     const anio = Number(selectAnio.value);
     const mes = Number(selectMes.value) || 1;
 
@@ -175,8 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (respuesta.status === 401) {
-        sessionStorage.removeItem('cochera_sesion');
-        window.location.reload();
+        mostrarErrorPeriodo('Sesión expirada. Por favor cierre sesión e ingrese nuevamente.');
         return;
       }
 
@@ -484,5 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
   poblarAnios();
   poblarMeses();
   actualizarModo(false);
-  consultar();
+  if (viewEstadisticas && viewEstadisticas.classList.contains('active')) {
+    consultar();
+  }
 });
