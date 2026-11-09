@@ -5,6 +5,10 @@ const { obtenerCapacidad } = require('../config/espacios');
 
 const router = express.Router();
 
+// Base de la llave de bloqueo por aforo (PostgreSQL advisory lock). El id del tipo de
+// vehículo se suma para que autos y motos no se bloqueen entre sí.
+const LLAVE_LOCK_AFORO = 770000;
+
 const TIPO_VEHICULO = {
   auto: { nombre: 'Automóvil / Camioneta', regex: /^[A-Z0-9]{3}-?[A-Z0-9]{3}$/ },
   moto: { nombre: 'Motocicleta', regex: /^([A-Z0-9]{2,4}-?[A-Z0-9]{2,4}|[A-Z]{3}-?\d{4})$/ }
@@ -114,6 +118,12 @@ router.post('/', async (req, res) => {
 
     // Registro atómico dentro de una transacción para evitar sobrecupo por concurrencia (DEF-77-10)
     const estadia = await prisma.$transaction(async (tx) => {
+      // Un lock de transacción por tipo de vehículo serializa los ingresos simultáneos:
+      // sin él, dos peticiones leen el mismo aforo y ambas insertan (el aislamiento por
+      // defecto de PostgreSQL no bloquea el conteo). Se libera al cerrar la transacción.
+      const llaveAforo = LLAVE_LOCK_AFORO + tipoVehiculo.id;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${llaveAforo})`;
+
       const estadiaActiva = await tx.estadia.findFirst({ where: { placa, horaSalida: null } });
 
       if (estadiaActiva) {
@@ -188,7 +198,9 @@ router.get('/activos', async (req, res) => {
         tipo: estadia.tipoVehiculo.nombre,
         horaIngreso: estadia.horaIngreso,
         nota: estadia.nota ?? null,
-        usuarioIngreso: estadia.usuario ? estadia.usuario.nombre : null
+        idUsuarioIngreso: estadia.idUsuario,
+        usuarioIngreso: estadia.usuario ? estadia.usuario.nombre : null,
+        rolUsuarioIngreso: estadia.usuario ? estadia.usuario.rol : null
       }))
     );
   } catch (error) {

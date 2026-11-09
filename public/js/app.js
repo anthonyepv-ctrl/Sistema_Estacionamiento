@@ -102,16 +102,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3800);
   }
 
+  const CLAVE_SESION = 'cochera_sesion';
+
+  function leerSesionGuardada() {
+    try {
+      const crudo = sessionStorage.getItem(CLAVE_SESION);
+      if (!crudo) return null;
+      const sesion = JSON.parse(crudo);
+      return sesion && sesion.token ? sesion : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function guardarSesion(sesion) {
+    if (!sesion || !sesion.token) return;
+    try { sessionStorage.setItem(CLAVE_SESION, JSON.stringify(sesion)); } catch (error) { /* modo privado */ }
+  }
+
+  function olvidarSesion() {
+    try { sessionStorage.removeItem(CLAVE_SESION); } catch (error) { /* modo privado */ }
+  }
+
   async function pedirApi(url, opciones = {}) {
     let respuesta;
 
+    const sesion = leerSesionGuardada();
+    const cabeceras = {
+      'Content-Type': 'application/json',
+      ...(sesion && sesion.token ? { Authorization: `Bearer ${sesion.token}` } : {})
+    };
+
     try {
       respuesta = await fetch(url, {
-        headers: { 'Content-Type': 'application/json' },
-        ...opciones
+        ...opciones,
+        headers: { ...cabeceras, ...(opciones.headers || {}) }
       });
     } catch (error) {
       throw new Error('No se pudo conectar con el servidor. Verifica que esté corriendo (npm run dev).');
+    }
+
+    // Sesión vencida o token inválido: se limpia y se vuelve al login.
+    if (respuesta.status === 401) {
+      olvidarSesion();
+      window.sesionActual = null;
+      rolActual = '';
+      if (sessionUserName) sessionUserName.textContent = '';
+      if (sessionUserRole) sessionUserRole.textContent = '';
+      if (sessionUserBadge) sessionUserBadge.textContent = '';
+      mostrarPantalla('login');
+      mostrarToast('Su sesión expiró. Vuelva a iniciar sesión.', true);
+      throw new Error('Sesión expirada.');
     }
 
     const datos = await respuesta.json().catch(() => ({}));
@@ -164,6 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         rolActual = sesion.rol;
         window.sesionActual = { usuario: sesion.usuario, nombre: sesion.nombre, rol: sesion.rol };
+        guardarSesion({
+          token: sesion.token,
+          usuario: sesion.usuario,
+          nombre: sesion.nombre,
+          rol: sesion.rol
+        });
 
         if (sessionUserName) sessionUserName.textContent = sesion.nombre;
         if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
@@ -184,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnLogout.addEventListener('click', () => {
       rolActual = '';
       window.sesionActual = null;
+      olvidarSesion();
       if (sessionUserName) sessionUserName.textContent = '';
       if (sessionUserRole) sessionUserRole.textContent = '';
       if (sessionUserBadge) sessionUserBadge.textContent = '';
@@ -741,8 +789,25 @@ document.addEventListener('DOMContentLoaded', () => {
       texto.className = 'callout-nota-texto';
       texto.textContent = nota;
 
+      const meta = document.createElement('div');
+      meta.className = 'callout-nota-meta';
+      meta.style.fontSize = '11px';
+      meta.style.marginTop = '6px';
+      meta.style.color = '#92400E';
+      meta.style.display = 'flex';
+      meta.style.alignItems = 'center';
+      meta.style.gap = '6px';
+      meta.style.fontWeight = '500';
+
+      const nombreUsuario = activo.usuarioIngreso || 'Recepcionista';
+      const idUsuario = activo.idUsuarioIngreso || activo.idUsuario || 2;
+      const horaTexto = formatearHora(activo.horaIngreso);
+
+      meta.innerHTML = `<span aria-hidden="true">👤</span> Registrado por: <strong>${nombreUsuario}</strong> (ID: #${idUsuario}) · ${horaTexto}`;
+
       card.appendChild(header);
       card.appendChild(texto);
+      card.appendChild(meta);
       salidaNotaContainer.appendChild(card);
     } else {
       const neutro = document.createElement('div');
@@ -914,8 +979,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Restaurar la sesión de la pestaña (si existe) antes de decidir la pantalla inicial.
+  const sesionRestaurada = leerSesionGuardada();
+  if (sesionRestaurada) {
+    rolActual = sesionRestaurada.rol || '';
+    window.sesionActual = {
+      usuario: sesionRestaurada.usuario,
+      nombre: sesionRestaurada.nombre,
+      rol: sesionRestaurada.rol
+    };
+    if (sessionUserName) sessionUserName.textContent = sesionRestaurada.nombre || '';
+    if (sessionUserRole) sessionUserRole.textContent = sesionRestaurada.rol || '';
+    if (sessionUserBadge) sessionUserBadge.textContent = sesionRestaurada.rol || '';
+  }
+
   if (window.location.hash === '#disponibilidad') {
     mostrarPantalla('disponibilidad');
+  } else if (sesionRestaurada) {
+    mostrarPantalla('dashboard');
   } else {
     mostrarPantalla('login');
   }

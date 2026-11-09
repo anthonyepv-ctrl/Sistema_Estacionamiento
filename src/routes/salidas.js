@@ -53,7 +53,9 @@ router.get('/activos', async (req, res) => {
         tarifaHora: estadia.tarifa ? Number(estadia.tarifa.precioHora).toFixed(2) : null,
         tarifaFraccion: estadia.tarifa ? Number(estadia.tarifa.precioFraccion).toFixed(2) : null,
         nota: estadia.nota ?? null,
-        usuarioIngreso: estadia.usuario ? estadia.usuario.nombre : null
+        idUsuarioIngreso: estadia.idUsuario,
+        usuarioIngreso: estadia.usuario ? estadia.usuario.nombre : null,
+        rolUsuarioIngreso: estadia.usuario ? estadia.usuario.rol : null
       }))
     );
   } catch (error) {
