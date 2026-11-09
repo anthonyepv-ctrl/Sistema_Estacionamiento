@@ -93,7 +93,7 @@ Ejemplo verificado con datos de staging (05/11/2026):
 
    El piso evita valores negativos ante un exceso temporal de ocupación.
 
-2. **Capacidad:** se obtiene con `obtenerCapacidad()` desde `src/config/espacios.js`, que lee `src/config/espacios.json` (por defecto 10 autos + 10 motos = 20).
+2. **Capacidad:** se obtiene con `obtenerCapacidad()` desde `src/config/espacios.js`, que lee `src/config/espacios.json` (por defecto 10 autos + 10 motos = 20). El valor `0` es válido (cochera cerrada).
 
 3. **Estadías activas:** se agrupan con `groupBy(idTipoVehiculo)` todas las filas de `estadia` con `horaSalida IS NULL`. Los tipos "Automóvil / Camioneta" y "Motocicleta" alimentan `autos` y `motos`; cualquier otro tipo se refleja en `total.otrosEnCochera` (antes se descartaba en silencio, DEF-77-02).
 
@@ -103,9 +103,33 @@ Ejemplo verificado con datos de staging (05/11/2026):
 
 6. **Actualización:** el endpoint envía `Cache-Control: no-store`; el frontend lo consulta al abrir la vista y cada 30 segundos mediante polling.
 
-7. **Acceso público:** la ruta se monta en `server.js` como `app.use('/api/publico', publicoRoutes)` antes del handler 404 y sin middleware de autenticación.
+7. **Acceso público:** la ruta se monta en `server.js` como `app.use('/api/publico', publicoRoutes)` **antes** de `app.use('/api', autenticar)`, por lo que es la única ruta de datos que no exige sesión. El resto de la API sí la exige (ver §4).
 
-   > **Deuda conocida (DEF-77-07):** el proyecto todavía no tiene middleware de autenticación en ninguna ruta. Este endpoint es público por diseño, pero los internos (`tarifas`, `espacios`, `ingresos`, `salidas`, `reportes`, `ocupacion`) también lo son y no deberían. Ver `plan-pruebas.md` §4.2.
+---
+
+## 4. Autenticación de la API
+
+Desde UPAO-77 (DEF-77-07) ninguna ruta interna responde sin sesión.
+
+| Ruta | Método | Acceso |
+| --- | --- | --- |
+| `/api/auth/login` | POST | Público. Devuelve `usuario`, `nombre`, `rol`, `token` y `expiraEnHoras`. |
+| `/api/auth/sesion` | GET | Requiere token. Devuelve la sesión asociada (útil para restaurar el estado tras recargar). |
+| `/api/publico/*` | GET | Público por diseño. |
+| `/api/ingresos/*`, `/api/salidas/*`, `/api/espacios` (GET), `/api/tarifas` (GET) | — | Requiere token de cualquier rol. |
+| `PUT /api/tarifas/:id`, `PUT /api/espacios/capacidad` | PUT | Solo rol `DUENO`. |
+| `/api/reportes/*`, `/api/ocupacion/*` | GET | Solo rol `DUENO`. |
+
+- **Cabecera:** `Authorization: Bearer <token>`.
+- **Token:** cadena `payload.firma` firmada con HMAC-SHA256 por `src/config/auth.js`. La firma se compara en tiempo constante y la vigencia (por defecto 8 h, `AUTH_TTL_HORAS`) se valida en cada petición.
+- **Secreto:** variable de entorno `AUTH_SECRET`. Si no está definida se genera uno aleatorio por proceso y las sesiones caen al reiniciar; debe configurarse en Render.
+- **Errores:** `401` sin token, token manipulado o expirado; `403` con token válido pero rol sin permiso.
+
+```http
+GET /api/espacios HTTP/1.1
+Host: localhost:3000
+Authorization: Bearer eyJzdWIiOjEsInVzdcGF5bG9hZC5maXJtYQ
+```
 
 ---
 

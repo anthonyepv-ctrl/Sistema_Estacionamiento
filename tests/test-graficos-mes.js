@@ -6,23 +6,57 @@ const app = require('../server');
 
 const PORT = 3456;
 
+// Desde UPAO-77 (DEF-77-07) los reportes exigen sesión de DUEÑO.
+let token = '';
+
+function postLogin(cuerpo) {
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify(cuerpo);
+    const req = http.request(
+      {
+        hostname: 'localhost',
+        port: PORT,
+        path: '/api/auth/login',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (c) => { data += c; });
+        res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(data) }));
+      }
+    );
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
 function hacerPeticion(path) {
   return new Promise((resolve, reject) => {
-    http.get(`http://localhost:${PORT}${path}`, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          resolve({
-            status: res.statusCode,
-            headers: res.headers,
-            body: data.startsWith('{') || data.startsWith('[') ? JSON.parse(data) : data
-          });
-        } catch (e) {
-          resolve({ status: res.statusCode, headers: res.headers, body: data });
-        }
-      });
-    }).on('error', reject);
+    http.get(
+      {
+        hostname: 'localhost',
+        port: PORT,
+        path,
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            resolve({
+              status: res.statusCode,
+              headers: res.headers,
+              body: data.startsWith('{') || data.startsWith('[') ? JSON.parse(data) : data
+            });
+          } catch (e) {
+            resolve({ status: res.statusCode, headers: res.headers, body: data });
+          }
+        });
+      }
+    ).on('error', reject);
   });
 }
 
@@ -33,6 +67,24 @@ async function runTests() {
   await new Promise((r) => setTimeout(r, 500));
 
   try {
+    const login = await postLogin({
+      usuario: process.env.TEST_USUARIO || 'admin',
+      contrasena: process.env.TEST_CONTRASENA || '123456'
+    });
+    assert.strictEqual(login.status, 200, 'El login debe responder 200');
+    assert.ok(login.body.token, 'El login debe emitir un token de sesión');
+    token = login.body.token;
+    console.log('[AUTH] Sesión iniciada como DUEÑO.');
+
+    // Caso 0: sin token la API debe rechazar
+    console.log('\n[TEST 0] GET /api/reportes/graficos-mes sin sesión (control de acceso)');
+    const tokenPrevio = token;
+    token = '';
+    const res0 = await hacerPeticion('/api/reportes/graficos-mes?mes=10&anio=2026');
+    token = tokenPrevio;
+    assert.strictEqual(res0.status, 401, 'Sin token debe responder HTTP 401');
+    console.log('✓ TEST 0 EXITOSO: el endpoint rechaza peticiones sin sesión.');
+
     // Caso 1: Consulta mensual válida con datos (Octubre 2026)
     console.log('\n[TEST 1] GET /api/reportes/graficos-mes?mes=10&anio=2026 (mes válido con movimientos)');
     const res1 = await hacerPeticion('/api/reportes/graficos-mes?mes=10&anio=2026');

@@ -28,10 +28,28 @@ async function asegurarServidor() {
   }
 }
 
-async function post(ruta, cuerpo) {
-  const r = await fetch(BASE_URL + ruta, {
+// La API exige sesión desde UPAO-77 (DEF-77-07): se inicia como DUEÑO antes de operar.
+async function iniciarSesion() {
+  const r = await fetch(BASE_URL + '/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      usuario: process.env.TEST_USUARIO || 'admin',
+      contrasena: process.env.TEST_CONTRASENA || '123456'
+    })
+  });
+  const data = await r.json();
+  if (!data.token) throw new Error('No se obtuvo token de sesión en el login.');
+  return data.token;
+}
+
+async function post(ruta, cuerpo, token) {
+  const r = await fetch(BASE_URL + ruta, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
     body: JSON.stringify(cuerpo)
   });
   const texto = await r.text();
@@ -61,6 +79,7 @@ async function limpiar() {
 
 (async () => {
   await asegurarServidor();
+  const token = await iniciarSesion();
   await limpiar();
 
   const tipoAuto = await prisma.tipoVehiculo.findUnique({ where: { nombre: 'Automóvil / Camioneta' } });
@@ -80,8 +99,8 @@ async function limpiar() {
 
   try {
     const [a, b] = await Promise.all([
-      post('/api/salidas', { estadiaId: estadia.id, metodoPago: 'Efectivo' }),
-      post('/api/salidas', { estadiaId: estadia.id, metodoPago: 'Yape' })
+      post('/api/salidas', { estadiaId: estadia.id, metodoPago: 'Efectivo' }, token),
+      post('/api/salidas', { estadiaId: estadia.id, metodoPago: 'Yape' }, token)
     ]);
 
     const pagosDespues = await prisma.pago.count();

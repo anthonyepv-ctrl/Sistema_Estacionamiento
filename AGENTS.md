@@ -24,6 +24,8 @@ Sistema web para la **gestión de una cochera/estacionamiento**: registro de ing
 | Backend | Node.js + Express (`server.js`, `src/`) |
 | Base de datos | PostgreSQL — nube: **Neon** (plan gratuito); local opcional: Docker (base `cochera-adev`) |
 | ORM | **Prisma** |
+| Autenticación | Token firmado HMAC-SHA256 propio (`src/config/auth.js`, sin dependencias externas) + cabecera `Authorization: Bearer` |
+| Pruebas | Playwright (E2E) + suites Node de API, integridad y concurrencia (`tests/`) |
 | Control de versiones | Git + GitHub |
 | Despliegue | **Render** (plan free) — `render.yaml`, rama `main` |
 
@@ -76,6 +78,15 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run db:migrate` | Crear/aplicar migraciones en desarrollo. |
 | `npm run db:generate` | Generar el cliente Prisma. |
 | `npm run db:studio` | Explorar la base de datos. |
+| `npm run test:regresion` | Suite de no regresión (levanta su propio servidor en el puerto 3555). |
+| `npm run test:e2e` | E2E del módulo de ingreso (requiere servidor y Playwright). |
+| `npm run test:graficos` | E2E de gráficos estadísticos. |
+| `npm run test:disponibilidad` | E2E de la vista pública de disponibilidad. |
+| `npm run test:seguridad` | Verifica que la API exige sesión y respeta los roles. |
+| `npm run test:integridad` | Verifica que un doble clic en la salida no duplique el cobro. |
+| `npm run test:concurrencia` | Verifica que dos ingresos simultáneos no superen el aforo. |
+
+> Las suites `test:seguridad`, `test:integridad`, `test:concurrencia` y `test:disponibilidad` esperan el servidor en `http://localhost:3555` (`BASE_URL` para cambiarlo). `test:graficos-mes` se ejecuta con `node tests/test-graficos-mes.js`.
 
 ---
 
@@ -160,14 +171,14 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | UPAO-11 | Ver estado de espacios | Listo | 1 | Operación y Control de la cochera |
 | UPAO-17 | Consultar ingresos recaudados | Listo | 2 | Administración y Supervisión del Negocio |
 
-### Historias del Sprint 2 (En curso)
+### Historias del Sprint 2 (26 oct – 9 nov)
 
 | Clave | Historia | Estado | SP | Épica |
 | --- | --- | --- | --- | --- |
-| UPAO-9 | Adjuntar notas | Por hacer | 2 | Operación y Control de la cochera |
-| UPAO-18 | Gráficos de ingresos | Por hacer | 5 | Administración y Supervisión del Negocio |
-| UPAO-19 | Consultar nivel de ocupación | Por hacer | 2 | Administración y Supervisión del Negocio |
-| UPAO-20 | Ver espacios disponibles | Por hacer | 1 | Manejo de Reserva Web |
+| UPAO-9 | Adjuntar notas | Listo | 2 | Operación y Control de la cochera |
+| UPAO-18 | Gráficos de ingresos | Listo | 5 | Administración y Supervisión del Negocio |
+| UPAO-19 | Consultar nivel de ocupación | Listo | 2 | Administración y Supervisión del Negocio |
+| UPAO-20 | Ver espacios disponibles | En curso | 1 | Manejo de Reserva Web |
 
 > Backlog futuro (sin sprint asignado): UPAO-8 Buscar reservas, UPAO-21 Realizar reserva, UPAO-22 Anular reserva, UPAO-23 Consultar historial de estados.
 
@@ -311,6 +322,7 @@ npx skills add usestrix/strix@api-security-testing -g -y
 - **Estrategia Blue / Green (§7):** El desarrollo e integración continua se realiza exclusivamente en **Blue (Staging / rama `develop`)**. Prohibido fusionar o desplegar directamente a **Green (Producción / rama `main`)** hasta que la historia de usuario esté 100% completada, depurada y validada en Blue (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
 - **Pruebas y Defect Log:** Toda subtarea de test debe generar su archivo `plan-pruebas.md` en `docs/modulos/<modulo>/` siguiendo la plantilla oficial (matriz de casos, Defect Log y enlaces a GitHub y video MP4).
 - **Entorno de datos:** El `.env` local y los tests deben apuntar a la base de datos de **Staging** (Neon `staging`), nunca alterar la base de datos de producción.
+- **Autenticación de la API (§2):** toda ruta bajo `/api` exige `Authorization: Bearer <token>` salvo `/api/auth/*` y `/api/publico/*`. Al crear un endpoint nuevo, decidir explícitamente qué roles lo usan y montarlo detrás de `autenticar` + `autorizar(...)` en `server.js`. Nunca confiar en que el frontend oculte una pantalla: el control de acceso vive en el backend.
 - Mantener la estructura de carpetas simple; no agregar dependencias sin justificarlo.
 
 ---
@@ -318,8 +330,10 @@ npx skills add usestrix/strix@api-security-testing -g -y
 ## 14. Pendientes conocidos
 
 - Compartir el `DATABASE_URL` de Neon con el equipo (por privado; ver README).
-- API implementada para login y tarifas; falta el resto de módulos del Sprint 1 (en su orden).
+- **`AUTH_SECRET` en Render:** crear la variable de entorno en el servicio de Blue. Sin ella el servidor genera un secreto por proceso y las sesiones se caen en cada reinicio (ver §2 y `.env.example`).
+- **DEF-77-08 — capacidad persistente:** la capacidad de autos/motos vive en `src/config/espacios.json`, un archivo versionado. Un despliegue la revierte a los valores del commit. Requiere moverla a base de datos (tabla `configuracion`) con migración y actualizar el modelo de datos. Ver `docs/modulos/espacios-publicos/plan-pruebas.md`.
+- **DEF-77-02 — política de aforo para tipos no clasificados:** la API ya reporta las estadías de tipos distintos de auto/moto (`total.otrosEnCochera`), pero falta que el equipo decida si se descuentan del cupo de autos, del de motos o se contabilizan aparte.
 - **Despliegue demo (UPAO-36):** login + tarifas publicados en **Render** (plan free, rama `main`, BD Neon) mediante `render.yaml`; `DATABASE_URL` es variable secreta del panel de Render. El despliegue productivo de la Reserva Web (Epic UPAO-28) sigue siendo trabajo futuro.
 - Posible error de nombre en `public/css/stye.css` (¿`style.css`?).
 - Confirmar la **URL del tablero de Jira** (ver §9).
-- Priorizar las historias del **Sprint 1** (UPAO-16, UPAO-6, UPAO-7, UPAO-11, UPAO-17) respetando el orden planificado.
+- **Sprint 3:** backlog de la épica UPAO-28 (UPAO-8, UPAO-21, UPAO-22, UPAO-23) y las mejoras detectadas en la retrospectiva.

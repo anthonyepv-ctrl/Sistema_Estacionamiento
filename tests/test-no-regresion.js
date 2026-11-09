@@ -5,43 +5,80 @@ process.env.PORT = '3555';
 const app = require('../server');
 const PORT = 3555;
 
-function get(path) {
+// Desde UPAO-77 (DEF-77-07) la API exige sesión: la suite inicia sesión como DUEÑO
+// y envía el token en cada petición.
+let token = '';
+
+function solicitar(metodo, path, cuerpo, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
-    http.get(`http://localhost:${PORT}${path}`, (res) => {
-      let data = '';
-      res.on('data', (c) => { data += c; });
-      res.on('end', () => {
-        try {
-          resolve({ status: res.statusCode, data: JSON.parse(data) });
-        } catch (e) {
-          resolve({ status: res.statusCode, data });
+    const payload = cuerpo ? JSON.stringify(cuerpo) : null;
+    const req = http.request(
+      {
+        hostname: 'localhost',
+        port: PORT,
+        path,
+        method: metodo,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {}),
+          ...extraHeaders
         }
-      });
-    }).on('error', reject);
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (c) => { data += c; });
+        res.on('end', () => {
+          try {
+            resolve({ status: res.statusCode, headers: res.headers, data: JSON.parse(data) });
+          } catch (e) {
+            resolve({ status: res.statusCode, headers: res.headers, data });
+          }
+        });
+      }
+    );
+    req.on('error', reject);
+    if (payload) req.write(payload);
+    req.end();
   });
+}
+
+async function iniciarSesion() {
+  const respuesta = await solicitar('POST', '/api/auth/login', {
+    usuario: process.env.TEST_USUARIO || 'admin',
+    contrasena: process.env.TEST_CONTRASENA || '123456'
+  });
+
+  assert.strictEqual(respuesta.status, 200, 'El login debe responder 200');
+  assert.ok(respuesta.data.token, 'El login debe emitir un token de sesión');
+  token = respuesta.data.token;
+  console.log('[AUTH] Sesión iniciada como DUEÑO; token recibido.');
+}
+
+function get(path) {
+  return solicitar('GET', path);
 }
 
 function getConCabeceras(path) {
-  return new Promise((resolve, reject) => {
-    http.get(`http://localhost:${PORT}${path}`, (res) => {
-      let data = '';
-      res.on('data', (c) => { data += c; });
-      res.on('end', () => {
-        try {
-          resolve({ status: res.statusCode, headers: res.headers, data: JSON.parse(data) });
-        } catch (e) {
-          resolve({ status: res.statusCode, headers: res.headers, data });
-        }
-      });
-    }).on('error', reject);
-  });
+  return solicitar('GET', path);
 }
 
 async function testNoRegresion() {
-  console.log('--- Verificando Aseguramiento de No Regresión (UPAO-73) ---');
+  console.log('--- Verificando Aseguramiento de No Regresión (UPAO-73 / UPAO-77) ---');
   await new Promise((r) => setTimeout(r, 600));
 
   try {
+    await iniciarSesion();
+
+    // 0. Control de acceso (DEF-77-07): sin token, la API debe rechazar
+    console.log('[REG-00] Validando que la API exige sesión...');
+    const tokenPrevio = token;
+    token = '';
+    const sinToken = await solicitar('GET', '/api/ingresos/activos');
+    token = tokenPrevio;
+    assert.strictEqual(sinToken.status, 401, 'Sin token la API debe responder 401');
+    console.log('✓ REG-00 EXITOSO: la API rechaza peticiones sin sesión.');
+
     // 1. Reportes Diarios (UPAO-17 / UPAO-54)
     console.log('[REG-01] Validando endpoint histórico de Reporte Diario...');
     const resDiario = await get('/api/reportes/diario?fecha=2026-10-27');

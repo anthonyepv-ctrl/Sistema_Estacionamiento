@@ -10,8 +10,8 @@ const router = express.Router();
 const LLAVE_LOCK_AFORO = 770000;
 
 const TIPO_VEHICULO = {
-  auto: { nombre: 'Automóvil / Camioneta', regex: /^[A-Z0-9]{3}-?[A-Z0-9]{3}$/ },
-  moto: { nombre: 'Motocicleta', regex: /^([A-Z0-9]{2,4}-?[A-Z0-9]{2,4}|[A-Z]{3}-?\d{4})$/ }
+  auto: { nombre: 'Automóvil / Camioneta', regex: /^[A-Z][A-Z0-9]{2}-?\d{3}$/ },
+  moto: { nombre: 'Motocicleta', regex: /^(\d{4}-?[A-Z0-9]{2}|[A-Z]{2}-?\d{4}|[A-Z]{3}-?\d{4})$/ }
 };
 
 function analizarPlaca(limpio) {
@@ -25,6 +25,13 @@ function analizarPlaca(limpio) {
 
   if (limpio.length === 6 && /\d{4}$/.test(limpio)) {
     return { tipo: 'moto', corte: 2 };
+  }
+
+  if (limpio.length === 6) {
+    if (/^[A-Z][A-Z0-9]{2}\d{3}$/.test(limpio)) {
+      return { tipo: 'auto', corte: 3 };
+    }
+    return { tipo: null, corte: 3 };
   }
 
   return { tipo: 'auto', corte: 3 };
@@ -58,7 +65,7 @@ router.post('/', async (req, res) => {
 
   // Validación de coherencia estricta entre formato de placa y tipo de vehículo seleccionado (Prevención de errores humanos / Poka-Yoke)
   const analisis = analizarPlaca(alfanumerico);
-  if (analisis.tipo !== tipo) {
+  if (analisis.tipo && analisis.tipo !== tipo) {
     const esperado = analisis.tipo === 'auto' ? 'Automóvil / Camioneta' : 'Motocicleta';
     const seleccionado = tipo === 'auto' ? 'Automóvil / Camioneta' : 'Motocicleta';
     return res.status(400).json({

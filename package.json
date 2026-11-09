@@ -20,7 +20,8 @@
     "test:graficos": "node tests/e2e-graficos-estadisticos.js",
     "test:disponibilidad": "node tests/e2e-disponibilidad.js",
     "test:integridad": "node tests/test-integridad-cobro.js",
-    "test:auditoria-seguridad": "node tests/auditoria-seguridad-api.js",
+    "test:concurrencia": "node tests/test-concurrencia-aforo.js",
+    "test:seguridad": "node tests/test-seguridad-api.js",
     "test:regresion": "node tests/test-no-regresion.js"
   },
   "prisma": {

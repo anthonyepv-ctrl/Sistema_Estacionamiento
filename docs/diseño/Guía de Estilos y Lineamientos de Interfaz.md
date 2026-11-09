@@ -35,15 +35,15 @@
 
 **Placa de Auto / Camioneta (Categoría M / N):**
 
-- **Longitud y Formato:** 6 caracteres alfanuméricos con guion intermedio (`ABC-123` o `A1B-234`).
-- **RegEx:** `^[A-Z0-9]{3}-?[A-Z0-9]{3}$`
+- **Longitud y Formato:** 6 caracteres alfanuméricos con guion intermedio (`ABC-123` o `A1B-234`). El primer carácter es letra de zona registral y los 3 últimos son obligatoriamente números.
+- **RegEx:** `^[A-Z][A-Z0-9]{2}-?\d{3}$`
 - **Transformación:** Automático a MAYÚSCULAS (`text-transform: uppercase;`).
 - **Input Type:** `text` con máscara de auto-completado de guion.
 
 **Placa de Motocicleta / Menores (Categoría L):**
 
 - **Longitud y Formato:** 6 caracteres alfanuméricos (`1234-AB` o `AB-1234`).
-- **RegEx:** `^[A-Z0-9]{2,4}-?[A-Z0-9]{2,4}$`
+- **RegEx:** `^(\d{4}-?[A-Z0-9]{2}|[A-Z]{2}-?\d{4}|[A-Z]{3}-?\d{4})$`
 - **Transformación:** Automático a MAYÚSCULAS (`text-transform: uppercase;`).
 
 **Feedback de Error:**

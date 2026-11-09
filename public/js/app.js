@@ -433,8 +433,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const PLACA_REGEX = {
-    auto: /^[A-Z0-9]{3}-?[A-Z0-9]{3}$/,
-    moto: /^([A-Z0-9]{2,4}-?[A-Z0-9]{2,4}|[A-Z]{3}-?\d{4})$/
+    auto: /^[A-Z][A-Z0-9]{2}-?\d{3}$/,
+    moto: /^(\d{4}-?[A-Z0-9]{2}|[A-Z]{2}-?\d{4}|[A-Z]{3}-?\d{4})$/
   };
 
   const ETIQUETA_TIPO = {
@@ -453,6 +453,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (limpio.length === 6 && /\d{4}$/.test(limpio)) {
       return { tipo: 'moto', corte: 2 };
+    }
+
+    if (limpio.length === 6) {
+      if (/^[A-Z][A-Z0-9]{2}\d{3}$/.test(limpio)) {
+        return { tipo: 'auto', corte: 3 };
+      }
+      return { tipo: null, corte: 3 };
     }
 
     return { tipo: 'auto', corte: 3 };
@@ -491,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const alfanumerico = valor.replace(/[^A-Z0-9]/g, '');
     if (alfanumerico.length >= 6) {
       const tipoInferido = inferirTipo(valor);
-      if (tipo !== tipoInferido) {
+      if (tipoInferido && tipo !== tipoInferido) {
         if (mostrarMensaje) {
           const esperado = ETIQUETA_TIPO[tipoInferido];
           const seleccionado = ETIQUETA_TIPO[tipo];
@@ -553,7 +560,10 @@ document.addEventListener('DOMContentLoaded', () => {
     inputPlaca.addEventListener('input', () => {
       const sinEspacios = inputPlaca.value.replace(/\s+/g, '');
       inputPlaca.value = normalizarPlaca(sinEspacios);
-      selectTipoIngreso.value = inferirTipo(inputPlaca.value);
+      const tipoInferido = inferirTipo(inputPlaca.value);
+      if (tipoInferido) {
+        selectTipoIngreso.value = tipoInferido;
+      }
       actualizarVistaPrevia();
 
       const alfanumerico = inputPlaca.value.replace(/[^A-Z0-9]/g, '');
