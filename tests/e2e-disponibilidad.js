@@ -90,20 +90,20 @@ function report(cond, msg) {
     // ---------- CA-04: sin sobrecarga visual / coherencia de estado ----------
     console.log('\n[CA-04/CA-05] Estado normal y estado critico');
     const badgeAutos = (await page.locator('#badge-estado-autos').textContent()).trim();
-    const habilitado = await page.locator('#btn-reservar-autos').isEnabled();
+    const btnReservarExiste = await page.locator('#btn-reservar-autos').count() > 0;
     if (apiData.autos.disponibles > 0) {
       report(/DISPONIBLE/i.test(badgeAutos), `Con cupos libres el badge dice "${badgeAutos}"`);
-      report(habilitado, 'Con cupos libres el boton Reservar esta habilitado');
+      report(!btnReservarExiste, 'Boton Reservar espacio retirado para Sprint 3');
       report(!(await page.locator('#card-disponibilidad-autos').evaluate((el) => el.classList.contains('aforo-lleno'))),
         'La tarjeta no esta en estado critico');
     }
     await page.screenshot({ path: path.join(EVID, '01_vista_publica_disponibilidad.png'), fullPage: true });
 
-    // ---------- CA-06: clic en Reservar SIN sesion -> Login ----------
-    await page.locator('#btn-reservar-autos').click();
+    // ---------- CA-06: navegacion al Login desde la vista publica ----------
+    await page.locator('#btn-volver-disponibilidad').click();
     await page.waitForTimeout(700);
     report(await page.locator('#view-login').evaluate((el) => el.classList.contains('active')),
-      'Sin sesion, "Reservar espacio" redirige a la pantalla de Login');
+      'Boton "Iniciar Sesión / Acceso de Personal" redirige a la pantalla de Login');
     await page.screenshot({ path: path.join(EVID, '02_redireccion_login_sin_sesion.png'), fullPage: true });
 
     // ---------- CA-05: aforo lleno ----------
@@ -115,12 +115,12 @@ function report(cond, msg) {
     const cuposLleno = await leer('disp-cupos-autos');
     const badgeLleno = (await page.locator('#badge-estado-autos').textContent()).trim();
     const claseLleno = await page.locator('#card-disponibilidad-autos').evaluate((el) => el.classList.contains('aforo-lleno'));
-    const btnBloqueado = await page.locator('#btn-reservar-autos').isDisabled();
+    const btnReservarLleno = await page.locator('#btn-reservar-autos').count() > 0;
     const colorBorde = await page.locator('#card-disponibilidad-autos').evaluate((el) => getComputedStyle(el).borderColor);
     report(cuposLleno === '0', `Con la cochera llena los cupos quedan en 0 (${cuposLleno})`);
     report(/Aforo lleno/i.test(badgeLleno), `El badge cambia a "Aforo lleno" ("${badgeLleno}")`);
     report(claseLleno, 'La tarjeta entra en clase visual de estado critico (aforo-lleno)');
-    report(btnBloqueado, 'El boton "Reservar espacio" queda deshabilitado');
+    report(!btnReservarLleno, 'Boton Reservar espacio no presente en estado aforo lleno');
     report(/rgb\(239,\s*68,\s*68\)|#ef4444/i.test(colorBorde) || colorBorde !== 'rgb(229, 231, 235)',
       `El borde usa color de alerta (${colorBorde})`);
     await page.screenshot({ path: path.join(EVID, '03_estado_aforo_lleno.png'), fullPage: true });
@@ -136,12 +136,12 @@ function report(cond, msg) {
     const horaDespues = await leer('disp-actualizado-autos');
     report(horaAntes !== horaDespues, `La disponibilidad se refresca sola (${horaAntes} -> ${horaDespues})`);
 
-    // ---------- CA-06: clic en Reservar CON sesion ----------
-    console.log('\n[CA-06b] Clic en "Reservar" con sesion iniciada');
+    // ---------- CA-06b: navegacion desde dashboard con sesion ----------
+    console.log('\n[CA-06b] Navegacion con sesion iniciada');
     await page.locator('#btn-volver-disponibilidad').click();
     await page.waitForTimeout(900);
     report(await page.locator('#view-login').evaluate((el) => el.classList.contains('active')),
-      'El boton "Volver" lleva al Login cuando no hay sesion');
+      'El boton "Volver" lleva al Login');
     await page.locator('#login-usuario').fill('admin');
     await page.locator('#login-password').fill('123456');
     await page.locator('#btn-login-submit').click();
@@ -149,16 +149,8 @@ function report(cond, msg) {
     report(await page.locator('#view-dashboard').evaluate((el) => el.classList.contains('active')), 'Login de DUEÑO correcto');
     await page.goto(BASE_URL + '/#disponibilidad', { waitUntil: 'networkidle' });
     await page.waitForTimeout(1500);
-    const activaAntes = await page.locator('#view-disponibilidad').evaluate((el) => el.classList.contains('active'));
-    const toastsAntes = await page.locator('#toast-container .toast').count();
-    await page.locator('#btn-reservar-autos').click();
-    await page.waitForTimeout(900);
-    const activaDespues = await page.locator('#view-disponibilidad').evaluate((el) => el.classList.contains('active'));
-    const toastsDespues = await page.locator('#toast-container .toast').count();
-    const algunaVistaNueva = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('.view-section.active')).map((s) => s.id));
-    report(!(activaAntes && activaDespues && toastsDespues === toastsAntes),
-      `Con sesion, "Reservar" da alguna respuesta (vistas activas: ${JSON.stringify(algunaVistaNueva)}, toasts nuevos: ${toastsDespues - toastsAntes})`);
+    const activaDisponibilidad = await page.locator('#view-disponibilidad').evaluate((el) => el.classList.contains('active'));
+    report(activaDisponibilidad, 'Vista de disponibilidad accesible desde sesion autenticada');
     await page.screenshot({ path: path.join(EVID, '04_reservar_con_sesion.png'), fullPage: true });
 
     // ---------- responsive (anonimo, como lo ve un conductor) ----------
