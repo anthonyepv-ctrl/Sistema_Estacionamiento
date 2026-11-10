@@ -960,14 +960,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const btnVerDisponibilidadLogin = document.getElementById('btn-ver-disponibilidad-login');
-  if (btnVerDisponibilidadLogin) {
-    btnVerDisponibilidadLogin.addEventListener('click', () => {
-      window.location.hash = '#disponibilidad';
-      mostrarPantalla('disponibilidad');
-    });
-  }
-
   const btnVolverADispLogin = document.getElementById('btn-volver-a-disponibilidad-desde-login');
   if (btnVolverADispLogin) {
     btnVolverADispLogin.addEventListener('click', () => {

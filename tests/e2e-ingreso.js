@@ -165,6 +165,6 @@ async function login(page, usuario) {
     await browser.close();
     await limpiarPrueba();
     await prisma.$disconnect();
-    process.exitCode = fail === 0 ? 0 : 1;
+    process.exit(fail === 0 ? 0 : 1);
   }
 })();
