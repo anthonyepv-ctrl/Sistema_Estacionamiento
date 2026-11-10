@@ -235,10 +235,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (sessionUserName) sessionUserName.textContent = '';
       if (sessionUserRole) sessionUserRole.textContent = '';
       if (sessionUserBadge) sessionUserBadge.textContent = '';
-      if (window.location.hash === '#disponibilidad') {
+      if (window.location.hash) {
         window.location.hash = '';
       }
-      mostrarPantalla('login');
+      mostrarPantalla('disponibilidad');
     });
   }
 
@@ -963,6 +963,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnVerDisponibilidadLogin = document.getElementById('btn-ver-disponibilidad-login');
   if (btnVerDisponibilidadLogin) {
     btnVerDisponibilidadLogin.addEventListener('click', () => {
+      window.location.hash = '#disponibilidad';
+      mostrarPantalla('disponibilidad');
+    });
+  }
+
+  const btnVolverADispLogin = document.getElementById('btn-volver-a-disponibilidad-desde-login');
+  if (btnVolverADispLogin) {
+    btnVolverADispLogin.addEventListener('click', () => {
+      window.location.hash = '#disponibilidad';
       mostrarPantalla('disponibilidad');
     });
   }
@@ -1003,20 +1012,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionUserBadge) sessionUserBadge.textContent = sesionRestaurada.rol || '';
   }
 
-  if (window.location.hash === '#disponibilidad') {
-    mostrarPantalla('disponibilidad');
+  if (window.location.hash === '#login') {
+    mostrarPantalla('login');
   } else if (sesionRestaurada) {
     mostrarPantalla('dashboard');
   } else {
-    mostrarPantalla('login');
+    // Por defecto para todo el público conductor: Vista de Disponibilidad (UPAO-20)
+    mostrarPantalla('disponibilidad');
   }
 
   window.addEventListener('hashchange', () => {
-    const viewDisponibilidad = document.getElementById('view-disponibilidad');
-    if (window.location.hash === '#disponibilidad') {
+    if (window.location.hash === '#login') {
+      mostrarPantalla('login');
+    } else if (window.location.hash === '#disponibilidad') {
       mostrarPantalla('disponibilidad');
-    } else if (viewDisponibilidad && viewDisponibilidad.classList.contains('active')) {
-      mostrarPantalla(rolActual ? 'dashboard' : 'login');
     }
   });
 });

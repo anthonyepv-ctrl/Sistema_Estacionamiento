@@ -60,7 +60,7 @@ function report(cond, msg) {
   try {
     // ---------- CA-06: acceso publico sin sesion ----------
     console.log('\n[CA-06] Acceso publico sin sesion');
-    await page.goto(BASE_URL + '/#disponibilidad', { waitUntil: 'networkidle' });
+    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
     await page.waitForTimeout(1200);
     report(await page.locator('#view-disponibilidad').evaluate((el) => el.classList.contains('active')),
       'La vista de disponibilidad abre sin haber iniciado sesion');
@@ -69,7 +69,7 @@ function report(cond, msg) {
     report((await page.locator('#header-user-section').getAttribute('style') || '').includes('none'),
       'La cabecera de usuario esta oculta (no hay sesion)');
     const textoVolver = (await page.locator('#btn-volver-disponibilidad').textContent()).trim();
-    report(/Iniciar Sesi/i.test(textoVolver), `El boton volver invita a iniciar sesion ("${textoVolver}")`);
+    report(/Iniciar Sesi|Acceso de Personal/i.test(textoVolver), `El boton volver invita a iniciar sesion ("${textoVolver}")`);
 
     // ---------- CA-02/CA-03: paneles con datos reales ----------
     console.log('\n[CA-02/CA-03] Paneles de autos y motos');
@@ -141,7 +141,7 @@ function report(cond, msg) {
     await page.locator('#btn-volver-disponibilidad').click();
     await page.waitForTimeout(900);
     report(await page.locator('#view-login').evaluate((el) => el.classList.contains('active')),
-      'El boton "Volver" lleva al Login');
+      'El boton "Acceso de Personal" lleva al Login');
     await page.locator('#login-usuario').fill('admin');
     await page.locator('#login-password').fill('123456');
     await page.locator('#btn-login-submit').click();
@@ -153,11 +153,15 @@ function report(cond, msg) {
     report(activaDisponibilidad, 'Vista de disponibilidad accesible desde sesion autenticada');
     await page.screenshot({ path: path.join(EVID, '04_reservar_con_sesion.png'), fullPage: true });
 
+    // Regresar al dashboard para cerrar sesion
+    await page.locator('#btn-volver-disponibilidad').click();
+    await page.waitForTimeout(700);
+
     // ---------- responsive (anonimo, como lo ve un conductor) ----------
     console.log('\n[Responsive] Vista movil sin sesion');
     await page.locator('#btn-logout').click();
     await page.waitForTimeout(700);
-    report(await page.locator('#view-login').evaluate((el) => el.classList.contains('active')), 'Cierre de sesion correcto');
+    report(await page.locator('#view-disponibilidad').evaluate((el) => el.classList.contains('active')), 'Cierre de sesion regresa a portada publica');
     for (const ancho of [360, 390, 414]) {
       await page.setViewportSize({ width: ancho, height: 844 });
       await page.goto(BASE_URL + '/#disponibilidad', { waitUntil: 'networkidle' });

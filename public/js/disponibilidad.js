@@ -211,9 +211,16 @@
     if (btnVolverDisponibilidad) {
       btnVolverDisponibilidad.addEventListener('click', () => {
         const autenticado = haySesionActiva();
-        limpiarHashDisponibilidad();
-        if (typeof window.mostrarPantalla === 'function') {
-          window.mostrarPantalla(autenticado ? 'dashboard' : 'login');
+        if (autenticado) {
+          limpiarHashDisponibilidad();
+          if (typeof window.mostrarPantalla === 'function') {
+            window.mostrarPantalla('dashboard');
+          }
+        } else {
+          window.location.hash = '#login';
+          if (typeof window.mostrarPantalla === 'function') {
+            window.mostrarPantalla('login');
+          }
         }
       });
     }
@@ -225,9 +232,9 @@
       iniciarPolling();
       // Ajustar texto del botón volver según si hay sesión abierta o no
       if (btnVolverDisponibilidad) {
-        btnVolverDisponibilidad.textContent = haySesionActiva()
+        btnVolverDisponibilidad.innerHTML = haySesionActiva()
           ? '← Volver al Menú Principal'
-          : '← Iniciar Sesión / Acceso de Personal';
+          : '<span>👤 Acceso de Personal</span> <span class="mono" style="font-size: 0.75rem; opacity: 0.85;">(Iniciar Sesión)</span>';
       }
     },
     detener: () => {

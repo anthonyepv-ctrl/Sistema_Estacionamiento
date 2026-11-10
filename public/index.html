@@ -49,9 +49,15 @@
     <!-- ----------------------------------------------------------------------
          1. PANTALLA DE LOGIN
          ---------------------------------------------------------------------- -->
-    <section id="view-login" class="view-section active">
+    <section id="view-login" class="view-section">
       <div class="login-wrapper">
         <div class="login-card">
+          <div style="margin-bottom: 1rem;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-a-disponibilidad-desde-login">
+              ← Volver a Disponibilidad
+            </button>
+          </div>
+
           <div class="login-header">
             <div class="logo-badge">P</div>
             <h1>Iniciar Sesión</h1>
@@ -1006,10 +1012,11 @@
     <!-- ----------------------------------------------------------------------
          10. PANTALLA PÚBLICA DE DISPONIBILIDAD DE ESPACIOS (UPAO-20)
          ---------------------------------------------------------------------- -->
-    <section id="view-disponibilidad" class="view-section">
-      <div class="view-top-bar">
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-disponibilidad">
-          ← Iniciar Sesión / Acceso de Personal
+    <section id="view-disponibilidad" class="view-section active">
+      <div class="view-top-bar" style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-disponibilidad" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+          <span>👤 Acceso de Personal</span>
+          <span class="mono" style="font-size: 0.75rem; opacity: 0.85;">(Iniciar Sesión)</span>
         </button>
       </div>
 
