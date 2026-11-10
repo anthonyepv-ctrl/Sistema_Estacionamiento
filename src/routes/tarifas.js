@@ -1,6 +1,7 @@
 const express = require('express');
 
 const prisma = require('../config/prisma');
+const { autorizar } = require('../config/auth');
 
 const router = express.Router();
 
@@ -40,7 +41,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+// Modificar precios es una función exclusiva del DUEÑO (DEF-77-07).
+router.put('/:id', autorizar('DUENO'), async (req, res) => {
   const id = Number(req.params.id);
   const { precioHora, precioFraccion } = req.body || {};
 

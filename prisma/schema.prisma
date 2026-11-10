@@ -58,6 +58,7 @@ model Estadia {
   idPago         Int?      @unique @map("id_pago")
   horaIngreso    DateTime  @default(now()) @map("hora_ingreso")
   horaSalida     DateTime? @map("hora_salida")
+  nota           String?   @db.VarChar(250) @map("nota")
 
   tipoVehiculo TipoVehiculo @relation(fields: [idTipoVehiculo], references: [id], onDelete: Restrict, onUpdate: Cascade)
   tarifa       Tarifa       @relation(fields: [idTarifa], references: [id], onDelete: Restrict, onUpdate: Cascade)

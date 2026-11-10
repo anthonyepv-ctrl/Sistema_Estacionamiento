@@ -8,14 +8,19 @@ const DEFAULT_CONFIG = {
   capacidadMotos: Number(process.env.CAPACIDAD_MOTOS) || 10
 };
 
+function parsearCapacidad(valor, porDefecto) {
+  const num = Number(valor);
+  return Number.isFinite(num) && num >= 0 ? num : porDefecto;
+}
+
 function obtenerCapacidad() {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
       const contenido = fs.readFileSync(CONFIG_PATH, 'utf8');
       const data = JSON.parse(contenido);
       return {
-        capacidadAutos: Number(data.capacidadAutos) || DEFAULT_CONFIG.capacidadAutos,
-        capacidadMotos: Number(data.capacidadMotos) || DEFAULT_CONFIG.capacidadMotos
+        capacidadAutos: parsearCapacidad(data.capacidadAutos, DEFAULT_CONFIG.capacidadAutos),
+        capacidadMotos: parsearCapacidad(data.capacidadMotos, DEFAULT_CONFIG.capacidadMotos)
       };
     }
   } catch (error) {
@@ -27,10 +32,10 @@ function obtenerCapacidad() {
 function guardarCapacidad(nuevaCapacidad) {
   const actual = obtenerCapacidad();
   const actualizada = {
-    capacidadAutos: nuevaCapacidad.capacidadAutos !== undefined
+    capacidadAutos: nuevaCapacidad.capacidadAutos !== undefined && Number.isFinite(Number(nuevaCapacidad.capacidadAutos)) && Number(nuevaCapacidad.capacidadAutos) >= 0
       ? Number(nuevaCapacidad.capacidadAutos)
       : actual.capacidadAutos,
-    capacidadMotos: nuevaCapacidad.capacidadMotos !== undefined
+    capacidadMotos: nuevaCapacidad.capacidadMotos !== undefined && Number.isFinite(Number(nuevaCapacidad.capacidadMotos)) && Number(nuevaCapacidad.capacidadMotos) >= 0
       ? Number(nuevaCapacidad.capacidadMotos)
       : actual.capacidadMotos
   };

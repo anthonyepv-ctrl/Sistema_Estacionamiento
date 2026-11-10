@@ -2,6 +2,7 @@ const express = require('express');
 
 const prisma = require('../config/prisma');
 const { obtenerCapacidad, guardarCapacidad } = require('../config/espacios');
+const { autorizar } = require('../config/auth');
 
 const router = express.Router();
 
@@ -96,7 +97,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.put('/capacidad', async (req, res) => {
+// Cambiar la capacidad es una función exclusiva del DUEÑO (DEF-77-07).
+router.put('/capacidad', autorizar('DUENO'), async (req, res) => {
   const { capacidadAutos, capacidadMotos } = req.body || {};
 
   if (capacidadAutos === undefined && capacidadMotos === undefined) {

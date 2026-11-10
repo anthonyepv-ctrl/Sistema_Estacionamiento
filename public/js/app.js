@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const sessionUserBadge = document.getElementById('session-user-badge');
 
   function mostrarPantalla(nombre) {
+    if (nombre !== 'disponibilidad' && window.disponibilidadModulo && typeof window.disponibilidadModulo.detener === 'function') {
+      window.disponibilidadModulo.detener();
+    }
+
     document.querySelectorAll('.view-section').forEach((section) => {
       section.classList.remove('active');
     });
@@ -50,6 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const viewReportes = document.getElementById('view-reportes');
       if (viewReportes) viewReportes.classList.add('active');
       headerUserSection.style.display = 'flex';
+    } else if (nombre === 'disponibilidad') {
+      const viewDisponibilidad = document.getElementById('view-disponibilidad');
+      if (viewDisponibilidad) viewDisponibilidad.classList.add('active');
+      headerUserSection.style.display = rolActual ? 'flex' : 'none';
+      if (window.disponibilidadModulo && typeof window.disponibilidadModulo.iniciar === 'function') {
+        window.disponibilidadModulo.iniciar();
+      }
     }
   }
 
@@ -62,12 +73,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardSalida = document.getElementById('card-modulo-salida');
     const cardAforo = document.getElementById('card-modulo-aforo');
     const cardReportes = document.getElementById('card-modulo-reportes');
+    const cardEstadisticas = document.getElementById('card-modulo-estadisticas');
+    const cardOcupacion = document.getElementById('card-modulo-ocupacion');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
     if (cardSalida) cardSalida.style.display = esRecepcionista ? '' : 'none';
     if (cardAforo) cardAforo.style.display = (esDueno || esRecepcionista) ? '' : 'none';
     if (cardReportes) cardReportes.style.display = esDueno ? '' : 'none';
+    if (cardEstadisticas) cardEstadisticas.style.display = esDueno ? '' : 'none';
+    if (cardOcupacion) cardOcupacion.style.display = esDueno ? '' : 'none';
+    const cardDisponibilidad = document.getElementById('card-modulo-disponibilidad');
+    if (cardDisponibilidad) cardDisponibilidad.style.display = '';
   }
 
   function mostrarToast(mensaje, esError = false) {
@@ -85,16 +102,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3800);
   }
 
+  const CLAVE_SESION = 'cochera_sesion';
+
+  function leerSesionGuardada() {
+    try {
+      const crudo = sessionStorage.getItem(CLAVE_SESION);
+      if (!crudo) return null;
+      const sesion = JSON.parse(crudo);
+      return sesion && sesion.token ? sesion : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function guardarSesion(sesion) {
+    if (!sesion || !sesion.token) return;
+    try { sessionStorage.setItem(CLAVE_SESION, JSON.stringify(sesion)); } catch (error) { /* modo privado */ }
+  }
+
+  function olvidarSesion() {
+    try { sessionStorage.removeItem(CLAVE_SESION); } catch (error) { /* modo privado */ }
+  }
+
   async function pedirApi(url, opciones = {}) {
     let respuesta;
 
+    const sesion = leerSesionGuardada();
+    const cabeceras = {
+      'Content-Type': 'application/json',
+      ...(sesion && sesion.token ? { Authorization: `Bearer ${sesion.token}` } : {})
+    };
+
     try {
       respuesta = await fetch(url, {
-        headers: { 'Content-Type': 'application/json' },
-        ...opciones
+        ...opciones,
+        headers: { ...cabeceras, ...(opciones.headers || {}) }
       });
     } catch (error) {
       throw new Error('No se pudo conectar con el servidor. Verifica que esté corriendo (npm run dev).');
+    }
+
+    // Sesión vencida o token inválido: se limpia y se vuelve al login.
+    if (respuesta.status === 401) {
+      olvidarSesion();
+      window.sesionActual = null;
+      rolActual = '';
+      if (sessionUserName) sessionUserName.textContent = '';
+      if (sessionUserRole) sessionUserRole.textContent = '';
+      if (sessionUserBadge) sessionUserBadge.textContent = '';
+      mostrarPantalla('login');
+      mostrarToast('Su sesión expiró. Vuelva a iniciar sesión.', true);
+      throw new Error('Sesión expirada.');
     }
 
     const datos = await respuesta.json().catch(() => ({}));
@@ -146,6 +204,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         rolActual = sesion.rol;
+        window.sesionActual = { usuario: sesion.usuario, nombre: sesion.nombre, rol: sesion.rol };
+        guardarSesion({
+          token: sesion.token,
+          usuario: sesion.usuario,
+          nombre: sesion.nombre,
+          rol: sesion.rol
+        });
 
         if (sessionUserName) sessionUserName.textContent = sesion.nombre;
         if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
@@ -164,7 +229,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
-      mostrarPantalla('login');
+      rolActual = '';
+      window.sesionActual = null;
+      olvidarSesion();
+      if (sessionUserName) sessionUserName.textContent = '';
+      if (sessionUserRole) sessionUserRole.textContent = '';
+      if (sessionUserBadge) sessionUserBadge.textContent = '';
+      if (window.location.hash) {
+        window.location.hash = '';
+      }
+      mostrarPantalla('disponibilidad');
     });
   }
 
@@ -344,10 +418,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRegistrarIngreso = document.getElementById('btn-registrar-ingreso');
   const previewPlaca = document.getElementById('preview-placa');
   const previewTipo = document.getElementById('preview-tipo');
+  const inputNotaIngreso = document.getElementById('input-nota-ingreso');
+  const contadorNota = document.getElementById('contador-nota');
+
+  function actualizarContadorNota() {
+    if (!inputNotaIngreso || !contadorNota) return;
+    const largo = inputNotaIngreso.value.length;
+    contadorNota.textContent = `${largo}/250`;
+    contadorNota.classList.toggle('limite', largo >= 250);
+  }
+
+  if (inputNotaIngreso) {
+    inputNotaIngreso.addEventListener('input', actualizarContadorNota);
+  }
 
   const PLACA_REGEX = {
-    auto: /^[A-Z0-9]{3}-?[A-Z0-9]{3}$/,
-    moto: /^([A-Z0-9]{2,4}-?[A-Z0-9]{2,4}|[A-Z]{3}-?\d{4})$/
+    auto: /^[A-Z][A-Z0-9]{2}-?\d{3}$/,
+    moto: /^(\d{4}-?[A-Z0-9]{2}|[A-Z]{2}-?\d{4}|[A-Z]{3}-?\d{4})$/
   };
 
   const ETIQUETA_TIPO = {
@@ -366,6 +453,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (limpio.length === 6 && /\d{4}$/.test(limpio)) {
       return { tipo: 'moto', corte: 2 };
+    }
+
+    if (limpio.length === 6) {
+      if (/^[A-Z][A-Z0-9]{2}\d{3}$/.test(limpio)) {
+        return { tipo: 'auto', corte: 3 };
+      }
+      return { tipo: null, corte: 3 };
     }
 
     return { tipo: 'auto', corte: 3 };
@@ -404,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const alfanumerico = valor.replace(/[^A-Z0-9]/g, '');
     if (alfanumerico.length >= 6) {
       const tipoInferido = inferirTipo(valor);
-      if (tipo !== tipoInferido) {
+      if (tipoInferido && tipo !== tipoInferido) {
         if (mostrarMensaje) {
           const esperado = ETIQUETA_TIPO[tipoInferido];
           const seleccionado = ETIQUETA_TIPO[tipo];
@@ -431,6 +525,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function limpiarFormularioIngreso() {
     inputPlaca.value = '';
     selectTipoIngreso.value = 'auto';
+    if (inputNotaIngreso) inputNotaIngreso.value = '';
+    actualizarContadorNota();
     limpiarErrores(inputPlaca);
     actualizarVistaPrevia();
     inputPlaca.focus();
@@ -464,7 +560,10 @@ document.addEventListener('DOMContentLoaded', () => {
     inputPlaca.addEventListener('input', () => {
       const sinEspacios = inputPlaca.value.replace(/\s+/g, '');
       inputPlaca.value = normalizarPlaca(sinEspacios);
-      selectTipoIngreso.value = inferirTipo(inputPlaca.value);
+      const tipoInferido = inferirTipo(inputPlaca.value);
+      if (tipoInferido) {
+        selectTipoIngreso.value = tipoInferido;
+      }
       actualizarVistaPrevia();
 
       const alfanumerico = inputPlaca.value.replace(/[^A-Z0-9]/g, '');
@@ -504,6 +603,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const placa = inputPlaca.value.trim();
       const tipo = selectTipoIngreso.value;
+      const notaValor = inputNotaIngreso ? inputNotaIngreso.value.trim() : '';
+
+      const datosIngreso = {
+        placa,
+        tipo,
+        nota: notaValor.length > 0 ? notaValor : null
+      };
 
       if (btnRegistrarIngreso) {
         btnRegistrarIngreso.classList.add('loading');
@@ -513,8 +619,14 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const ingreso = await pedirApi('/api/ingresos', {
           method: 'POST',
-          body: JSON.stringify({ placa, tipo })
+          body: JSON.stringify(datosIngreso)
         });
+
+        if (notaValor.length > 0) {
+          guardarNotaLocal(placa, notaValor);
+        } else {
+          eliminarNotaLocal(placa);
+        }
 
         mostrarToast(ingreso.mensaje || `Ingreso registrado: Placa [${placa}]`);
         limpiarFormularioIngreso();
@@ -545,6 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectMetodoPago = document.getElementById('select-metodo-pago');
   const btnRegistrarSalida = document.getElementById('btn-registrar-salida');
   const btnCancelarSalida = document.getElementById('btn-cancelar-salida');
+  const salidaNotaContainer = document.getElementById('salida-nota-container');
 
   let activos = [];
   let tarifasSalida = [];
@@ -582,7 +695,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function cargarSalida() {
-    activos = await pedirApi('/api/ingresos/activos');
+    try {
+      activos = await pedirApi('/api/salidas/activos');
+    } catch (_) {
+      activos = await pedirApi('/api/ingresos/activos');
+    }
     tarifasSalida = await pedirApi('/api/tarifas');
     activoSeleccionado = null;
     if (inputBuscarPlaca) inputBuscarPlaca.value = '';
@@ -626,12 +743,102 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function guardarNotaLocal(placa, nota) {
+    try {
+      const limpia = String(placa || '').replace(/[^A-Z0-9]/g, '');
+      if (!limpia) return;
+      if (nota && nota.trim().length > 0) {
+        localStorage.setItem(`cochera_nota_${limpia}`, nota.trim());
+      } else {
+        localStorage.removeItem(`cochera_nota_${limpia}`);
+      }
+    } catch (_) {}
+  }
+
+  function obtenerNotaLocal(placa) {
+    try {
+      const limpia = String(placa || '').replace(/[^A-Z0-9]/g, '');
+      if (!limpia) return '';
+      return localStorage.getItem(`cochera_nota_${limpia}`) || '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function eliminarNotaLocal(placa) {
+    try {
+      const limpia = String(placa || '').replace(/[^A-Z0-9]/g, '');
+      if (limpia) localStorage.removeItem(`cochera_nota_${limpia}`);
+    } catch (_) {}
+  }
+
+  function renderNotaSalida(activo) {
+    if (!salidaNotaContainer) return;
+
+    salidaNotaContainer.innerHTML = '';
+    if (!activo) return;
+
+    const notaApi = typeof activo.nota === 'string' ? activo.nota.trim() : '';
+    const notaLocal = obtenerNotaLocal(activo.placa);
+    const nota = notaApi || notaLocal;
+
+    if (nota.length > 0) {
+      const card = document.createElement('div');
+      card.className = 'callout-nota callout-nota-alerta';
+
+      const header = document.createElement('div');
+      header.className = 'callout-nota-header';
+
+      const titulo = document.createElement('span');
+      titulo.className = 'callout-nota-titulo';
+      titulo.textContent = 'Observación registrada al ingreso:';
+
+      header.appendChild(titulo);
+
+      const texto = document.createElement('p');
+      texto.className = 'callout-nota-texto';
+      texto.textContent = nota;
+
+      const meta = document.createElement('div');
+      meta.className = 'callout-nota-meta';
+      meta.style.fontSize = '11px';
+      meta.style.marginTop = '6px';
+      meta.style.color = '#92400E';
+      meta.style.display = 'flex';
+      meta.style.alignItems = 'center';
+      meta.style.gap = '6px';
+      meta.style.fontWeight = '500';
+
+      const nombreUsuario = activo.usuarioIngreso || 'Recepcionista';
+      const idUsuario = activo.idUsuarioIngreso || activo.idUsuario || 2;
+      const horaTexto = formatearHora(activo.horaIngreso);
+
+      meta.innerHTML = `<span aria-hidden="true">👤</span> Registrado por: <strong>${nombreUsuario}</strong> (ID: #${idUsuario}) · ${horaTexto}`;
+
+      card.appendChild(header);
+      card.appendChild(texto);
+      card.appendChild(meta);
+      salidaNotaContainer.appendChild(card);
+    } else {
+      const neutro = document.createElement('div');
+      neutro.className = 'callout-nota-neutro';
+
+      const texto = document.createElement('span');
+      texto.className = 'callout-nota-texto-neutro';
+      texto.textContent = 'Sin observaciones registradas';
+
+      neutro.appendChild(texto);
+      salidaNotaContainer.appendChild(neutro);
+    }
+  }
+
   function mostrarResumen(activo) {
     if (!salidaResumen || !salidaVacio) return;
 
     if (!activo) {
       salidaResumen.style.display = 'none';
       salidaVacio.style.display = '';
+      if (salidaNotaContainer) salidaNotaContainer.innerHTML = '';
       return;
     }
 
@@ -642,6 +849,8 @@ document.addEventListener('DOMContentLoaded', () => {
     salidaTipo.textContent = activo.tipo;
     salidaHoraEntrada.textContent = formatearHora(activo.horaIngreso);
     salidaTiempo.textContent = `${cobro.horas} h ${cobro.minutos} min`;
+
+    renderNotaSalida(activo);
 
     if (tarifa) {
       salidaTarifa.textContent = `S/ ${tarifa.precioHora.toFixed(2)} /h + S/ ${tarifa.precioFraccion.toFixed(2)} fracción`;
@@ -738,6 +947,8 @@ document.addEventListener('DOMContentLoaded', () => {
           })
         });
 
+        eliminarNotaLocal(activoSeleccionado.placa);
+
         mostrarToast(respuesta.mensaje || 'Salida registrada exitosamente.');
         await cargarSalida();
       } catch (error) {
@@ -748,6 +959,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  const btnVolverADispLogin = document.getElementById('btn-volver-a-disponibilidad-desde-login');
+  if (btnVolverADispLogin) {
+    btnVolverADispLogin.addEventListener('click', () => {
+      window.location.hash = '#disponibilidad';
+      mostrarPantalla('disponibilidad');
+    });
+  }
+
+  const cardModuloDisponibilidad = document.getElementById('card-modulo-disponibilidad');
+  if (cardModuloDisponibilidad) {
+    cardModuloDisponibilidad.addEventListener('click', () => {
+      mostrarPantalla('disponibilidad');
+    });
+  }
+
+  window.mostrarPantalla = mostrarPantalla;
+  window.mostrarToast = mostrarToast;
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && viewTarifas.classList.contains('active')) {
@@ -761,5 +990,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  mostrarPantalla('login');
+  // Restaurar la sesión de la pestaña (si existe) antes de decidir la pantalla inicial.
+  const sesionRestaurada = leerSesionGuardada();
+  if (sesionRestaurada) {
+    rolActual = sesionRestaurada.rol || '';
+    window.sesionActual = {
+      usuario: sesionRestaurada.usuario,
+      nombre: sesionRestaurada.nombre,
+      rol: sesionRestaurada.rol
+    };
+    if (sessionUserName) sessionUserName.textContent = sesionRestaurada.nombre || '';
+    if (sessionUserRole) sessionUserRole.textContent = sesionRestaurada.rol || '';
+    if (sessionUserBadge) sessionUserBadge.textContent = sesionRestaurada.rol || '';
+  }
+
+  if (window.location.hash === '#login') {
+    mostrarPantalla('login');
+  } else if (sesionRestaurada) {
+    mostrarPantalla('dashboard');
+  } else {
+    // Por defecto para todo el público conductor: Vista de Disponibilidad (UPAO-20)
+    mostrarPantalla('disponibilidad');
+  }
+
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#login') {
+      mostrarPantalla('login');
+    } else if (window.location.hash === '#disponibilidad') {
+      mostrarPantalla('disponibilidad');
+    }
+  });
 });

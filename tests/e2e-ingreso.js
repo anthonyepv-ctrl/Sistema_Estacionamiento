@@ -36,7 +36,22 @@ async function limpiarPrueba() {
   }
 }
 
+async function asegurarServidor() {
+  try {
+    const res = await fetch(`${BASE}/api/publico/disponibilidad`);
+    if (res.status) return;
+  } catch (e) {
+    require('../server');
+    await new Promise((r) => setTimeout(r, 800));
+  }
+}
+
 async function login(page, usuario) {
+  const visible = await page.isVisible('#login-usuario');
+  if (!visible && (await page.isVisible('#btn-volver-disponibilidad'))) {
+    await page.click('#btn-volver-disponibilidad');
+    await page.waitForSelector('#login-usuario', { timeout: 5000 });
+  }
   await page.fill('#login-usuario', usuario);
   await page.fill('#login-password', '123456');
   await page.click('#btn-login-submit');
@@ -49,6 +64,7 @@ async function login(page, usuario) {
 }
 
 (async () => {
+  await asegurarServidor();
   await limpiarPrueba();
 
   const browser = await chromium.launch({ headless: !HEADED, slowMo: HEADED ? 350 : 0 });
@@ -66,7 +82,11 @@ async function login(page, usuario) {
     check(await page.isVisible('#card-modulo-tarifas'), 'dueno VE "Configurar Tarifas"');
     check(!(await page.isVisible('#card-modulo-ingreso')), 'dueno NO ve "Registrar Ingreso"');
     await page.click('#btn-logout');
-    await page.waitForFunction(() => document.getElementById('view-login')?.classList.contains('active'), null, { timeout: 10000 });
+    await page.waitForFunction(() => {
+      const login = document.getElementById('view-login')?.classList.contains('active');
+      const disp = document.getElementById('view-disponibilidad')?.classList.contains('active');
+      return login || disp;
+    }, null, { timeout: 10000 });
     await page.waitForTimeout(500);
 
     console.log('CP-01 Login recepcionista (recepcion) -> solo Registrar Ingreso');
@@ -145,6 +165,6 @@ async function login(page, usuario) {
     await browser.close();
     await limpiarPrueba();
     await prisma.$disconnect();
-    process.exitCode = fail === 0 ? 0 : 1;
+    process.exit(fail === 0 ? 0 : 1);
   }
 })();

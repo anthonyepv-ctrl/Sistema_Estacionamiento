@@ -21,6 +21,31 @@ Sistema web **cliente-servidor**: el backend sirve la interfaz y la API REST en 
 - La base de datos es **PostgreSQL gestionado en Neon**, compartida por el equipo.
 - El despliegue demo se hace en **Render** (plan free) desde la rama `main`, con `render.yaml`.
 
+### 1.1. Capa de autenticación y autorización
+
+Incorporada en la subtarea UPAO-77 (defecto DEF-77-07). Antes de ella la API no exigía sesión: el control de acceso era solo visual, ocultando pantallas en el frontend.
+
+```text
+POST /api/auth/login  ──►  bcrypt compara la contraseña
+                           └─► firmarToken()  =  base64url(payload) + "." + HMAC-SHA256
+                                              └─► payload: { sub, usuario, nombre, rol, exp }
+
+Petición a /api/*  ──►  Authorization: Bearer <token>
+                        └─► autenticar()   verifica firma (timingSafeEqual) y vigencia → req.sesion
+                            └─► autorizar('DUENO')  comprueba el rol → 403 si no corresponde
+```
+
+| Pieza | Archivo | Responsabilidad |
+| --- | --- | --- |
+| Emisión y verificación del token | `src/config/auth.js` | Firmar (HMAC-SHA256), verificar, y los middlewares `autenticar` y `autorizar(...roles)`. Sin dependencias externas: usa el módulo `crypto` de Node. |
+| Emisión en el login | `src/routes/auth.js` | `POST /api/auth/login` devuelve el token; `GET /api/auth/sesion` valida uno existente. |
+| Aplicación de las reglas | `server.js` | Declara primero las rutas públicas (`/api/auth`, `/api/publico`), luego `app.use('/api', autenticar)` y, por grupo, `autorizar('DUENO')`. |
+| Persistencia en el cliente | `public/js/app.js` | Guarda la sesión en `sessionStorage`, añade la cabecera en cada llamada y, ante `401`, limpia la sesión y vuelve al login. |
+
+- **Mapa de permisos:** anónimo → solo disponibilidad pública y login; `RECEPCIONISTA` → ingreso, salida, espacios y consulta de tarifas; `DUENO` → además reportes, gráficos, ocupación y edición de tarifas y capacidad.
+- **Secreto:** `AUTH_SECRET` (variable de entorno). Si falta, se genera uno aleatorio por proceso y las sesiones no sobreviven a un reinicio.
+- **Alcance:** el token es autocontenido (no hay tabla de sesiones), por lo que no se puede revocar individualmente; la salida del cliente descarta el token y la vigencia por defecto es de 8 horas.
+
 ## 2. Entornos y Estrategia Blue / Green
 
 | Entorno | Aplicación | Base de datos | Ejecución |

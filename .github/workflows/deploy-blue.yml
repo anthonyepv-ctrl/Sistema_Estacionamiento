@@ -1,0 +1,33 @@
+name: Deploy to Render Blue (Staging)
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    name: Trigger Render Deploy Hook
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar Deploy Hook de Render
+        env:
+          HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_BLUE }}
+        run: |
+          if [ -n "$HOOK_URL" ]; then
+            echo "Iniciando despliegue automático en Render Blue..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$HOOK_URL")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            echo "Respuesta Render: HTTP $HTTP_CODE"
+            echo "$BODY"
+            if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 201 ]; then
+              echo "✓ Despliegue ordenado exitosamente a Render."
+            else
+              echo "⚠ Render respondió con código $HTTP_CODE: $BODY"
+              exit 1
+            fi
+          else
+            echo "ℹ Secret RENDER_DEPLOY_HOOK_BLUE no configurado en GitHub. Configúralo en Settings > Secrets > Actions con la URL del Deploy Hook de Render para activar el despliegue automático en cada push."
+            exit 1
+          fi

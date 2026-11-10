@@ -39,6 +39,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const cardFiltroEfectivo = document.getElementById('card-filtro-efectivo');
   const cardFiltroYape = document.getElementById('card-filtro-yape');
 
+  function obtenerToken() {
+    try {
+      const crudo = sessionStorage.getItem('cochera_sesion');
+      if (!crudo) return null;
+      const sesion = JSON.parse(crudo);
+      return sesion && sesion.token ? sesion.token : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // Estado interno en memoria
   let transaccionesActuales = [];
   let filtroMetodoActivo = 'todos';
@@ -158,7 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       let data = null;
       try {
-        const res = await fetch(`/api/reportes/diario?fecha=${fechaISO}`);
+        const token = obtenerToken();
+        const res = await fetch(`/api/reportes/diario?fecha=${fechaISO}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         if (res.ok) {
           data = await res.json();
         }

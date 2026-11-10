@@ -34,3 +34,7 @@ build/
 # Evidencia del test E2E (videos locales, no se suben)
 evidencia/
 docs/modulos/espacios/evidencias/*.webm
+
+# Grabaciones crudas de Playwright: se versiona solo el MP4 transcodificado
+docs/modulos/**/evidencias/**/*.webm
+.tmp-video-*/

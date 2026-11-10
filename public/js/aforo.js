@@ -24,12 +24,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function obtenerToken() {
+        try {
+            const crudo = sessionStorage.getItem('cochera_sesion');
+            if (!crudo) return null;
+            const sesion = JSON.parse(crudo);
+            return sesion && sesion.token ? sesion.token : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
     async function cargarDatosAforo() {
         if (!parkingList) return;
         parkingList.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #6b7280;">Cargando estado de la cochera...</div>';
 
         try {
-            const res = await fetch('/api/espacios');
+            const token = obtenerToken();
+            const res = await fetch('/api/espacios', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
             if (!res.ok) throw new Error('Error al obtener datos');
             const data = await res.json();
 
