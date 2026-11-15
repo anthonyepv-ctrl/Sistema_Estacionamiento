@@ -57,11 +57,11 @@
     }
 
     if (!configPasarela || !configPasarela.habilitado || !configPasarela.publishableKey) {
-      throw new Error('La pasarela de pagos Stripe no está configurada en el servidor.');
+      throw new Error('La pasarela de pagos con tarjeta no está configurada en el servidor.');
     }
 
     if (typeof window.Stripe !== 'function') {
-      throw new Error('No se pudo cargar el SDK de Stripe.js. Verifique su conexión a internet.');
+      throw new Error('No se pudo cargar el formulario seguro de tarjeta. Verifique su conexión a internet.');
     }
 
     stripeInstance = window.Stripe(configPasarela.publishableKey);
@@ -72,7 +72,7 @@
         base: {
           color: '#0F172A',
           fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '15px',
+          fontSize: '13.5px',
           '::placeholder': { color: '#94A3B8' }
         },
         invalid: {
@@ -156,6 +156,11 @@
         }
 
         actualizarVistaPreviaAdelanto();
+      }
+
+      const hintSinVeh = document.getElementById('hint-sin-vehiculos-reserva');
+      if (hintSinVeh) {
+        hintSinVeh.classList.toggle('hidden', vehiculosConductor.length > 0);
       }
 
       if (vehiculosConductor.length === 0) {
@@ -271,13 +276,9 @@
 
   function ocultarCheckoutStripe() {
     intencionActual = null;
-    const boxCheckout = document.getElementById('stripe-checkout-box');
-    const boxResumen = document.getElementById('box-resumen-adelanto');
-    const btnPreparar = document.getElementById('btn-preparar-pago-stripe');
+    const modalPago = document.getElementById('modal-pago-reserva');
     const errDiv = document.getElementById('stripe-card-errors');
-    if (boxCheckout) boxCheckout.classList.add('hidden');
-    if (boxResumen) boxResumen.classList.add('hidden');
-    if (btnPreparar) btnPreparar.classList.remove('hidden');
+    if (modalPago) modalPago.classList.add('hidden');
     if (errDiv) errDiv.textContent = '';
     if (stripeCardElement && typeof stripeCardElement.clear === 'function') {
       stripeCardElement.clear();
@@ -571,11 +572,14 @@
           const elMonto = document.getElementById('reserva-monto-adelanto');
           if (elMonto) elMonto.textContent = formatearSoles(intencionActual.montoAdelanto);
 
-          const boxResumen = document.getElementById('box-resumen-adelanto');
-          const boxCheckout = document.getElementById('stripe-checkout-box');
-          if (boxResumen) boxResumen.classList.remove('hidden');
-          if (boxCheckout) boxCheckout.classList.remove('hidden');
-          btnPrepararPago.classList.add('hidden');
+          const modalPagoVeh = document.getElementById('modal-pago-vehiculo');
+          const modalPagoMonto = document.getElementById('modal-pago-monto');
+          const vehSel = vehiculosConductor.find((v) => v.id === idVehiculo);
+          if (modalPagoVeh) modalPagoVeh.textContent = vehSel ? `${vehSel.placa} (${vehSel.tipo})` : 'Vehículo seleccionado';
+          if (modalPagoMonto) modalPagoMonto.textContent = formatearSoles(intencionActual.montoAdelanto);
+
+          const modalPago = document.getElementById('modal-pago-reserva');
+          if (modalPago) modalPago.classList.remove('hidden');
         } catch (err) {
           window.mostrarToast(err.message, true);
         } finally {
@@ -622,7 +626,7 @@
           }
 
           if (!resultadoStripe.paymentIntent || resultadoStripe.paymentIntent.status !== 'succeeded') {
-            throw new Error('El pago no pudo completarse en Stripe.');
+            throw new Error('El pago no pudo completarse con la tarjeta.');
           }
 
           const selectVehiculo = document.getElementById('reserva-vehiculo-select');

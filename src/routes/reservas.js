@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const express = require('express');
 const prisma = require('../config/prisma');
 const { obtenerCapacidad } = require('../config/espacios');
@@ -215,7 +216,7 @@ router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
 
       const ahora = new Date();
       const fechaLimite = new Date(ahora.getTime() + TOLERANCIA_MINUTOS * 60 * 1000);
-      const codigo = `RES-${String(Date.now()).slice(-6)}`;
+      const codigo = `RES-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
       return tx.reserva.create({
         data: {
@@ -236,7 +237,7 @@ router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
           usuario: { select: { id: true, nombre: true, dni: true, celular: true } }
         }
       });
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return res.status(201).json({
       reserva: formatearReserva(reserva),
@@ -473,7 +474,7 @@ router.post('/:id/confirmar', autorizar('RECEPCIONISTA', 'DUENO'), async (req, r
       });
 
       return { reserva: reservaActualizada, estadia, placa: reserva.vehiculo.placa };
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return res.status(201).json({
       estadiaId: resultado.estadia.id,

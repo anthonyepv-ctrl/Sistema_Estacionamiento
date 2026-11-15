@@ -52,7 +52,9 @@ async function ejecutarPruebas() {
   const capacidadOriginal = obtenerCapacidad();
   const sufijo = String(Date.now()).slice(-4);
   const usuarioTest = `cond_sp3_${sufijo}`;
+  const usuarioTestB = `cond_sp3b_${sufijo}`;
   const dniTest = `7485${sufijo}`;
+  const dniTestB = `7496${sufijo}`;
   const numPlaca = String(100 + (Number(sufijo) % 899));
   const placaTest = `BTP-${numPlaca}`;
 
@@ -284,17 +286,173 @@ async function ejecutarPruebas() {
     }
     console.log(`✅ [SP3-10] Historial de estadías del conductor verificado con estado FINALIZADA (UPAO-23).`);
 
-    console.log('\n🎉 TODAS LAS PRUEBAS DEL SPRINT 3 PASARON EXITOSAMENTE (12/12).');
+    // 8. Casos negativos y límites completos (UPAO-21, UPAO-22, UPAO-8, UPAO-23)
+    // 8.1 Sin token -> 401 en reservas e historial (UPAO-21 / UPAO-23)
+    const resSinTokenReserva = await fetch(`${BASE_URL}/api/reservas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idVehiculo, paymentIntentId: 'pi_invalido' })
+    });
+    if (resSinTokenReserva.status !== 401) {
+      throw new Error(`Se esperaba 401 sin token en POST /api/reservas, recibió ${resSinTokenReserva.status}`);
+    }
+    const resSinTokenHistorial = await fetch(`${BASE_URL}/api/conductor/historial`);
+    if (resSinTokenHistorial.status !== 401) {
+      throw new Error(`Se esperaba 401 sin token en /api/conductor/historial, recibió ${resSinTokenHistorial.status}`);
+    }
+    console.log('✅ [SP3-11] Rechazo 401 sin sesión activa verificado en reservas e historial.');
+
+    // 8.2 Sin espacios disponibles -> 409 (UPAO-21)
+    const capAntesCero = obtenerCapacidad();
+    const resDispParaCero = await fetch(`${BASE_URL}/api/publico/disponibilidad`);
+    const dispParaCero = await resDispParaCero.json();
+    guardarCapacidad({
+      capacidadAutos: dispParaCero.autos.enCochera + dispParaCero.autos.reservasVigentes,
+      capacidadMotos: capAntesCero.capacidadMotos
+    });
+    const resCupoCero = await fetch(`${BASE_URL}/api/reservas/intencion-pago`, {
+      method: 'POST',
+      headers: headersConductor,
+      body: JSON.stringify({ idVehiculo })
+    });
+    guardarCapacidad(capAntesCero);
+    if (resCupoCero.status !== 409) {
+      throw new Error(`Se esperaba 409 sin cupos disponibles, recibió ${resCupoCero.status}`);
+    }
+    console.log('✅ [SP3-12] Bloqueo 409 con aforo lleno verificado.');
+
+    // 8.3 Pago Stripe no confirmado -> 402 (UPAO-21) y doble reserva vigente -> 409 (UPAO-21)
+    const resIntencionSinConfirmar = await fetch(`${BASE_URL}/api/reservas/intencion-pago`, {
+      method: 'POST',
+      headers: headersConductor,
+      body: JSON.stringify({ idVehiculo })
+    });
+    const intencionSinConfirmar = await resIntencionSinConfirmar.json();
+    if (!resIntencionSinConfirmar.ok || !intencionSinConfirmar.paymentIntentId) {
+      throw new Error(`Fallo creando intención para prueba de pago no confirmado: ${JSON.stringify(intencionSinConfirmar)}`);
+    }
+    const resPagoNoConfirmado = await fetch(`${BASE_URL}/api/reservas`, {
+      method: 'POST',
+      headers: headersConductor,
+      body: JSON.stringify({ idVehiculo, paymentIntentId: intencionSinConfirmar.paymentIntentId })
+    });
+    if (resPagoNoConfirmado.status !== 402) {
+      throw new Error(`Se esperaba 402 con pago no confirmado, recibió ${resPagoNoConfirmado.status}`);
+    }
+    console.log('✅ [SP3-13] Rechazo 402 cuando el PaymentIntent no fue aprobado.');
+
+    // Crear Reserva #3 vigente para probar doble reserva, aislamiento entre conductores y vencimiento
+    await confirmarPaymentIntentEnStripe(intencionSinConfirmar.paymentIntentId);
+    const resCrear3 = await fetch(`${BASE_URL}/api/reservas`, {
+      method: 'POST',
+      headers: headersConductor,
+      body: JSON.stringify({ idVehiculo, paymentIntentId: intencionSinConfirmar.paymentIntentId })
+    });
+    const dataReserva3 = await resCrear3.json();
+    if (resCrear3.status !== 201) {
+      throw new Error(`Fallo creando Reserva #3: ${JSON.stringify(dataReserva3)}`);
+    }
+
+    const resDobleReserva = await fetch(`${BASE_URL}/api/reservas/intencion-pago`, {
+      method: 'POST',
+      headers: headersConductor,
+      body: JSON.stringify({ idVehiculo })
+    });
+    if (resDobleReserva.status !== 409) {
+      throw new Error(`Se esperaba 409 al intentar segunda reserva vigente para la misma placa, recibió ${resDobleReserva.status}`);
+    }
+    console.log('✅ [SP3-14] Bloqueo 409 de doble reserva vigente verificado.');
+
+    // 8.4 Conductor B: aislamiento de historial/reservas (UPAO-23) y 403 al anular reserva ajena (UPAO-22)
+    const resRegB = await fetch(`${BASE_URL}/api/auth/registro-conductor`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: 'Conductor Secundario B',
+        dni: dniTestB,
+        celular: '987654322',
+        usuario: usuarioTestB,
+        contrasena: 'password123'
+      })
+    });
+    const sesionB = await resRegB.json();
+    if (!resRegB.ok || !sesionB.token) {
+      throw new Error(`Fallo registro conductor B: ${JSON.stringify(sesionB)}`);
+    }
+    const headersB = { 'Content-Type': 'application/json', Authorization: `Bearer ${sesionB.token}` };
+
+    const resHistB = await fetch(`${BASE_URL}/api/conductor/historial`, { headers: headersB });
+    const dataHistB = await resHistB.json();
+    const resMiasB = await fetch(`${BASE_URL}/api/reservas/mias`, { headers: headersB });
+    const dataMiasB = await resMiasB.json();
+    if (!resHistB.ok || dataHistB.estadias.length !== 0 || !resMiasB.ok || dataMiasB.reservas.length !== 0) {
+      throw new Error('Se filtraron datos ajenos o historial no vacío para conductor B.');
+    }
+    console.log('✅ [SP3-15] Estado vacío y aislamiento estricto de historial/reservas verificado (UPAO-23).');
+
+    const resAnularAjena = await fetch(`${BASE_URL}/api/reservas/${dataReserva3.reserva.id}/anular`, {
+      method: 'POST',
+      headers: headersB,
+      body: JSON.stringify({})
+    });
+    if (resAnularAjena.status !== 403) {
+      throw new Error(`Se esperaba 403 al anular reserva de otro conductor, recibió ${resAnularAjena.status}`);
+    }
+    console.log('✅ [SP3-16] Rechazo 403 al intentar anular reserva de otro conductor (UPAO-22).');
+
+    // 8.5 Re-anular reserva ya anulada -> 409 (UPAO-22) y anular/confirmar reserva vencida -> 409 (UPAO-22 / UPAO-8)
+    const resReAnular = await fetch(`${BASE_URL}/api/reservas/${dataReserva1.reserva.id}/anular`, {
+      method: 'POST',
+      headers: headersConductor,
+      body: JSON.stringify({})
+    });
+    if (resReAnular.status !== 409) {
+      throw new Error(`Se esperaba 409 al re-anular Reserva #1, recibió ${resReAnular.status}`);
+    }
+
+    await prisma.reserva.update({
+      where: { id: dataReserva3.reserva.id },
+      data: { fechaLimite: new Date(Date.now() - 5 * 60 * 1000) }
+    });
+    const resAnularVencida = await fetch(`${BASE_URL}/api/reservas/${dataReserva3.reserva.id}/anular`, {
+      method: 'POST',
+      headers: headersConductor,
+      body: JSON.stringify({})
+    });
+    if (resAnularVencida.status !== 409) {
+      throw new Error(`Se esperaba 409 al anular reserva vencida, recibió ${resAnularVencida.status}`);
+    }
+    const resConfirmarVencida = await fetch(`${BASE_URL}/api/reservas/${dataReserva3.reserva.id}/confirmar`, {
+      method: 'POST',
+      headers: headersRec,
+      body: JSON.stringify({})
+    });
+    if (resConfirmarVencida.status !== 409) {
+      throw new Error(`Se esperaba 409 al confirmar reserva vencida en garita, recibió ${resConfirmarVencida.status}`);
+    }
+    console.log('✅ [SP3-17] Rechazo 409 en anulación duplicada/vencida y en confirmación de reserva vencida.');
+
+    // 8.6 Búsqueda en garita sin coincidencias -> [] (UPAO-8)
+    const resSinCoincidencias = await fetch(`${BASE_URL}/api/reservas?q=ZZZ-999`, { headers: headersRec });
+    const dataSinCoincidencias = await resSinCoincidencias.json();
+    if (!resSinCoincidencias.ok || !Array.isArray(dataSinCoincidencias.reservas) || dataSinCoincidencias.reservas.length !== 0) {
+      throw new Error(`La búsqueda inexistente no devolvió lista vacía: ${JSON.stringify(dataSinCoincidencias)}`);
+    }
+    console.log('✅ [SP3-18] Búsqueda en garita sin coincidencias retorna lista vacía (UPAO-8).');
+
+    console.log('\n🎉 TODAS LAS PRUEBAS DEL SPRINT 3 PASARON EXITOSAMENTE (20/20 verificaciones).');
   } finally {
     // Limpieza de datos de prueba en staging
     try {
-      const u = await prisma.usuario.findUnique({ where: { usuario: usuarioTest } });
-      if (u) {
-        await prisma.pago.deleteMany({ where: { estadia: { placa: placaTest } } });
-        await prisma.estadia.deleteMany({ where: { placa: placaTest } });
-        await prisma.reserva.deleteMany({ where: { idUsuario: u.id } });
-        await prisma.vehiculoConductor.deleteMany({ where: { idUsuario: u.id } });
-        await prisma.usuario.delete({ where: { id: u.id } });
+      for (const usr of [usuarioTest, usuarioTestB]) {
+        const u = await prisma.usuario.findUnique({ where: { usuario: usr } });
+        if (u) {
+          await prisma.pago.deleteMany({ where: { estadia: { placa: placaTest } } });
+          await prisma.estadia.deleteMany({ where: { placa: placaTest } });
+          await prisma.reserva.deleteMany({ where: { idUsuario: u.id } });
+          await prisma.vehiculoConductor.deleteMany({ where: { idUsuario: u.id } });
+          await prisma.usuario.delete({ where: { id: u.id } });
+        }
       }
     } catch (e) {
       console.error('Aviso limpiando datos de prueba:', e.message);

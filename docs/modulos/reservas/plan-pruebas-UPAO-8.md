@@ -10,12 +10,13 @@
 
 | ID | Caso de Prueba | Resultado Obtenido | Estado |
 | --- | --- | --- | --- |
-| **CP-08-01** | 1- Válido: Búsqueda en garita por código o placa | `SP3-07` y UI (`capturar_ui.js`) verificados: `GET /api/reservas?q=...` retorna la reserva con placa, tipo, conductor, vigencia y estado. | ✅ Aprobado |
-| **CP-08-02** | 2- Válido: Alerta `RESERVADO` automática al digitar placa en Ingreso | `SP3-07b` y captura UI verificados: `GET /api/reservas/por-placa/:placa` detecta reserva `VIGENTE` (con o sin guion), muestra banner `RESERVADO` y deshabilita ingreso normal. | ✅ Aprobado |
-| **CP-08-03** | 3- Válido: Confirmar llegada en garita y abrir estadía vinculada | `SP3-08` verificado: `POST /api/reservas/:id/confirmar` marca la reserva como `UTILIZADA` y crea estadía activa con `id_reserva`. | ✅ Aprobado |
-| **CP-08-04** | 4- Inválido: Registrar ingreso normal cuando existe reserva vigente | `SP3-07c` verificado: `POST /api/ingresos` rechaza con HTTP `409 Conflict` cuando la placa tiene una reserva `VIGENTE` activa. | ✅ Aprobado |
-| **CP-08-05** | 5- Inválido: Confirmar reserva vencida, anulada o ya utilizada | Caso negativo pendiente de prueba automatizada dedicada sobre estados `VENCIDA`, `ANULADA` y `UTILIZADA`. | ⏳ Pendiente |
-| **CP-08-06** | 6- Inválido: Búsqueda por código o placa inexistente | Caso de búsqueda sin resultados pendiente de validación automatizada dedicada. | ⏳ Pendiente |
+| **CP-08-01** | 1- Válido: Búsqueda en garita por código o placa | `SP3-07` y UI (`capturar_ui.js`) verificados: `GET /api/reservas?q=...` retorna la reserva con placa (con/sin guion), tipo, conductor, vigencia y estado. | ✅ Aprobado |
+| **CP-08-02** | 2- Válido: Alerta `RESERVADO` automática al digitar placa en Ingreso | `SP3-07b` y captura UI verificados: `GET /api/reservas/por-placa/:placa` detecta reserva `VIGENTE`, muestra banner `RESERVADO` y deshabilita ingreso normal. | ✅ Aprobado |
+| **CP-08-03** | 3- Válido: Confirmar llegada en garita y abrir estadía vinculada | `SP3-08` verificado: `POST /api/reservas/:id/confirmar` marca la reserva `UTILIZADA` y crea estadía activa vinculada con `id_reserva`. | ✅ Aprobado |
+| **CP-08-04** | 4- Válido: Descuento automático del adelanto en salida | `SP3-09` verificado: `POST /api/salidas` retorna `montoBruto`, `adelantoReserva` (1h) y cobra únicamente `saldo = max(0, montoBruto - adelantoReserva)`. | ✅ Aprobado |
+| **CP-08-05** | 5- Inválido: Registrar ingreso normal cuando existe reserva vigente | `SP3-07c` verificado: `POST /api/ingresos` rechaza con HTTP `409 Conflict` cuando la placa tiene una reserva `VIGENTE` activa. | ✅ Aprobado |
+| **CP-08-06** | 6- Inválido: Confirmar reserva vencida, anulada o ya utilizada | `SP3-17` verificado: `POST /api/reservas/:id/confirmar` sobre una reserva vencida rechaza con HTTP `409 Conflict` sin crear estadía. | ✅ Aprobado |
+| **CP-08-07** | 7- Inválido: Búsqueda por código o placa inexistente | `SP3-18` verificado: `GET /api/reservas?q=ZZZ-999` retorna lista vacía `reservas: []` con HTTP `200 OK`. | ✅ Aprobado |
 
 ---
 
@@ -39,6 +40,6 @@ npm run test:regresion
 ## 4. Trazabilidad en GitHub (Rama `feature/UPAO-21-realizar-reserva` → `develop`)
 
 - **Pull Request hacia `develop` (Blue):** [#25 — Manejo de Reserva Web y Portal del Conductor](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/pull/25)
-- **Backend Garita y Bloqueo en Ingreso (`UPAO-92`):** [`src/routes/reservas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/routes/reservas.js) · [`src/routes/ingresos.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/routes/ingresos.js) · [`src/routes/salidas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/routes/salidas.js)
+- **Backend Garita, Bloqueo en Ingreso y Salida (`UPAO-92`):** [`src/routes/reservas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/routes/reservas.js) · [`src/routes/ingresos.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/routes/ingresos.js) · [`src/routes/salidas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/routes/salidas.js)
 - **UI Garita + Sidebar (`UPAO-91`):** [`public/index.html`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/public/index.html) · [`public/js/reservas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/public/js/reservas.js)
-- **Casos automatizados `SP3-07/07b/07c/08` (`UPAO-93`):** [`tests/test-reservas-sprint3.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/tests/test-reservas-sprint3.js)
+- **Casos automatizados `SP3-07/07b/07c/08/09/17/18` (`UPAO-93`):** [`tests/test-reservas-sprint3.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/tests/test-reservas-sprint3.js)

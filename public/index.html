@@ -1308,15 +1308,54 @@
       </div>
 
       <div class="page-title-group">
-        <h1>Mis Vehículos y Reservas</h1>
-        <p>Registre sus vehículos, reserve su espacio abonando 1 hora de adelanto con tarjeta y gestione sus reservas activas (tolerancia de ingreso: 30 minutos).</p>
+        <h1>Reservas de Estacionamiento</h1>
+        <p>Reserve su espacio abonando 1 hora de adelanto con tarjeta y administre sus vehículos registrados (tolerancia de llegada: 30 minutos).</p>
       </div>
 
       <div class="tarifas-layout" style="align-items: start;">
-        <!-- Columna 1: Mis Vehículos Registrados + Formulario Agregar -->
+        <!-- Columna 1 (Protagonista, 3fr): Realizar Reserva Web (UPAO-21) -->
         <div class="card">
           <div class="card-header">
-            <h2>1. Mis Vehículos</h2>
+            <h2>1. Realizar Reserva Web</h2>
+            <p class="caption">Seleccione su vehículo y asegure su lugar abonando 1 hora de adelanto (descontable al salir)</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <form id="form-crear-reserva" novalidate>
+            <div class="form-group">
+              <label for="reserva-vehiculo-select" class="form-label">
+                <span>Vehículo a Reservar</span>
+                <span class="required">*</span>
+              </label>
+              <select id="reserva-vehiculo-select" class="input-control mono" required>
+                <option value="">-- Seleccione un vehículo registrado --</option>
+              </select>
+              <div class="input-feedback" id="feedback-reserva-vehiculo"></div>
+              <p id="hint-sin-vehiculos-reserva" class="caption hidden" style="margin-top: 6px; color: #92400E;">
+                Primero registre un vehículo en el panel "2. Mis Vehículos" de la derecha para habilitar la reserva.
+              </p>
+            </div>
+
+            <div id="box-resumen-adelanto" class="hidden" style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="caption" style="color: #1E3A8A; font-weight: 600;">Adelanto por 1 hora (Tarifa vigente):</span>
+                <span id="reserva-monto-adelanto" class="mono" style="font-size: 1.35rem; font-weight: 700; color: #1E3A8A;">S/ 0.00</span>
+              </div>
+              <p class="caption" style="margin-top: 6px; color: #475569;">
+                Este monto se descontará automáticamente del total al registrar su salida. Si anula dentro de los 30 minutos de vigencia, se reembolsará íntegramente a su tarjeta.
+              </p>
+            </div>
+
+            <button type="button" id="btn-preparar-pago-stripe" class="btn btn-primary btn-block">
+              Pagar Adelanto y Reservar
+            </button>
+          </form>
+        </div>
+
+        <!-- Columna 2 (Secundaria, 2fr): Mis Vehículos -->
+        <div class="card">
+          <div class="card-header">
+            <h2>2. Mis Vehículos</h2>
             <p class="caption">Registre la placa SUNARP/MTC de sus vehículos para reservar en un clic</p>
           </div>
           <div class="accent-bar-sm"></div>
@@ -1366,60 +1405,44 @@
             </table>
           </div>
         </div>
+      </div>
 
-        <!-- Columna 2: Realizar Reserva con Pasarela Stripe (UPAO-21) -->
-        <div class="card">
-          <div class="card-header">
-            <h2>2. Realizar Reserva Web</h2>
-            <p class="caption">Seleccione su vehículo y abone 1 hora por adelantado (descontable al salir)</p>
+      <!-- Modal limpio de Pago con Tarjeta (UPAO-21) -->
+      <div id="modal-pago-reserva" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-pago-titulo">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3 id="modal-pago-titulo">Pago de Adelanto de Reserva</h3>
+            <p class="caption" style="margin-top: 4px;">Complete los datos de su tarjeta de crédito o débito para confirmar su espacio por 30 minutos.</p>
           </div>
-          <div class="accent-bar-sm"></div>
-
-          <form id="form-crear-reserva" novalidate>
-            <div class="form-group">
-              <label for="reserva-vehiculo-select" class="form-label">
-                <span>Vehículo a Reservar</span>
-                <span class="required">*</span>
-              </label>
-              <select id="reserva-vehiculo-select" class="input-control mono" required>
-                <option value="">-- Seleccione un vehículo registrado --</option>
-              </select>
-              <div class="input-feedback" id="feedback-reserva-vehiculo"></div>
-            </div>
-
-            <div id="box-resumen-adelanto" class="hidden" style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span class="caption" style="color: #1E3A8A; font-weight: 600;">Adelanto por 1 hora (Tarifa vigente):</span>
-                <span id="reserva-monto-adelanto" class="mono" style="font-size: 1.25rem; font-weight: 700; color: #1E3A8A;">S/ 0.00</span>
+          <div class="modal-body">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div class="caption">Vehículo seleccionado</div>
+                <div class="mono" id="modal-pago-vehiculo" style="font-weight: 700; color: #0F172A;">—</div>
               </div>
-              <p class="caption" style="margin-top: 4px; color: #475569;">
-                Este monto se descontará automáticamente del total al registrar su salida. Si anula la reserva dentro de los 30 minutos de vigencia, se reembolsará íntegramente a su tarjeta.
-              </p>
+              <div style="text-align: right;">
+                <div class="caption">Total a pagar ahora</div>
+                <div class="mono" id="modal-pago-monto" style="font-size: 1.2rem; font-weight: 700; color: #1E3A8A;">S/ 0.00</div>
+              </div>
             </div>
 
-            <button type="button" id="btn-preparar-pago-stripe" class="btn btn-primary btn-block">
-              Continuar al Pago con Tarjeta (Stripe)
-            </button>
-
-            <!-- Contenedor de Stripe Card Element -->
-            <div id="stripe-checkout-box" class="hidden" style="margin-top: 16px; border: 1px solid #CBD5E1; border-radius: 8px; padding: 16px; background: #FFFFFF;">
+            <div id="stripe-checkout-box">
               <label class="form-label" style="margin-bottom: 8px;">
-                <span>Datos de Tarjeta (Stripe Test Mode)</span>
+                <span>Datos de tu tarjeta</span>
                 <span class="required">*</span>
               </label>
-              <div id="stripe-card-element" style="padding: 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #F8FAFC;"></div>
+              <div id="stripe-card-element" style="padding: 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF;"></div>
               <div id="stripe-card-errors" class="input-feedback error" role="alert" style="margin-top: 8px;"></div>
-
-              <div style="display: flex; gap: 10px; margin-top: 16px;">
-                <button type="button" id="btn-cancelar-checkout-stripe" class="btn btn-secondary" style="flex: 1;">
-                  Cancelar
-                </button>
-                <button type="submit" id="btn-confirmar-pago-reserva" class="btn btn-primary" style="flex: 2;">
-                  Pagar Adelanto y Confirmar Reserva
-                </button>
-              </div>
             </div>
-          </form>
+          </div>
+          <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+            <button type="button" id="btn-cancelar-checkout-stripe" class="btn btn-secondary">
+              Cancelar
+            </button>
+            <button type="submit" form="form-crear-reserva" id="btn-confirmar-pago-reserva" class="btn btn-primary">
+              Confirmar Pago y Reservar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1468,7 +1491,7 @@
           <div class="modal-body">
             <p>¿Está seguro de que desea anular la reserva <strong class="mono" id="modal-anular-codigo">RES-0000</strong> para el vehículo <strong class="mono" id="modal-anular-placa">ABC-123</strong>?</p>
             <p class="caption" style="margin-top: 8px;">
-              Se liberará el cupo inmediatamente y se ejecutará el reembolso automático de <strong class="mono" id="modal-anular-monto">S/ 0.00</strong> a su tarjeta mediante Stripe.
+              Se liberará el cupo inmediatamente y se ejecutará el reembolso automático de <strong class="mono" id="modal-anular-monto">S/ 0.00</strong> de forma automática a su tarjeta.
             </p>
           </div>
           <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">

@@ -11,8 +11,8 @@
 | ID | Caso de Prueba | Resultado Obtenido | Estado |
 | --- | --- | --- | --- |
 | **CP-23-01** | 1- Válido: Historial cronológico de reservas y estadías del conductor | `SP3-10` y UI (`capturar_ui.js`) verificados: `GET /api/conductor/historial` devuelve las estadías de las placas del conductor con estado `Finalizada` / `En cochera` ordenadas descendentemente. | ✅ Aprobado |
-| **CP-23-02** | 2- Válido: Conductor recién registrado sin movimientos | Caso de estado vacío sin reservas ni estadías previas pendiente de verificación aislada en UI. | ⏳ Pendiente |
-| **CP-23-03** | 3- Inválido: Consulta sin sesión o intento de ver historial ajeno | Caso negativo de aislamiento entre conductores y rechazo `401` sin token pendiente de prueba automatizada dedicada. | ⏳ Pendiente |
+| **CP-23-02** | 2- Válido: Conductor recién registrado sin movimientos | `SP3-15` verificado: un segundo conductor recién registrado recibe `estadias: []` y `reservas: []` sin filtraciones ni errores. | ✅ Aprobado |
+| **CP-23-03** | 3- Inválido: Consulta sin sesión o intento de ver historial ajeno | `SP3-11` y `SP3-15` verificados: sin token retorna HTTP `401 Unauthorized` y el conductor B no visualiza movimientos del conductor A. | ✅ Aprobado |
 
 ---
 
@@ -28,7 +28,7 @@ node tests/test-reservas-sprint3.js
 
 | ID Defecto | Descripción | Causa Raíz | Solución Aplicada | Estado |
 | --- | --- | --- | --- | --- |
-| *(Sin defectos abiertos)* | No se registraron defectos en el flujo principal de historial (`SP3-10`). | — | — | Cerrado |
+| *(Sin defectos abiertos)* | No se registraron defectos; el aislamiento estricto por `req.sesion.sub` y rechazo `401` pasaron todas las verificaciones. | — | — | Cerrado |
 
 ---
 
@@ -37,4 +37,4 @@ node tests/test-reservas-sprint3.js
 - **Pull Request hacia `develop` (Blue):** [#25 — Manejo de Reserva Web y Portal del Conductor](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/pull/25)
 - **Backend Historial Seguro (`UPAO-96`):** [`src/routes/conductor.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/routes/conductor.js)
 - **UI Portal Historial y Sidebar (`UPAO-95`):** [`public/js/reservas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/public/js/reservas.js) · [`public/js/app.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/public/js/app.js)
-- **Caso automatizado `SP3-10` (`UPAO-97`):** [`tests/test-reservas-sprint3.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/tests/test-reservas-sprint3.js)
+- **Casos automatizados `SP3-10/11/15` (`UPAO-97`):** [`tests/test-reservas-sprint3.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/tests/test-reservas-sprint3.js)
