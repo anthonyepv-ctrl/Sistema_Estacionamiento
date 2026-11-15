@@ -197,6 +197,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 - **Redacción de historias:** `Como <rol> quiero <acción> para <beneficio>` (roles: recepcionista, dueño).
 - **Criterios de aceptación:** van en el campo *Criterios de Aceptación* como lista de viñetas (`* ...`), verificables y sin ambigüedad.
 - **Subtareas por historia (patrón):** Análisis y Diseño → Prototipado → Codificación → Test → Configuración (integración/subida a GitHub).
+- **Casos de prueba en Excel separado (obligatorio):** no se agrega una sexta subtarea en Jira. Al cierre de **Análisis y Diseño**, se diseñan los **Casos de Prueba (válidos, inválidos y límites)** a partir de los criterios de aceptación y se registran en `docs/modulos/<modulo>/Casos_de_Prueba_<Scope>.xlsx` usando exactamente el formato oficial de columnas (`CODIGO | HISTORIA DE USUARIO | SPRINT | CASO DE PRUEBA | DATOS DE PRUEBA | RESULTADO ESPERADO | ESTADO`, filas inválidas en `#FEE2E2`, estado inicial `Pendiente`). En la subtarea **Test** se ejecutan y se actualiza su `ESTADO` (`Aprobado` / `Fallido`).
 - **Nomenclatura de ramas:** `feature/<CLAVE-JIRA>-descripcion` (ej. `feature/UPAO-16-configurar-tarifas`).
 - **Referencia en commits/PR:** incluir la clave del ticket (ej. `feat: ... (UPAO-16)`).
 - **Definition of Done (DoD):** subtareas de Análisis, Prototipado, Codificación, Test y Configuración completadas; criterios de aceptación cumplidos; documentación actualizada (§11); PR aprobado por 1 revisor e integrado a `develop`; historia en estado `Listo`.
@@ -294,6 +295,7 @@ npx skills add usestrix/strix@api-security-testing -g -y
 | Modelo de datos (tablas, campos, relaciones) | `docs/datos/Modelo_de_Datos.md` y `diagrama-er.erd` |
 | UI, colores, tipografía o componentes | Guía de estilos y `UI_Kit_Estilos_Cochera.svg` / `.html` |
 | Comportamiento o reglas de un módulo | `docs/modulos/<modulo>/` |
+| Criterios de aceptación / Casos de prueba | `docs/modulos/<modulo>/Casos_de_Prueba_*.xlsx` (diseño al cierre de *Análisis y Diseño*) y actualización de `ESTADO` + `plan-pruebas.md` (en *Test*) |
 | Comandos, scripts o dependencias | `package.json` y §4 de este archivo |
 | Decisiones de metodología o flujo | Este archivo (`AGENTS.md`) |
 
@@ -313,6 +315,7 @@ npx skills add usestrix/strix@api-security-testing -g -y
 | Guía de estilos UI/UX | [`docs/diseño/Guía de Estilos y Lineamientos de Interfaz.md`](docs/diseño/Guía%20de%20Estilos%20y%20Lineamientos%20de%20Interfaz.md) |
 | UI Kit (referencia visual) | `docs/diseño/UI_Kit_Estilos_Cochera.svg` / `.html` |
 | Módulos | `docs/modulos/<modulo>/` |
+| Matriz de Casos de Prueba (Sprint 3) | [`docs/modulos/reservas/Casos_de_Prueba_Sprint3.xlsx`](docs/modulos/reservas/Casos_de_Prueba_Sprint3.xlsx) |
 | Flujo Git / commits / PR | [`README.md`](README.md) |
 
 ---
@@ -328,7 +331,9 @@ npx skills add usestrix/strix@api-security-testing -g -y
 - **No** hacer `commit`, `push` ni abrir PR si no se solicita explícitamente.
 - No inventar reglas de negocio: si falta información, preguntar o dejar `TODO`.
 - **Estrategia Blue / Green (§7):** El desarrollo e integración continua se realiza exclusivamente en **Blue (Staging / rama `develop`)**. Prohibido fusionar o desplegar directamente a **Green (Producción / rama `main`)** hasta que la historia de usuario esté 100% completada, depurada y validada en Blue (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
-- **Pruebas y Defect Log:** Toda subtarea de test debe generar su archivo `plan-pruebas.md` en `docs/modulos/<modulo>/` siguiendo la plantilla oficial (matriz de casos, Defect Log y enlaces a GitHub y video MP4).
+- **Pruebas, Casos de Prueba (Excel) y Defect Log:**
+  - Al finalizar **Análisis y Diseño**, diseñar los casos válidos, inválidos y límites en `docs/modulos/<modulo>/Casos_de_Prueba_*.xlsx` con estado inicial `Pendiente` (sin adelantar resultados de ejecución ni enlaces de commits futuros dentro de `analisis.md`).
+  - En la subtarea **Test**, ejecutar los casos, actualizar su `ESTADO` (`Aprobado` / `Fallido`) en el Excel y generar `plan-pruebas.md` en `docs/modulos/<modulo>/` siguiendo la plantilla oficial (matriz de casos, Defect Log y enlaces a GitHub y video MP4).
 - **Entorno de datos:** El `.env` local y los tests deben apuntar a la base de datos de **Staging** (Neon `staging`), nunca alterar la base de datos de producción.
 - **Autenticación de la API (§2):** toda ruta bajo `/api` exige `Authorization: Bearer <token>` salvo `/api/auth/*` y `/api/publico/*`. Al crear un endpoint nuevo, decidir explícitamente qué roles lo usan y montarlo detrás de `autenticar` + `autorizar(...)` en `server.js`. Nunca confiar en que el frontend oculte una pantalla: el control de acceso vive en el backend.
 - Mantener la estructura de carpetas simple; no agregar dependencias sin justificarlo.
