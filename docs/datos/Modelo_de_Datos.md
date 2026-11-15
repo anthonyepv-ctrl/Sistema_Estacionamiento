@@ -9,7 +9,10 @@ Base de datos **PostgreSQL**. Implementada con **Prisma 6** (migración inicial 
 | `prisma/schema.prisma` | Esquema Prisma (modelos, tipos y relaciones). |
 | `prisma/migrations/20261005120000_init/migration.sql` | Migración inicial (tablas, PK, FK, CHECK, índices). |
 | `diagrama-er.erd` | Diagrama entidad-relación editable (referencia visual). |
+| `diagrama-er.jpg` | Captura visual del diagrama ER actualizado al Sprint 3. |
 | `modelo-sprint1.png` | Imagen del modelo del Sprint 1. |
+
+![Diagrama Entidad-Relación (Sprint 3)](diagrama-er.jpg)
 
 ## Cómo aplicar la migración
 

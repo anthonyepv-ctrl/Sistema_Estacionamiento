@@ -89,12 +89,3 @@
 1. **Barra lateral izquierda por rol (Sidebar):** una vez iniciada la sesión (`RECEPCIONISTA`, `DUENO` o `CONDUCTOR`), permanece visible un menú lateral izquierdo con los módulos habilitados para ese rol, evitando regresar al Menú Principal en cada transición operativa (en pantallas menores a 900 px se adapta a barra superior horizontal desplazable).
 2. **Previsualización inmediata de adelanto:** `GET /api/conductor/vehiculos` incluye `precioAdelanto` para mostrar el monto de 1 hora (`S/ X.XX`) apenas el conductor selecciona su vehículo, antes de abrir el formulario de tarjeta Stripe.
 3. **Bloqueo de ingreso normal con reserva vigente:** al ingresar una placa en garita, `GET /api/reservas/por-placa/:placa` detecta si existe una reserva `VIGENTE`, muestra la alerta `RESERVADO` con botón directo de confirmación y deshabilita el ingreso estándar; adicionalmente, `POST /api/ingresos` rechaza (`409`) la creación de una estadía sin reserva para impedir doble ocupación y pérdida del adelanto.
-
----
-
-## 6. Trazabilidad en GitHub (Rama `feature/UPAO-21-realizar-reserva` → `develop`)
-
-- **Modelo de Datos y Migración (`UPAO-79`, `UPAO-84`):** [Commit 758b47e](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/758b47e7bca2628ff1b011d709923c81afc476ba) (`prisma/schema.prisma`, `migration.sql`, `Modelo_de_Datos.md`, `diagrama-er.erd`)
-- **API Backend (`UPAO-84`, `UPAO-88`, `UPAO-92`, `UPAO-96`):** [Commit c810227](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/c810227c66c0e8914950c1c16030c533a2297e3c) (`conductor.js`, `reservas.js`, `stripe.js`, `placas.js`, `ingresos.js`, `salidas.js`, `publico.js`)
-- **Interfaz Web y Sidebar por Rol (`UPAO-83`, `UPAO-87`, `UPAO-91`, `UPAO-95`):** [Commit 4c050b9](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/4c050b92566abfe059054770ee06756fd251bd8c) (`index.html`, `style.css`, `app.js`, `disponibilidad.js`, `public/js/reservas.js`)
-- **Suite Automatizada Sprint 3 (`UPAO-85`, `UPAO-89`, `UPAO-93`, `UPAO-97`):** [Commit fd90e2b](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/fd90e2b216f4ca4237119c36691e5e849ec345e2) (`tests/test-reservas-sprint3.js`)

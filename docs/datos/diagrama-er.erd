@@ -5,7 +5,7 @@
     "originX": 0,
     "originY": 0,
     "zoomLevel": 1,
-    "show": 431,
+    "show": 429,
     "database": 4,
     "databaseName": "cochera-adev",
     "canvasType": "ERD",
@@ -69,8 +69,8 @@
           "col_estadia_res"
         ],
         "ui": {
-          "x": -1032.293,
-          "y": -357.5599
+          "x": -493.271,
+          "y": -247.8037
         }
       },
       "Cg_o1zqVokIwkCW8Jz6hk": {
@@ -95,8 +95,8 @@
           "qV5eXPt2XjfQGl5yfmoJv"
         ],
         "ui": {
-          "x": -295.5331,
-          "y": 102.2357
+          "x": -450.7591,
+          "y": 411.5121
         }
       },
       "O2fnjhGxO_d-EChnWHXkt": {
@@ -111,8 +111,8 @@
           "-pQ-EzbEH8i2tRSHwJzo1"
         ],
         "ui": {
-          "x": -890.0527,
-          "y": 42.5087
+          "x": -484.3021,
+          "y": 121.7338
         }
       },
       "eYJ7FxkPofyiGAwV3yOLs": {
@@ -128,8 +128,8 @@
           "col_usuario_cel"
         ],
         "ui": {
-          "x": 584.3582,
-          "y": -332.7225
+          "x": 354.4209,
+          "y": -283.0249
         }
       },
       "nJ8VwavTJgrpGpvAVjEKP": {
@@ -141,8 +141,8 @@
           "e9tgOChRgTzWyO2JnRsnc"
         ],
         "ui": {
-          "x": -132.8974,
-          "y": -724.6046
+          "x": -531.9403,
+          "y": -484.928
         }
       },
       "tbl_reserva": {
@@ -164,8 +164,8 @@
           "col_res_anu"
         ],
         "ui": {
-          "x": 826.5767,
-          "y": 74.0146
+          "x": 338.2959,
+          "y": 77.8105
         }
       },
       "tbl_vehiculo_conductor": {
@@ -180,8 +180,8 @@
           "col_vc_cre"
         ],
         "ui": {
-          "x": 865.1431,
-          "y": -657.5388
+          "x": 451.049,
+          "y": -555.5918
         }
       }
     },
@@ -357,7 +357,7 @@
         "id": "WjGLh7lubDP5Zi7Ilwz_z",
         "tableId": "eYJ7FxkPofyiGAwV3yOLs",
         "name": "rol",
-        "dataType": "ENUM('RECEPCIONISTA','DUEÑO')",
+        "dataType": "ENUM('RECEPCIONISTA','DUEÑO','CONDUCTOR')",
         "default": "RECEPCIONISTA",
         "options": 8
       },
