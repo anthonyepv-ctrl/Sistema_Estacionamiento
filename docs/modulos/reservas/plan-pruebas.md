@@ -49,6 +49,9 @@ npm run test:regresion
 
 ## 4. Enlaces de Trazabilidad en GitHub (GitFlow → `develop`)
 
+- **Pull Request hacia `develop` (Blue):** [#25 — Manejo de Reserva Web y Portal del Conductor](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/pull/25)
+- **Documentación y Trazabilidad:** [Commit 8362ab8](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/8362ab8)
+
 | Historia / Subtareas | Alcance | Enlace GitHub |
 | --- | --- | --- |
 | **UPAO-21** (`UPAO-79`, `UPAO-83`, `UPAO-84`, `UPAO-85`) | Modelo BD, Conductor, Vehículos, Pasarela Stripe, Sidebar | [BD `758b47e`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/758b47e7bca2628ff1b011d709923c81afc476ba) · [API `c810227`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/c810227c66c0e8914950c1c16030c533a2297e3c) · [UI `4c050b9`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/4c050b92566abfe059054770ee06756fd251bd8c) · [Tests `fd90e2b`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/fd90e2b216f4ca4237119c36691e5e849ec345e2) |
