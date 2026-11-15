@@ -85,6 +85,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run test:seguridad` | Verifica que la API exige sesión y respeta los roles. |
 | `npm run test:integridad` | Verifica que un doble clic en la salida no duplique el cobro. |
 | `npm run test:concurrencia` | Verifica que dos ingresos simultáneos no superen el aforo. |
+| `npm run test:reservas` | Suite integral del Sprint 3 (registro conductor, vehículos, pagos y reembolsos Stripe, búsqueda en garita e historial). |
 
 > Las suites `test:seguridad`, `test:integridad`, `test:concurrencia` y `test:disponibilidad` esperan el servidor en `http://localhost:3555` (`BASE_URL` para cambiarlo). `test:graficos-mes` se ejecuta con `node tests/test-graficos-mes.js`.
 
@@ -178,9 +179,16 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | UPAO-9 | Adjuntar notas | Listo | 2 | Operación y Control de la cochera |
 | UPAO-18 | Gráficos de ingresos | Listo | 5 | Administración y Supervisión del Negocio |
 | UPAO-19 | Consultar nivel de ocupación | Listo | 2 | Administración y Supervisión del Negocio |
-| UPAO-20 | Ver espacios disponibles | En curso | 1 | Manejo de Reserva Web |
+| UPAO-20 | Ver espacios disponibles | Listo | 1 | Manejo de Reserva Web |
 
-> Backlog futuro (sin sprint asignado): UPAO-8 Buscar reservas, UPAO-21 Realizar reserva, UPAO-22 Anular reserva, UPAO-23 Consultar historial de estados.
+### Historias del Sprint 3 (15 nov – 1 dic)
+
+| Clave | Historia | Estado | SP | Épica |
+| --- | --- | --- | --- | --- |
+| UPAO-21 | Realizar reserva | En curso | 5 | Manejo de Reserva Web |
+| UPAO-22 | Anular reserva | En curso | 3 | Manejo de Reserva Web |
+| UPAO-8 | Buscar reservas | En curso | 2 | Manejo de Reserva Web |
+| UPAO-23 | Consultar historial de estados | En curso | 2 | Manejo de Reserva Web |
 
 > **Estrategia Blue / Green:** La rama `develop` despliega en el ambiente **Blue (Staging)** para pruebas continuas; la rama `main` despliega en el ambiente **Green (Producción)** solo al validar cada historia (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
 
