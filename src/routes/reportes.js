@@ -25,6 +25,15 @@ function obtenerFechaHoyPeru() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function esFechaValida(texto) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) return false;
+  const [anio, mes, dia] = texto.split('-').map(Number);
+  const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+  return fecha.getUTCFullYear() === anio
+    && fecha.getUTCMonth() === mes - 1
+    && fecha.getUTCDate() === dia;
+}
+
 /**
  * GET /api/reportes/diario?fecha=YYYY-MM-DD
  * Consulta y agrupa los montos cobrados en la tabla de salidas por método de pago.
@@ -37,10 +46,10 @@ router.get('/diario', async (req, res) => {
 
   let fechaConsulta = fecha || hoyPeru;
 
-  // 1. Validar formato de fecha YYYY-MM-DD
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaConsulta)) {
+  // 1. Validar formato y existencia real de la fecha (YYYY-MM-DD)
+  if (!esFechaValida(fechaConsulta)) {
     return res.status(400).json({
-      error: 'Formato de fecha inválido. Utilice el formato YYYY-MM-DD.'
+      error: 'Ingrese una fecha válida en formato YYYY-MM-DD.'
     });
   }
 
@@ -78,21 +87,31 @@ router.get('/diario', async (req, res) => {
     // 4. Lógica de agrupación por método de pago y cuadre de caja
     let totalEfectivo = 0;
     let totalYape = 0;
+    let totalPos = 0;
+    let totalOtros = 0;
     let cantidadEfectivo = 0;
     let cantidadYape = 0;
+    let cantidadPos = 0;
+    let cantidadOtros = 0;
     const movimientos = [];
 
     for (const p of pagos) {
       const monto = Number(p.monto) || 0;
-      const metodo = (p.metodoPago?.nombre || 'Efectivo').trim();
+      const metodo = (p.metodoPago?.nombre || 'Sin método').trim();
       const metodoNorm = metodo.toLowerCase();
 
       if (metodoNorm.includes('efectivo')) {
         totalEfectivo += monto;
         cantidadEfectivo += 1;
-      } else if (metodoNorm.includes('yape')) {
+      } else if (metodoNorm.includes('yape') || metodoNorm.includes('plin')) {
         totalYape += monto;
         cantidadYape += 1;
+      } else if (metodoNorm.includes('pos') || metodoNorm.includes('tarjeta')) {
+        totalPos += monto;
+        cantidadPos += 1;
+      } else {
+        totalOtros += monto;
+        cantidadOtros += 1;
       }
 
       // Hora formateada en horario de Perú (24 horas)
@@ -113,11 +132,13 @@ router.get('/diario', async (req, res) => {
       });
     }
 
-    const totalGeneral = Number((totalEfectivo + totalYape).toFixed(2));
-    const totalTransacciones = cantidadEfectivo + cantidadYape;
+    const totalGeneral = Number((totalEfectivo + totalYape + totalPos + totalOtros).toFixed(2));
+    const totalTransacciones = cantidadEfectivo + cantidadYape + cantidadPos + cantidadOtros;
 
     const porcentajeFisico = totalGeneral > 0 ? Number(((totalEfectivo / totalGeneral) * 100).toFixed(1)) : 0;
     const porcentajeDigital = totalGeneral > 0 ? Number(((totalYape / totalGeneral) * 100).toFixed(1)) : 0;
+    const porcentajePos = totalGeneral > 0 ? Number(((totalPos / totalGeneral) * 100).toFixed(1)) : 0;
+    const porcentajeOtros = totalGeneral > 0 ? Number(((totalOtros / totalGeneral) * 100).toFixed(1)) : 0;
 
     // Formato de fecha para presentación peruana
     const [yyyy, mm, dd] = fechaConsulta.split('-');
@@ -139,9 +160,23 @@ router.get('/diario', async (req, res) => {
         cantidadCobros: cantidadYape,
         porcentaje: porcentajeDigital
       },
+      dineroPos: {
+        metodo: 'POS / Tarjeta',
+        descripcion: 'Cobros con tarjeta o terminal POS',
+        total: Number(totalPos.toFixed(2)),
+        cantidadCobros: cantidadPos,
+        porcentaje: porcentajePos
+      },
+      dineroOtros: {
+        metodo: 'Otros',
+        descripcion: 'Cobros con métodos no clasificados',
+        total: Number(totalOtros.toFixed(2)),
+        cantidadCobros: cantidadOtros,
+        porcentaje: porcentajeOtros
+      },
       totalGeneral,
       totalTransacciones,
-      estadoCuadre: totalGeneral > 0 ? 'CON_MOVIMIENTOS' : 'SIN_MOVIMIENTOS'
+      estadoCuadre: totalTransacciones > 0 ? 'CON_MOVIMIENTOS' : 'SIN_MOVIMIENTOS'
     };
 
     return res.status(200).json({
@@ -150,6 +185,8 @@ router.get('/diario', async (req, res) => {
       cuadre,
       totalEfectivo: Number(totalEfectivo.toFixed(2)),
       totalYape: Number(totalYape.toFixed(2)),
+      totalPos: Number(totalPos.toFixed(2)),
+      totalOtros: Number(totalOtros.toFixed(2)),
       totalGeneral,
       movimientos
     });
@@ -314,8 +351,12 @@ async function generarReporteGraficos(periodo, anio, mes) {
 
   const totalEfectivo = redondear(porMetodo.find((item) => item.nombre.toLowerCase().includes('efectivo')) ? porMetodo.find((item) => item.nombre.toLowerCase().includes('efectivo')).monto : 0);
   const totalYape = redondear(porMetodo.find((item) => item.nombre.toLowerCase().includes('yape')) ? porMetodo.find((item) => item.nombre.toLowerCase().includes('yape')).monto : 0);
+  const totalPos = redondear(porMetodo.find((item) => item.nombre.toLowerCase().includes('pos') || item.nombre.toLowerCase().includes('tarjeta')) ? porMetodo.find((item) => item.nombre.toLowerCase().includes('pos') || item.nombre.toLowerCase().includes('tarjeta')).monto : 0);
+  const totalOtros = redondear(totalGeneral - totalEfectivo - totalYape - totalPos);
   const porcentajeEfectivo = totalGeneral > 0 ? redondear((totalEfectivo / totalGeneral) * 100) : 0;
   const porcentajeYape = totalGeneral > 0 ? redondear((totalYape / totalGeneral) * 100) : 0;
+  const porcentajePos = totalGeneral > 0 ? redondear((totalPos / totalGeneral) * 100) : 0;
+  const porcentajeOtros = totalGeneral > 0 ? redondear((totalOtros / totalGeneral) * 100) : 0;
 
   let serieDiaria = [];
   if (periodo === 'mensual') {
@@ -363,9 +404,13 @@ async function generarReporteGraficos(periodo, anio, mes) {
       totalGeneral,
       totalEfectivo,
       totalYape,
+      totalPos,
+      totalOtros,
       concurrenciaTotal: pagos.length,
       porcentajeEfectivo,
       porcentajeYape,
+      porcentajePos,
+      porcentajeOtros,
       porMetodo
     },
     serieDiaria,
@@ -436,13 +481,18 @@ router.get('/exportar', async (req, res) => {
     let totalGeneral = 0;
     let totalEfectivo = 0;
     let totalYape = 0;
+    let totalPos = 0;
+    let totalOtros = 0;
 
     for (const pago of pagos) {
       const monto = redondear(pago.monto);
       const metodo = normalizarMetodo(pago.metodoPago ? pago.metodoPago.nombre : null);
+      const metodoNorm = metodo.toLowerCase();
       totalGeneral = redondear(totalGeneral + monto);
-      if (metodo.toLowerCase().includes('efectivo')) totalEfectivo = redondear(totalEfectivo + monto);
-      if (metodo.toLowerCase().includes('yape')) totalYape = redondear(totalYape + monto);
+      if (metodoNorm.includes('efectivo')) totalEfectivo = redondear(totalEfectivo + monto);
+      else if (metodoNorm.includes('yape') || metodoNorm.includes('plin')) totalYape = redondear(totalYape + monto);
+      else if (metodoNorm.includes('pos') || metodoNorm.includes('tarjeta')) totalPos = redondear(totalPos + monto);
+      else totalOtros = redondear(totalOtros + monto);
 
       filas.push([
         formatearFechaHoraPeru(pago.fechaHora),
@@ -456,6 +506,8 @@ router.get('/exportar', async (req, res) => {
     filas.push(['TOTAL RECAUDADO', '', '', '', formatearMoneda(totalGeneral)]);
     filas.push(['TOTAL EFECTIVO', '', '', '', formatearMoneda(totalEfectivo)]);
     filas.push(['TOTAL YAPE', '', '', '', formatearMoneda(totalYape)]);
+    filas.push(['TOTAL POS / TARJETA', '', '', '', formatearMoneda(totalPos)]);
+    filas.push(['TOTAL OTROS', '', '', '', formatearMoneda(totalOtros)]);
     filas.push(['TOTAL VEHÍCULOS ATENDIDOS', '', '', '', String(pagos.length)]);
 
     const contenido = `\uFEFF${filas.map((fila) => fila.map((valor) => `"${String(valor).replace(/"/g, '""')}"`).join(',')).join('\r\n')}`;

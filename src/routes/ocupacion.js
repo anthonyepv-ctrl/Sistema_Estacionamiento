@@ -102,8 +102,11 @@ function obtenerEstadiasPeriodo(inicio, fin) {
   });
 }
 
-function esMotocicleta(estadia) {
-  return estadia.tipoVehiculo.nombre.toLowerCase().includes('moto');
+function clasificarTipo(estadia) {
+  const nombre = estadia.tipoVehiculo.nombre.toLowerCase();
+  if (nombre.includes('moto')) return 'moto';
+  if (nombre.includes('auto') || nombre.includes('camioneta')) return 'auto';
+  return 'otro';
 }
 
 function obtenerIndiceBloque(hora) {
@@ -129,9 +132,9 @@ function calcularAforoMaximo(estadias, inicio, fin) {
 
     if (finEstadia.getTime() < inicioEstadia.getTime()) continue;
 
-    const moto = esMotocicleta(estadia);
-    eventos.push({ fecha: inicioEstadia, delta: 1, moto });
-    eventos.push({ fecha: finEstadia, delta: -1, moto });
+    const tipo = clasificarTipo(estadia);
+    eventos.push({ fecha: inicioEstadia, delta: 1, tipo });
+    eventos.push({ fecha: finEstadia, delta: -1, tipo });
   }
 
   eventos.sort((a, b) => {
@@ -142,25 +145,31 @@ function calcularAforoMaximo(estadias, inicio, fin) {
 
   let autosActuales = 0;
   let motosActuales = 0;
+  let otrosActuales = 0;
   let maximoAutos = 0;
   let maximoMotos = 0;
+  let maximoOtros = 0;
   let maximoSimultaneo = 0;
 
   for (const evento of eventos) {
-    if (evento.moto) {
+    if (evento.tipo === 'moto') {
       motosActuales += evento.delta;
       maximoMotos = Math.max(maximoMotos, motosActuales);
-    } else {
+    } else if (evento.tipo === 'auto') {
       autosActuales += evento.delta;
       maximoAutos = Math.max(maximoAutos, autosActuales);
+    } else {
+      otrosActuales += evento.delta;
+      maximoOtros = Math.max(maximoOtros, otrosActuales);
     }
 
-    maximoSimultaneo = Math.max(maximoSimultaneo, autosActuales + motosActuales);
+    maximoSimultaneo = Math.max(maximoSimultaneo, autosActuales + motosActuales + otrosActuales);
   }
 
   return {
     aforoMaximoAutos: maximoAutos,
     aforoMaximoMotos: maximoMotos,
+    aforoMaximoOtros: maximoOtros,
     aforoMaximoSimultaneo: maximoSimultaneo
   };
 }
@@ -198,13 +207,17 @@ router.get('/', async (req, res) => {
 
     let totalAutos = 0;
     let totalMotos = 0;
+    let totalOtros = 0;
     const conteoBloques = new Array(BLOQUES_HORARIOS.length).fill(0);
 
     for (const estadia of estadiasIngreso) {
-      if (esMotocicleta(estadia)) {
+      const clasificacion = clasificarTipo(estadia);
+      if (clasificacion === 'moto') {
         totalMotos += 1;
-      } else {
+      } else if (clasificacion === 'auto') {
         totalAutos += 1;
+      } else {
+        totalOtros += 1;
       }
 
       const partes = obtenerPartesPeru(estadia.horaIngreso);
@@ -241,9 +254,11 @@ router.get('/', async (req, res) => {
         totalVehiculos,
         totalAutos,
         totalMotos,
+        totalOtros,
         aforoMaximoSimultaneo: aforo.aforoMaximoSimultaneo,
         aforoMaximoAutos: aforo.aforoMaximoAutos,
         aforoMaximoMotos: aforo.aforoMaximoMotos,
+        aforoMaximoOtros: aforo.aforoMaximoOtros,
         capacidadTotalCochera
       },
       bloquesHorarios,

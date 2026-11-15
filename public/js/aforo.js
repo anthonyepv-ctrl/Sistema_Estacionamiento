@@ -4,6 +4,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewDashboard = document.getElementById('view-dashboard');
     const viewAforo = document.getElementById('view-aforo');
     const parkingList = document.getElementById('parking-list');
+    let aforoInterval = null;
+
+    function iniciarAforo() {
+        cargarDatosAforo();
+        if (aforoInterval) clearInterval(aforoInterval);
+        aforoInterval = setInterval(cargarDatosAforo, 30000);
+    }
+
+    function detenerAforo() {
+        if (aforoInterval) {
+            clearInterval(aforoInterval);
+            aforoInterval = null;
+        }
+    }
 
     if (cardModuloAforo && viewDashboard && viewAforo) {
         cardModuloAforo.addEventListener('click', (e) => {
@@ -12,13 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 section.classList.remove('active');
             });
             viewAforo.classList.add('active');
-            cargarDatosAforo();
+            iniciarAforo();
         });
     }
 
     if (btnBackToMenuAforo) {
         btnBackToMenuAforo.addEventListener('click', (e) => {
             e.preventDefault();
+            detenerAforo();
             viewAforo.classList.remove('active');
             viewDashboard.classList.add('active');
         });
@@ -90,9 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const icono = esAuto ? '🚗' : '🏍️';
                 
                 const hora = new Date(v.horaIngreso).toLocaleTimeString('es-PE', {
+                    timeZone: 'America/Lima',
                     hour: '2-digit',
                     minute: '2-digit',
-                    hour12: true
+                    hour12: false
                 });
 
                 rowElement.innerHTML = `

@@ -25,10 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const metricaTotal = document.getElementById('metrica-total');
   const metricaEfectivo = document.getElementById('metrica-efectivo');
   const metricaYape = document.getElementById('metrica-yape');
+  const metricaPos = document.getElementById('metrica-pos');
   const metricaVehiculos = document.getElementById('metrica-vehiculos');
   const metricaPeriodo = document.getElementById('metrica-periodo');
   const metricaPctEfectivo = document.getElementById('metrica-pct-efectivo');
   const metricaPctYape = document.getElementById('metrica-pct-yape');
+  const metricaPctPos = document.getElementById('metrica-pct-pos');
 
   const chartsGrid = document.getElementById('charts-grid-estadisticas');
   const estadoVacio = document.getElementById('estadisticas-vacio');
@@ -207,15 +209,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderMetricas() {
     const totales = datos && datos.totales
       ? datos.totales
-      : { totalGeneral: 0, totalEfectivo: 0, totalYape: 0, concurrenciaTotal: 0, porcentajeEfectivo: 0, porcentajeYape: 0 };
+      : { totalGeneral: 0, totalEfectivo: 0, totalYape: 0, totalPos: 0, concurrenciaTotal: 0, porcentajeEfectivo: 0, porcentajeYape: 0, porcentajePos: 0 };
 
     if (metricaTotal) metricaTotal.textContent = formatearMoneda(totales.totalGeneral);
     if (metricaEfectivo) metricaEfectivo.textContent = formatearMoneda(totales.totalEfectivo);
     if (metricaYape) metricaYape.textContent = formatearMoneda(totales.totalYape);
+    if (metricaPos) metricaPos.textContent = formatearMoneda(totales.totalPos);
     if (metricaVehiculos) metricaVehiculos.textContent = Number(totales.concurrenciaTotal || 0).toLocaleString('es-PE');
     if (metricaPeriodo) metricaPeriodo.textContent = datos && datos.etiquetaPeriodo ? datos.etiquetaPeriodo : '—';
     if (metricaPctEfectivo) metricaPctEfectivo.textContent = formatearPorcentaje(totales.porcentajeEfectivo);
     if (metricaPctYape) metricaPctYape.textContent = formatearPorcentaje(totales.porcentajeYape);
+    if (metricaPctPos) metricaPctPos.textContent = formatearPorcentaje(totales.porcentajePos);
   }
 
   function renderGraficos() {
@@ -414,20 +418,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function exportarCsv() {
+  async function exportarCsv() {
     if (!datos || !datos.tieneDatos) return;
 
     const token = obtenerToken();
+    if (!token) return;
+
     const parametros = new URLSearchParams({ periodo: modo, anio: String(periodo.anio) });
     if (modo === 'mensual') parametros.set('mes', String(periodo.mes));
-    if (token) parametros.set('token', token);
 
-    const enlace = document.createElement('a');
-    enlace.href = `/api/reportes/exportar?${parametros.toString()}`;
-    enlace.download = '';
-    document.body.appendChild(enlace);
-    enlace.click();
-    enlace.remove();
+    try {
+      const res = await fetch(`/api/reportes/exportar?${parametros.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('No se pudo exportar el reporte.');
+
+      const blob = await res.blob();
+      const disposicion = res.headers.get('Content-Disposition') || '';
+      const coincidencia = disposicion.match(/filename="?([^";]+)"?/i);
+      const nombre = coincidencia ? coincidencia[1] : 'reporte_ingresos.csv';
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = nombre;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      if (typeof window.mostrarToast === 'function') {
+        window.mostrarToast(error.message, true);
+      }
+    }
   }
 
   if (cardModulo) {

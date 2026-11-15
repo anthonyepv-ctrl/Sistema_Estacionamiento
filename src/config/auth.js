@@ -1,9 +1,13 @@
 const crypto = require('crypto');
 
-// Secreto de firma. En producción se lee de AUTH_SECRET.
-// Cuenta con un fallback persistente para evitar que las sesiones de usuario mueran
-// cada vez que Render o el servidor se reinicia o despliega.
-const SECRETO = process.env.AUTH_SECRET || 'cochera_secret_session_52a09a69e2e0e65c6f8ed3666ace88fdbc1aa8a450636d74cbf6a7404e38e463';
+// Secreto de firma. En producción debe venir de AUTH_SECRET.
+// Si no está configurado, se genera un secreto temporal por proceso para no
+// dejar un valor hardcodeado que permita forjar tokens. Las sesiones se
+// invalidan al reiniciar, pero el sistema sigue funcionando en local/demo.
+const SECRETO = process.env.AUTH_SECRET || crypto.randomBytes(32).toString('hex');
+if (!process.env.AUTH_SECRET) {
+  console.warn('[auth] AUTH_SECRET no está configurado. Se usará un secreto temporal; las sesiones se invalidarán al reiniciar.');
+}
 const HORAS_VIGENCIA = Number(process.env.AUTH_TTL_HORAS) || 8;
 const VIGENCIA_MS = HORAS_VIGENCIA * 60 * 60 * 1000;
 
@@ -60,9 +64,6 @@ function leerTokenDeCabecera(req) {
   const cabecera = req.headers.authorization || '';
   if (cabecera.startsWith('Bearer ')) {
     return cabecera.slice(7).trim() || null;
-  }
-  if (req.query && typeof req.query.token === 'string') {
-    return req.query.token.trim() || null;
   }
   return null;
 }

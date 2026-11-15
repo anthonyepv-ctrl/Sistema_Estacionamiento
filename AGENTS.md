@@ -83,6 +83,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run test:graficos` | E2E de gráficos estadísticos. |
 | `npm run test:disponibilidad` | E2E de la vista pública de disponibilidad. |
 | `npm run test:seguridad` | Verifica que la API exige sesión y respeta los roles. |
+| `npm run test:validaciones` | Verifica el rechazo de placas inválidas y de identificadores de estadía corruptos. |
 | `npm run test:integridad` | Verifica que un doble clic en la salida no duplique el cobro. |
 | `npm run test:concurrencia` | Verifica que dos ingresos simultáneos no superen el aforo. |
 

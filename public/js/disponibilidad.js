@@ -4,8 +4,9 @@
  */
 
 (function () {
-  let pollingInterval = null;
-  let datosDisponibilidad = null;
+  let pollingTimeout = null;
+  let pollingActivo = false;
+  let avisoErrorMostrado = false;
 
   const cardAutos = document.getElementById('card-disponibilidad-autos');
   const cardMotos = document.getElementById('card-disponibilidad-motos');
@@ -19,7 +20,6 @@
   const dispCuposAutos = document.getElementById('disp-cupos-autos');
   const dispTextoAutos = document.getElementById('disp-texto-autos');
   const cuposBoxAutos = document.getElementById('cupos-box-autos');
-  const btnReservarAutos = document.getElementById('btn-reservar-autos');
   const dispActualizadoAutos = document.getElementById('disp-actualizado-autos');
 
   const dispCapacidadMotos = document.getElementById('disp-capacidad-motos');
@@ -28,7 +28,6 @@
   const dispCuposMotos = document.getElementById('disp-cupos-motos');
   const dispTextoMotos = document.getElementById('disp-texto-motos');
   const cuposBoxMotos = document.getElementById('cupos-box-motos');
-  const btnReservarMotos = document.getElementById('btn-reservar-motos');
   const dispActualizadoMotos = document.getElementById('disp-actualizado-motos');
 
   const btnVolverDisponibilidad = document.getElementById('btn-volver-disponibilidad');
@@ -55,6 +54,12 @@
     }
   }
 
+  function escribirSiCambia(elemento, valor) {
+    if (!elemento) return;
+    const texto = String(valor);
+    if (elemento.textContent !== texto) elemento.textContent = texto;
+  }
+
   function renderizarPanel(tipo, data, horaActualizacion) {
     const esAuto = tipo === 'autos';
     const card = esAuto ? cardAutos : cardMotos;
@@ -65,7 +70,6 @@
     const elCupos = esAuto ? dispCuposAutos : dispCuposMotos;
     const elTexto = esAuto ? dispTextoAutos : dispTextoMotos;
     const box = esAuto ? cuposBoxAutos : cuposBoxMotos;
-    const btn = esAuto ? btnReservarAutos : btnReservarMotos;
     const elActualizado = esAuto ? dispActualizadoAutos : dispActualizadoMotos;
 
     if (!card) return;
@@ -75,52 +79,34 @@
     const reservas = Number(data.reservasVigentes) || 0;
     const disponibles = Math.max(0, Number(data.disponibles) || 0);
 
-    if (elCapacidad) elCapacidad.textContent = capacidad;
-    if (elEnCochera) elEnCochera.textContent = enCochera;
-    if (elReservas) elReservas.textContent = reservas;
-    if (elCupos) elCupos.textContent = disponibles;
-    if (elActualizado) elActualizado.textContent = horaActualizacion;
+    escribirSiCambia(elCapacidad, capacidad);
+    escribirSiCambia(elEnCochera, enCochera);
+    escribirSiCambia(elReservas, reservas);
+    escribirSiCambia(elCupos, disponibles);
+    escribirSiCambia(elActualizado, horaActualizacion);
 
     // Estado Crítico: cuando los cupos se agotan (disponibles === 0)
     if (disponibles === 0) {
       card.classList.add('aforo-lleno');
       if (box) box.classList.add('lleno');
 
-      if (badge) {
+      if (badge && badge.textContent !== 'Aforo lleno') {
         badge.className = 'badge badge-danger mono';
         badge.textContent = 'Aforo lleno';
       }
 
-      if (elTexto) {
-        elTexto.textContent = 'Aforo completo sin cupos';
-      }
-
-      if (btn) {
-        btn.disabled = true;
-        btn.setAttribute('aria-disabled', 'true');
-        btn.classList.add('btn-disabled');
-        btn.title = 'No hay espacios disponibles para este tipo de vehículo';
-      }
+      escribirSiCambia(elTexto, 'Aforo completo sin cupos');
     } else {
       // Estado Normal: con espacios disponibles
       card.classList.remove('aforo-lleno');
       if (box) box.classList.remove('lleno');
 
-      if (badge) {
+      if (badge && badge.textContent !== 'DISPONIBLE') {
         badge.className = 'badge badge-success mono';
         badge.textContent = 'DISPONIBLE';
       }
 
-      if (elTexto) {
-        elTexto.textContent = disponibles === 1 ? 'espacio disponible' : 'espacios disponibles';
-      }
-
-      if (btn) {
-        btn.disabled = false;
-        btn.removeAttribute('aria-disabled');
-        btn.classList.remove('btn-disabled');
-        btn.title = '';
-      }
+      escribirSiCambia(elTexto, disponibles === 1 ? 'espacio disponible' : 'espacios disponibles');
     }
   }
 
@@ -131,7 +117,7 @@
         throw new Error('No se pudo cargar la disponibilidad.');
       }
       const data = await res.json();
-      datosDisponibilidad = data;
+      avisoErrorMostrado = false;
 
       const horaStr = formatearHora(data.ultimaActualizacion);
 
@@ -143,8 +129,14 @@
       }
     } catch (error) {
       console.error('Error al actualizar disponibilidad pública:', error);
-      if (typeof window.mostrarToast === 'function') {
+      if (!avisoErrorMostrado && typeof window.mostrarToast === 'function') {
         window.mostrarToast('No se pudo actualizar la disponibilidad en tiempo real.', true);
+        avisoErrorMostrado = true;
+      }
+    } finally {
+      if (pollingActivo) {
+        if (pollingTimeout) clearTimeout(pollingTimeout);
+        pollingTimeout = setTimeout(cargarDisponibilidadPublica, 30000);
       }
     }
   }
@@ -159,55 +151,24 @@
     return Boolean(sesion && sesion.rol);
   }
 
-  function manejarAccionReservar(tipo) {
-    const data = datosDisponibilidad ? datosDisponibilidad[tipo] : null;
-
-    if (!data) return;
-
-    const disponibles = Math.max(0, Number(data.disponibles) || 0);
-
-    // Guard de seguridad: Si no hay cupos disponibles, no se permite ninguna acción
-    if (disponibles === 0) return;
-
-    // Regla CA-06: sin sesión, "Reservar espacio" lleva a la pantalla de Login
-    if (!haySesionActiva()) {
-      limpiarHashDisponibilidad();
-      if (typeof window.mostrarPantalla === 'function') {
-        window.mostrarPantalla('login');
-      }
-      return;
-    }
-
-    // Con sesión iniciada la reserva en línea todavía no existe (Historia UPAO-21),
-    // así que el botón informa en lugar de quedarse mudo.
-    if (typeof window.mostrarToast === 'function') {
-      window.mostrarToast('La reserva en línea aún no está habilitada. Por ahora la disponibilidad es solo informativa.', true);
-    }
-  }
-
   function iniciarPolling() {
-    cargarDisponibilidadPublica();
-    if (!pollingInterval) {
-      // CA-04: Polling cada 30 segundos
-      pollingInterval = setInterval(cargarDisponibilidadPublica, 30000);
+    pollingActivo = true;
+    if (pollingTimeout) {
+      clearTimeout(pollingTimeout);
+      pollingTimeout = null;
     }
+    cargarDisponibilidadPublica();
   }
 
   function detenerPolling() {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      pollingInterval = null;
+    pollingActivo = false;
+    if (pollingTimeout) {
+      clearTimeout(pollingTimeout);
+      pollingTimeout = null;
     }
   }
 
   function inicializarEventos() {
-    if (btnReservarAutos) {
-      btnReservarAutos.addEventListener('click', () => manejarAccionReservar('autos'));
-    }
-    if (btnReservarMotos) {
-      btnReservarMotos.addEventListener('click', () => manejarAccionReservar('motos'));
-    }
-
     if (btnVolverDisponibilidad) {
       btnVolverDisponibilidad.addEventListener('click', () => {
         const autenticado = haySesionActiva();

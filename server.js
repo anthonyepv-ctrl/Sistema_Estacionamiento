@@ -16,6 +16,14 @@ const { autenticar, autorizar } = require('./src/config/auth');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -43,6 +51,9 @@ app.use('/api', (req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err && (err.type === 'entity.parse.failed' || err.status === 400)) {
+    return res.status(400).json({ error: 'El cuerpo de la petición no es un JSON válido.' });
+  }
   console.error(err);
   res.status(500).json({ error: 'Error interno del servidor.' });
 });

@@ -336,23 +336,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function exportar() {
+  async function exportar() {
     if (!datos || datos.sinDatos || !periodoConsultado) return;
 
     const token = obtenerToken();
+    if (!token) return;
+
     const parametros = new URLSearchParams({
       fechaInicio: periodoConsultado.inicio,
       fechaFin: periodoConsultado.fin,
       formato: 'csv'
     });
-    if (token) parametros.set('token', token);
-    const enlace = document.createElement('a');
 
-    enlace.href = `/api/ocupacion/exportar?${parametros.toString()}`;
-    enlace.download = '';
-    document.body.appendChild(enlace);
-    enlace.click();
-    enlace.remove();
+    try {
+      const res = await fetch(`/api/ocupacion/exportar?${parametros.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('No se pudo exportar el reporte de ocupación.');
+
+      const blob = await res.blob();
+      const disposicion = res.headers.get('Content-Disposition') || '';
+      const coincidencia = disposicion.match(/filename="?([^";]+)"?/i);
+      const nombre = coincidencia ? coincidencia[1] : 'reporte_ocupacion.csv';
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = nombre;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      if (typeof window.mostrarToast === 'function') {
+        window.mostrarToast(error.message, true);
+      }
+    }
   }
 
   if (cardModulo) {

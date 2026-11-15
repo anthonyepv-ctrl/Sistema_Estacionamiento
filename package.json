@@ -22,6 +22,7 @@
     "test:integridad": "node tests/test-integridad-cobro.js",
     "test:concurrencia": "node tests/test-concurrencia-aforo.js",
     "test:seguridad": "node tests/test-seguridad-api.js",
+    "test:validaciones": "node tests/test-validaciones-api.js",
     "test:regresion": "node tests/test-no-regresion.js"
   },
   "prisma": {

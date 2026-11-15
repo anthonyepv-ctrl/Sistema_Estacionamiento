@@ -1,6 +1,7 @@
 const express = require('express');
 
 const prisma = require('../config/prisma');
+const { normalizarPlaca, tieneCaracteresInvalidos } = require('../config/placas');
 
 const router = express.Router();
 
@@ -66,10 +67,6 @@ router.get('/activos', async (req, res) => {
 
 router.get('/metodos-pago', async (req, res) => {
   try {
-    for (const nombre of METODOS_PERMITIDOS) {
-      await asegurarMetodoPago(nombre);
-    }
-
     const metodos = await prisma.metodoPago.findMany({ orderBy: { id: 'asc' } });
     return res.json(metodos.map((m) => ({ id: m.id, nombre: m.nombre })));
   } catch (error) {
@@ -92,9 +89,23 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const whereCond = estadiaId
-      ? { id: Number(estadiaId), horaSalida: null }
-      : { placa: String(placa).trim().toUpperCase(), horaSalida: null };
+    let whereCond;
+    if (estadiaId !== undefined && estadiaId !== null && estadiaId !== '') {
+      const id = Number(estadiaId);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Identificador de estadía inválido.' });
+      }
+      whereCond = { id, horaSalida: null };
+    } else if (placa !== undefined && placa !== null && String(placa).trim() !== '') {
+      if (tieneCaracteresInvalidos(placa)) {
+        return res.status(400).json({
+          error: 'La placa contiene caracteres inválidos. Solo se admiten letras, números, espacios y guiones.'
+        });
+      }
+      whereCond = { placa: normalizarPlaca(placa), horaSalida: null };
+    } else {
+      return res.status(400).json({ error: 'Debe especificar el vehículo para registrar la salida.' });
+    }
 
     const estadia = await prisma.estadia.findFirst({
       where: whereCond,
@@ -160,6 +171,9 @@ router.post('/', async (req, res) => {
       });
 
       return { nuevoPago, estadiaActualizada };
+    }, {
+      maxWait: 10000,
+      timeout: 15000
     });
 
     if (!resultado) {

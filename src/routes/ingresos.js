@@ -2,6 +2,7 @@ const express = require('express');
 
 const prisma = require('../config/prisma');
 const { obtenerCapacidad } = require('../config/espacios');
+const { TIPO_VEHICULO, analizarPlaca, normalizarPlaca, tieneCaracteresInvalidos } = require('../config/placas');
 
 const router = express.Router();
 
@@ -9,51 +10,18 @@ const router = express.Router();
 // vehículo se suma para que autos y motos no se bloqueen entre sí.
 const LLAVE_LOCK_AFORO = 770000;
 
-const TIPO_VEHICULO = {
-  auto: { nombre: 'Automóvil / Camioneta', regex: /^[A-Z][A-Z0-9]{2}-?\d{3}$/ },
-  moto: { nombre: 'Motocicleta', regex: /^(\d{4}-?[A-Z0-9]{2}|[A-Z]{2}-?\d{4}|[A-Z]{3}-?\d{4})$/ }
-};
-
-function analizarPlaca(limpio) {
-  if (limpio.length >= 7) {
-    return { tipo: 'moto', corte: 3 };
-  }
-
-  if (/^\d/.test(limpio)) {
-    return { tipo: 'moto', corte: 4 };
-  }
-
-  if (limpio.length === 6 && /\d{4}$/.test(limpio)) {
-    return { tipo: 'moto', corte: 2 };
-  }
-
-  if (limpio.length === 6) {
-    if (/^[A-Z][A-Z0-9]{2}\d{3}$/.test(limpio)) {
-      return { tipo: 'auto', corte: 3 };
-    }
-    return { tipo: null, corte: 3 };
-  }
-
-  return { tipo: 'auto', corte: 3 };
-}
-
-function normalizarPlaca(valor) {
-  const limpio = String(valor ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (limpio.length === 0) return '';
-
-  const { corte } = analizarPlaca(limpio);
-  if (limpio.length <= corte) return limpio;
-
-  const maxLen = limpio.length >= 7 ? 7 : 6;
-  return `${limpio.slice(0, corte)}-${limpio.slice(corte, maxLen)}`;
-}
-
 router.post('/', async (req, res) => {
-  const { placa: placaRaw, tipo, nota, idUsuario, usuario: nombreUsuario } = req.body || {};
+  const { placa: placaRaw, tipo, nota } = req.body || {};
   const config = TIPO_VEHICULO[tipo];
 
   if (!config) {
     return res.status(400).json({ error: 'Seleccione un tipo de vehículo válido (auto o moto).' });
+  }
+
+  if (tieneCaracteresInvalidos(placaRaw)) {
+    return res.status(400).json({
+      error: 'La placa contiene caracteres inválidos. Solo se admiten letras, números, espacios y guiones.'
+    });
   }
 
   const placa = normalizarPlaca(placaRaw);
@@ -105,22 +73,16 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'No hay una tarifa vigente para este tipo de vehículo.' });
     }
 
-    let usuario = null;
-    if (idUsuario) {
-      usuario = await prisma.usuario.findUnique({ where: { id: Number(idUsuario) } });
-    } else if (nombreUsuario) {
-      usuario = await prisma.usuario.findUnique({ where: { usuario: String(nombreUsuario).trim() } });
+    if (!req.sesion || !req.sesion.sub) {
+      return res.status(401).json({ error: 'Sesión no válida o expirada. Inicie sesión nuevamente.' });
     }
 
-    if (!usuario) {
-      usuario = await prisma.usuario.findFirst({
-        where: { rol: 'RECEPCIONISTA' },
-        orderBy: { id: 'asc' }
-      }) || await prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
-    }
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: Number(req.sesion.sub) }
+    });
 
     if (!usuario) {
-      return res.status(500).json({ error: 'No hay un usuario configurado para registrar el ingreso.' });
+      return res.status(401).json({ error: 'La sesión no corresponde a un usuario válido.' });
     }
 
     // Registro atómico dentro de una transacción para evitar sobrecupo por concurrencia (DEF-77-10)
@@ -161,6 +123,9 @@ router.post('/', async (req, res) => {
           nota: notaFinal
         }
       });
+    }, {
+      maxWait: 10000,
+      timeout: 15000
     });
 
     return res.status(201).json({

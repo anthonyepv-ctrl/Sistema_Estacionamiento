@@ -7,37 +7,44 @@ const { autorizar } = require('../config/auth');
 const router = express.Router();
 
 async function obtenerEstadiasActivasPorTipo() {
-  const [tipoAuto, tipoMoto] = await Promise.all([
-    prisma.tipoVehiculo.findUnique({ where: { nombre: 'Automóvil / Camioneta' } }),
-    prisma.tipoVehiculo.findUnique({ where: { nombre: 'Motocicleta' } })
+  const [tipos, agrupado] = await Promise.all([
+    prisma.tipoVehiculo.findMany({ select: { id: true, nombre: true } }),
+    prisma.estadia.groupBy({
+      by: ['idTipoVehiculo'],
+      where: { horaSalida: null },
+      _count: { _all: true }
+    })
   ]);
 
-  const [ocupadosAutos, ocupadosMotos] = await Promise.all([
-    tipoAuto ? prisma.estadia.count({ where: { idTipoVehiculo: tipoAuto.id, horaSalida: null } }) : 0,
-    tipoMoto ? prisma.estadia.count({ where: { idTipoVehiculo: tipoMoto.id, horaSalida: null } }) : 0
-  ]);
+  const idPorNombre = new Map(tipos.map((tipo) => [tipo.nombre, tipo.id]));
+  const conteoPorId = new Map(agrupado.map((fila) => [fila.idTipoVehiculo, fila._count._all]));
+  const ocupadosAutos = conteoPorId.get(idPorNombre.get('Automóvil / Camioneta')) || 0;
+  const ocupadosMotos = conteoPorId.get(idPorNombre.get('Motocicleta')) || 0;
+  const totalActivas = agrupado.reduce((acumulado, fila) => acumulado + fila._count._all, 0);
+  const otrosOcupados = totalActivas - ocupadosAutos - ocupadosMotos;
 
-  return { ocupadosAutos, ocupadosMotos };
+  return { ocupadosAutos, ocupadosMotos, otrosOcupados };
 }
 
 function calcularEstadoAforo(capacidad, ocupados) {
+  const otrosOcupados = ocupados.otrosOcupados || 0;
   const disponiblesAutos = Math.max(0, capacidad.capacidadAutos - ocupados.ocupadosAutos);
   const disponiblesMotos = Math.max(0, capacidad.capacidadMotos - ocupados.ocupadosMotos);
 
   const totalCapacidad = capacidad.capacidadAutos + capacidad.capacidadMotos;
-  const totalOcupados = ocupados.ocupadosAutos + ocupados.ocupadosMotos;
-  const totalDisponibles = disponiblesAutos + disponiblesMotos;
+  const totalOcupados = ocupados.ocupadosAutos + ocupados.ocupadosMotos + otrosOcupados;
+  const totalDisponibles = Math.max(0, totalCapacidad - totalOcupados);
 
   const porcentajeAutos = capacidad.capacidadAutos > 0
-    ? Math.round((ocupados.ocupadosAutos / capacidad.capacidadAutos) * 100)
+    ? Math.min(100, Math.round((ocupados.ocupadosAutos / capacidad.capacidadAutos) * 100))
     : 0;
 
   const porcentajeMotos = capacidad.capacidadMotos > 0
-    ? Math.round((ocupados.ocupadosMotos / capacidad.capacidadMotos) * 100)
+    ? Math.min(100, Math.round((ocupados.ocupadosMotos / capacidad.capacidadMotos) * 100))
     : 0;
 
   const porcentajeTotal = totalCapacidad > 0
-    ? Math.round((totalOcupados / totalCapacidad) * 100)
+    ? Math.min(100, Math.round((totalOcupados / totalCapacidad) * 100))
     : 0;
 
   let nivelAforo = 'DISPONIBLE';
@@ -60,11 +67,15 @@ function calcularEstadoAforo(capacidad, ocupados) {
       disponibles: disponiblesMotos,
       porcentaje: porcentajeMotos
     },
+    otros: {
+      ocupados: otrosOcupados
+    },
     total: {
       capacidad: totalCapacidad,
       ocupados: totalOcupados,
       disponibles: totalDisponibles,
-      porcentaje: porcentajeTotal
+      porcentaje: porcentajeTotal,
+      otrosEnCochera: otrosOcupados
     },
     nivelAforo
   };
@@ -107,12 +118,12 @@ router.put('/capacidad', autorizar('DUENO'), async (req, res) => {
     });
   }
 
-  if (capacidadAutos !== undefined && (!Number.isInteger(Number(capacidadAutos)) || Number(capacidadAutos) < 1)) {
-    return res.status(400).json({ error: 'La capacidad de autos debe ser un número entero mayor a 0.' });
+  if (capacidadAutos !== undefined && (!Number.isInteger(Number(capacidadAutos)) || Number(capacidadAutos) < 0)) {
+    return res.status(400).json({ error: 'La capacidad de autos debe ser un número entero mayor o igual a 0.' });
   }
 
-  if (capacidadMotos !== undefined && (!Number.isInteger(Number(capacidadMotos)) || Number(capacidadMotos) < 1)) {
-    return res.status(400).json({ error: 'La capacidad de motos debe ser un número entero mayor a 0.' });
+  if (capacidadMotos !== undefined && (!Number.isInteger(Number(capacidadMotos)) || Number(capacidadMotos) < 0)) {
+    return res.status(400).json({ error: 'La capacidad de motos debe ser un número entero mayor o igual a 0.' });
   }
 
   try {

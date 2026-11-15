@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const pillCountTodos = document.getElementById('pill-count-todos');
   const cardFiltroEfectivo = document.getElementById('card-filtro-efectivo');
   const cardFiltroYape = document.getElementById('card-filtro-yape');
+  const cardFiltroPos = document.getElementById('card-filtro-pos');
+  const pillPos = document.getElementById('pill-filtro-pos');
+  const totalPosEl = document.getElementById('reporte-total-pos');
+  const countPosEl = document.getElementById('reporte-count-pos');
 
   function obtenerToken() {
     try {
@@ -54,32 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let transaccionesActuales = [];
   let filtroMetodoActivo = 'todos';
 
-  // Datos mock para enriquecer fechas anteriores durante la fase de prototipado
-  const DEMO_TRANSACCIONES_FECHAS = {
-    // Ejemplo de ayer
-    ayer: [
-      { id: 101, placa: 'ABC-123', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '18:40', metodoPago: 'Efectivo', monto: 14.00 },
-      { id: 102, placa: 'BCF-456', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '17:15', metodoPago: 'Yape', monto: 21.00 },
-      { id: 103, placa: 'M1-9876', tipoVehiculo: 'Motocicleta', horaSalida: '16:05', metodoPago: 'Efectivo', monto: 7.50 },
-      { id: 104, placa: 'T2A-101', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '14:20', metodoPago: 'Yape', monto: 10.50 },
-      { id: 105, placa: 'ACB-7890', tipoVehiculo: 'Motocicleta', horaSalida: '11:50', metodoPago: 'Efectivo', monto: 5.00 },
-      { id: 106, placa: 'XYZ-999', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '09:30', metodoPago: 'Yape', monto: 17.50 }
-    ],
-    // Ejemplo de anteayer
-    anteayer: [
-      { id: 201, placa: 'DEF-789', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '19:10', metodoPago: 'Efectivo', monto: 28.00 },
-      { id: 202, placa: 'GHI-321', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '15:45', metodoPago: 'Yape', monto: 14.00 },
-      { id: 203, placa: '2345-AB', tipoVehiculo: 'Motocicleta', horaSalida: '12:15', metodoPago: 'Efectivo', monto: 10.00 },
-      { id: 204, placa: 'P1-5544', tipoVehiculo: 'Motocicleta', horaSalida: '10:00', metodoPago: 'Yape', monto: 7.50 }
-    ]
-  };
-
   function obtenerFechaHoyISO() {
-    const ahora = new Date();
-    const yyyy = ahora.getFullYear();
-    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
-    const dd = String(ahora.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
   }
 
   function formatearFechaPeruana(fechaISO) {
@@ -167,58 +152,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      let data = null;
-      try {
-        const token = obtenerToken();
-        const res = await fetch(`/api/reportes/diario?fecha=${fechaISO}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        if (res.ok) {
-          data = await res.json();
-        }
-      } catch (e) {
-        console.warn('API no disponible temporalmente, usando fallback de prototipo.');
+      const token = obtenerToken();
+      const res = await fetch(`/api/reportes/diario?fecha=${fechaISO}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || 'No se pudo consultar la recaudación.');
       }
 
-      // Si la API no devolvió movimientos y es una fecha para probar el prototipo:
-      let movimientos = data && data.movimientos ? data.movimientos : [];
-
-      if (movimientos.length === 0) {
-        // Enriquecer demostrativamente según la fecha para que el prototipo interactivo
-        // muestre recaudación del día actual y de fechas anteriores como pide Jira
-        const hoyISO = obtenerFechaHoyISO();
-        const dActual = new Date(fechaISO + 'T00:00:00');
-        const dHoy = new Date(hoyISO + 'T00:00:00');
-        const diffDias = Math.round((dHoy - dActual) / (1000 * 60 * 60 * 24));
-
-        if (diffDias === 0 && movimientos.length === 0) {
-          // Si hoy no hay cobros aún en BD, mostramos transacciones modelo del día
-          movimientos = [
-            { id: 1, placa: 'ABC-123', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '09:45', metodoPago: 'Efectivo', monto: 7.00 },
-            { id: 2, placa: 'T2A-101', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '10:15', metodoPago: 'Yape', monto: 10.50 },
-            { id: 3, placa: 'ACB-0000', tipoVehiculo: 'Motocicleta', horaSalida: '10:50', metodoPago: 'Efectivo', monto: 5.00 },
-            { id: 4, placa: 'A1-2345', tipoVehiculo: 'Motocicleta', horaSalida: '11:20', metodoPago: 'Yape', monto: 7.50 },
-            { id: 5, placa: 'D4F-567', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '11:45', metodoPago: 'Efectivo', monto: 14.00 }
-          ];
-        } else if (diffDias === 1) {
-          movimientos = DEMO_TRANSACCIONES_FECHAS.ayer;
-        } else if (diffDias === 2) {
-          movimientos = DEMO_TRANSACCIONES_FECHAS.anteayer;
-        }
-        // Fechas más antiguas mostrarán el estado sin movimientos definido en la especificación
-      }
-
+      const movimientos = Array.isArray(data.movimientos) ? data.movimientos : [];
       transaccionesActuales = movimientos;
       filtroMetodoActivo = 'todos';
       actualizarEstilosPills();
       actualizarTotales(transaccionesActuales);
       renderizarTabla(transaccionesActuales);
-
     } catch (err) {
       console.error('Error al consultar recaudación:', err);
       transaccionesActuales = [];
       actualizarTotales([]);
       renderizarTabla([]);
+      if (typeof window.mostrarToast === 'function') {
+        window.mostrarToast(err.message || 'No se pudo consultar la recaudación.', true);
+      }
     } finally {
       if (btnConsultar) {
         btnConsultar.disabled = false;
@@ -230,8 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function actualizarTotales(movimientos) {
     let totalEfectivo = 0;
     let totalYape = 0;
+    let totalPos = 0;
+    let totalOtros = 0;
     let countEfectivo = 0;
     let countYape = 0;
+    let countPos = 0;
+    let countOtros = 0;
 
     movimientos.forEach(m => {
       const metodo = (m.metodoPago || '').toLowerCase();
@@ -239,20 +200,29 @@ document.addEventListener('DOMContentLoaded', () => {
       if (metodo.includes('efectivo')) {
         totalEfectivo += monto;
         countEfectivo++;
-      } else if (metodo.includes('yape')) {
+      } else if (metodo.includes('yape') || metodo.includes('plin')) {
         totalYape += monto;
         countYape++;
+      } else if (metodo.includes('pos') || metodo.includes('tarjeta')) {
+        totalPos += monto;
+        countPos++;
+      } else {
+        totalOtros += monto;
+        countOtros++;
       }
     });
 
-    const totalGeneral = totalEfectivo + totalYape;
+    const totalDigital = totalYape + totalPos + totalOtros;
+    const totalGeneral = totalEfectivo + totalDigital;
 
     if (totalEfectivoEl) totalEfectivoEl.textContent = formatearMoneda(totalEfectivo);
     if (totalYapeEl) totalYapeEl.textContent = formatearMoneda(totalYape);
+    if (totalPosEl) totalPosEl.textContent = formatearMoneda(totalPos);
     if (totalGeneralEl) totalGeneralEl.textContent = formatearMoneda(totalGeneral);
 
     if (countEfectivoEl) countEfectivoEl.textContent = `${countEfectivo} cobro${countEfectivo === 1 ? '' : 's'}`;
     if (countYapeEl) countYapeEl.textContent = `${countYape} cobro${countYape === 1 ? '' : 's'}`;
+    if (countPosEl) countPosEl.textContent = `${countPos} cobro${countPos === 1 ? '' : 's'}`;
     if (pillCountTodos) pillCountTodos.textContent = movimientos.length;
 
     // Actualizar barra de desglose porcentual
@@ -265,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         barDigital.style.width = `${pctDigital}%`;
 
         lblPctFisico.textContent = `💵 ${pctFisico}% Físico (${formatearMoneda(totalEfectivo)})`;
-        lblPctDigital.textContent = `📱 ${pctDigital}% Digital (${formatearMoneda(totalYape)})`;
+        lblPctDigital.textContent = `📱 ${pctDigital}% Digital (${formatearMoneda(totalDigital)})`;
       } else {
         barFisico.style.width = '0%';
         barDigital.style.width = '0%';
@@ -275,15 +245,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function clasificarMetodo(metodo) {
+    const texto = String(metodo || '').toLowerCase();
+    if (texto.includes('efectivo')) return { clase: 'badge-metodo-efectivo', icono: '💵' };
+    if (texto.includes('yape') || texto.includes('plin')) return { clase: 'badge-metodo-yape', icono: '📱' };
+    if (texto.includes('pos') || texto.includes('tarjeta')) return { clase: 'badge-metodo-pos', icono: '💳' };
+    return { clase: 'badge-metodo-otro', icono: '💳' };
+  }
+
   function renderizarTabla(movimientos) {
     if (!tablaBody) return;
 
     // Aplicar filtro activo si es diferente de 'todos'
     let listaFiltrada = movimientos;
     if (filtroMetodoActivo !== 'todos') {
-      listaFiltrada = movimientos.filter(m => 
-        (m.metodoPago || '').toLowerCase().includes(filtroMetodoActivo.toLowerCase())
-      );
+      const filtro = filtroMetodoActivo.toLowerCase();
+      listaFiltrada = movimientos.filter(m => {
+        const metodo = (m.metodoPago || '').toLowerCase();
+        if (filtro === 'pos') return metodo.includes('pos') || metodo.includes('tarjeta');
+        if (filtro === 'yape') return metodo.includes('yape') || metodo.includes('plin');
+        return metodo.includes(filtro);
+      });
     }
 
     tablaBody.innerHTML = '';
@@ -299,9 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     listaFiltrada.forEach(m => {
       const tr = document.createElement('tr');
-      const esEfectivo = (m.metodoPago || '').toLowerCase().includes('efectivo');
-      const badgeClase = esEfectivo ? 'badge-metodo-efectivo' : 'badge-metodo-yape';
-      const icono = esEfectivo ? '💵' : '📱';
+      const { clase: badgeClase, icono } = clasificarMetodo(m.metodoPago);
 
       tr.innerHTML = `
         <td class="mono" style="font-weight: 700; color: #1e3a8a;">${m.placa}</td>
@@ -324,12 +304,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function actualizarEstilosPills() {
-    [pillTodos, pillEfectivo, pillYape].forEach(p => {
+    [pillTodos, pillEfectivo, pillYape, pillPos].forEach(p => {
       if (p) p.classList.remove('active');
     });
 
     if (cardFiltroEfectivo) cardFiltroEfectivo.classList.remove('active-filter');
     if (cardFiltroYape) cardFiltroYape.classList.remove('active-filter');
+    if (cardFiltroPos) cardFiltroPos.classList.remove('active-filter');
 
     if (filtroMetodoActivo === 'todos') {
       if (pillTodos) pillTodos.classList.add('active');
@@ -339,6 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (filtroMetodoActivo === 'Yape') {
       if (pillYape) pillYape.classList.add('active');
       if (cardFiltroYape) cardFiltroYape.classList.add('active-filter');
+    } else if (filtroMetodoActivo === 'POS') {
+      if (pillPos) pillPos.classList.add('active');
+      if (cardFiltroPos) cardFiltroPos.classList.add('active-filter');
     }
   }
 
@@ -351,6 +335,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (pillYape) {
     pillYape.addEventListener('click', () => setFiltro('Yape'));
   }
+  if (pillPos) {
+    pillPos.addEventListener('click', () => setFiltro('POS'));
+  }
 
   // También permitir filtrar al hacer clic en las tarjetas de resumen
   if (cardFiltroEfectivo) {
@@ -361,6 +348,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cardFiltroYape) {
     cardFiltroYape.addEventListener('click', () => {
       setFiltro(filtroMetodoActivo === 'Yape' ? 'todos' : 'Yape');
+    });
+  }
+  if (cardFiltroPos) {
+    cardFiltroPos.addEventListener('click', () => {
+      setFiltro(filtroMetodoActivo === 'POS' ? 'todos' : 'POS');
     });
   }
 });

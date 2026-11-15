@@ -472,8 +472,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const { corte } = analizarPlaca(limpio);
     if (limpio.length <= corte) return limpio;
 
-    const maxLen = limpio.length >= 7 ? 7 : 6;
-    return `${limpio.slice(0, corte)}-${limpio.slice(corte, maxLen)}`;
+    // No se recorta: una placa más larga que el formato se deja completa
+    // para que la validación estricta la rechace.
+    return `${limpio.slice(0, corte)}-${limpio.slice(corte)}`;
   }
 
   function inferirTipo(placa) {
@@ -622,12 +623,6 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify(datosIngreso)
         });
 
-        if (notaValor.length > 0) {
-          guardarNotaLocal(placa, notaValor);
-        } else {
-          eliminarNotaLocal(placa);
-        }
-
         mostrarToast(ingreso.mensaje || `Ingreso registrado: Placa [${placa}]`);
         limpiarFormularioIngreso();
       } catch (error) {
@@ -665,16 +660,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function formatearHora(fechaISO) {
     const fecha = new Date(fechaISO);
-    const hoy = new Date();
-    const esHoy = fecha.getFullYear() === hoy.getFullYear()
-      && fecha.getMonth() === hoy.getMonth()
-      && fecha.getDate() === hoy.getDate();
+    const claveFecha = (d) => new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(d);
+    const esHoy = claveFecha(fecha) === claveFecha(new Date());
 
-    const hora = fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+    const hora = fecha.toLocaleTimeString('es-PE', {
+      timeZone: 'America/Lima',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
     if (esHoy) return hora;
 
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const partes = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      day: '2-digit',
+      month: '2-digit'
+    }).formatToParts(fecha);
+    const dia = partes.find((p) => p.type === 'day').value;
+    const mes = partes.find((p) => p.type === 'month').value;
     return `${dia}/${mes} ${hora}`;
   }
 
@@ -743,44 +751,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function guardarNotaLocal(placa, nota) {
-    try {
-      const limpia = String(placa || '').replace(/[^A-Z0-9]/g, '');
-      if (!limpia) return;
-      if (nota && nota.trim().length > 0) {
-        localStorage.setItem(`cochera_nota_${limpia}`, nota.trim());
-      } else {
-        localStorage.removeItem(`cochera_nota_${limpia}`);
-      }
-    } catch (_) {}
-  }
-
-  function obtenerNotaLocal(placa) {
-    try {
-      const limpia = String(placa || '').replace(/[^A-Z0-9]/g, '');
-      if (!limpia) return '';
-      return localStorage.getItem(`cochera_nota_${limpia}`) || '';
-    } catch (_) {
-      return '';
-    }
-  }
-
-  function eliminarNotaLocal(placa) {
-    try {
-      const limpia = String(placa || '').replace(/[^A-Z0-9]/g, '');
-      if (limpia) localStorage.removeItem(`cochera_nota_${limpia}`);
-    } catch (_) {}
-  }
-
   function renderNotaSalida(activo) {
     if (!salidaNotaContainer) return;
 
     salidaNotaContainer.innerHTML = '';
     if (!activo) return;
 
-    const notaApi = typeof activo.nota === 'string' ? activo.nota.trim() : '';
-    const notaLocal = obtenerNotaLocal(activo.placa);
-    const nota = notaApi || notaLocal;
+    const nota = typeof activo.nota === 'string' ? activo.nota.trim() : '';
 
     if (nota.length > 0) {
       const card = document.createElement('div');
@@ -843,7 +820,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const cobro = calcularCobro(activo.horaIngreso);
-    const tarifa = tarifaDeTipo(activo.tipo);
+    const tieneTarifaEstadia = activo.tarifaHora !== null
+      && activo.tarifaHora !== undefined
+      && activo.tarifaFraccion !== null
+      && activo.tarifaFraccion !== undefined;
+    const tarifaHora = Number(activo.tarifaHora);
+    const tarifaFraccion = Number(activo.tarifaFraccion);
+    const tarifa = tieneTarifaEstadia && Number.isFinite(tarifaHora) && Number.isFinite(tarifaFraccion)
+      ? { precioHora: tarifaHora, precioFraccion: tarifaFraccion }
+      : tarifaDeTipo(activo.tipo);
 
     salidaPlaca.textContent = activo.placa;
     salidaTipo.textContent = activo.tipo;
@@ -947,8 +932,6 @@ document.addEventListener('DOMContentLoaded', () => {
           })
         });
 
-        eliminarNotaLocal(activoSeleccionado.placa);
-
         mostrarToast(respuesta.mensaje || 'Salida registrada exitosamente.');
         await cargarSalida();
       } catch (error) {
@@ -973,6 +956,15 @@ document.addEventListener('DOMContentLoaded', () => {
       mostrarPantalla('disponibilidad');
     });
   }
+
+  document.querySelectorAll('.module-card').forEach((card) => {
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        card.click();
+      }
+    });
+  });
 
   window.mostrarPantalla = mostrarPantalla;
   window.mostrarToast = mostrarToast;

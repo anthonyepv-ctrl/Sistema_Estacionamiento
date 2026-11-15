@@ -57,7 +57,7 @@ router.get('/disponibilidad', async (req, res) => {
     const totalCapacidad = capacidad.capacidadAutos + capacidad.capacidadMotos;
     const totalEnCochera = ocupadosAutos + ocupadosMotos + otrosEnCochera;
     const totalReservas = reservasVigentesAutos + reservasVigentesMotos;
-    const totalDisponibles = disponiblesAutos + disponiblesMotos;
+    const totalDisponibles = Math.max(0, totalCapacidad - totalEnCochera);
 
     if (otrosEnCochera > 0) {
       console.warn(
@@ -95,6 +95,11 @@ router.get('/disponibilidad', async (req, res) => {
     console.error('Error al consultar disponibilidad pública de espacios:', error);
     return res.status(500).json({ error: 'No se pudo consultar la disponibilidad de espacios.' });
   }
+});
+
+router.all('/disponibilidad', (req, res) => {
+  res.set('Allow', 'GET, HEAD');
+  return res.status(405).json({ error: 'Método no permitido.' });
 });
 
 module.exports = router;
