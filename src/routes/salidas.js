@@ -39,7 +39,8 @@ router.get('/activos', async (req, res) => {
       include: {
         tipoVehiculo: true,
         usuario: true,
-        tarifa: true
+        tarifa: true,
+        reserva: { select: { codigo: true, montoAdelanto: true } }
       },
       orderBy: { horaIngreso: 'desc' }
     });
@@ -53,6 +54,8 @@ router.get('/activos', async (req, res) => {
         tarifaHora: estadia.tarifa ? Number(estadia.tarifa.precioHora).toFixed(2) : null,
         tarifaFraccion: estadia.tarifa ? Number(estadia.tarifa.precioFraccion).toFixed(2) : null,
         nota: estadia.nota ?? null,
+        adelantoReserva: estadia.reserva ? Number(estadia.reserva.montoAdelanto) : 0,
+        codigoReserva: estadia.reserva ? estadia.reserva.codigo : null,
         idUsuarioIngreso: estadia.idUsuario,
         usuarioIngreso: estadia.usuario ? estadia.usuario.nombre : null,
         rolUsuarioIngreso: estadia.usuario ? estadia.usuario.rol : null
@@ -100,7 +103,8 @@ router.post('/', async (req, res) => {
       where: whereCond,
       include: {
         tipoVehiculo: true,
-        tarifa: true
+        tarifa: true,
+        reserva: { select: { montoAdelanto: true } }
       }
     });
 
@@ -121,12 +125,17 @@ router.post('/', async (req, res) => {
 
     const metodo = await asegurarMetodoPago(metodoPago);
     const horaSalida = new Date();
-    const cobro = calcularTiempoYCobro(
+    const cobroBase = calcularTiempoYCobro(
       new Date(estadia.horaIngreso),
       horaSalida,
       Number(tarifa.precioHora),
       Number(tarifa.precioFraccion)
     );
+    const adelanto = estadia.reserva ? Number(estadia.reserva.montoAdelanto) : 0;
+    const cobro = {
+      ...cobroBase,
+      monto: Math.max(0, Number((cobroBase.monto - adelanto).toFixed(2)))
+    };
 
     const resultado = await prisma.$transaction(async (tx) => {
       // Cierre condicional: únicamente la petición que encuentre la estadía todavía abierta
@@ -177,6 +186,8 @@ router.post('/', async (req, res) => {
         horaIngreso: estadia.horaIngreso,
         horaSalida,
         tiempo: `${cobro.horasCompletas} h ${cobro.minutos} min`,
+        montoBruto: cobroBase.monto,
+        adelantoReserva: adelanto,
         monto: cobro.monto,
         metodoPago: metodo.nombre,
         idPago: resultado.nuevoPago.id

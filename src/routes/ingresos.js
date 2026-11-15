@@ -2,51 +2,13 @@ const express = require('express');
 
 const prisma = require('../config/prisma');
 const { obtenerCapacidad } = require('../config/espacios');
+const { TIPO_VEHICULO, analizarPlaca, normalizarPlaca } = require('../utils/placas');
 
 const router = express.Router();
 
 // Base de la llave de bloqueo por aforo (PostgreSQL advisory lock). El id del tipo de
 // vehículo se suma para que autos y motos no se bloqueen entre sí.
 const LLAVE_LOCK_AFORO = 770000;
-
-const TIPO_VEHICULO = {
-  auto: { nombre: 'Automóvil / Camioneta', regex: /^[A-Z][A-Z0-9]{2}-?\d{3}$/ },
-  moto: { nombre: 'Motocicleta', regex: /^(\d{4}-?[A-Z0-9]{2}|[A-Z]{2}-?\d{4}|[A-Z]{3}-?\d{4})$/ }
-};
-
-function analizarPlaca(limpio) {
-  if (limpio.length >= 7) {
-    return { tipo: 'moto', corte: 3 };
-  }
-
-  if (/^\d/.test(limpio)) {
-    return { tipo: 'moto', corte: 4 };
-  }
-
-  if (limpio.length === 6 && /\d{4}$/.test(limpio)) {
-    return { tipo: 'moto', corte: 2 };
-  }
-
-  if (limpio.length === 6) {
-    if (/^[A-Z][A-Z0-9]{2}\d{3}$/.test(limpio)) {
-      return { tipo: 'auto', corte: 3 };
-    }
-    return { tipo: null, corte: 3 };
-  }
-
-  return { tipo: 'auto', corte: 3 };
-}
-
-function normalizarPlaca(valor) {
-  const limpio = String(valor ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (limpio.length === 0) return '';
-
-  const { corte } = analizarPlaca(limpio);
-  if (limpio.length <= corte) return limpio;
-
-  const maxLen = limpio.length >= 7 ? 7 : 6;
-  return `${limpio.slice(0, corte)}-${limpio.slice(corte, maxLen)}`;
-}
 
 router.post('/', async (req, res) => {
   const { placa: placaRaw, tipo, nota, idUsuario, usuario: nombreUsuario } = req.body || {};
@@ -135,6 +97,23 @@ router.post('/', async (req, res) => {
 
       if (estadiaActiva) {
         const err = new Error(`El vehículo con placa ${placa} ya registra un ingreso activo.`);
+        err.statusCode = 409;
+        throw err;
+      }
+
+      const reservaVigente = await tx.reserva.findFirst({
+        where: {
+          estado: 'VIGENTE',
+          fechaLimite: { gte: new Date() },
+          vehiculo: { placa }
+        },
+        select: { codigo: true }
+      });
+
+      if (reservaVigente) {
+        const err = new Error(
+          `La placa ${placa} tiene una reserva vigente (${reservaVigente.codigo}). Confirme el ingreso desde el aviso de reserva o en 'Buscar Reservas' para descontar su adelanto.`
+        );
         err.statusCode = 409;
         throw err;
       }
