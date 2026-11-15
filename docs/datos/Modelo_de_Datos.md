@@ -35,7 +35,9 @@ Credenciales y rol de acceso al sistema.
 | `usuario` | VARCHAR(50) | UNIQUE, NOT NULL — nombre de usuario para iniciar sesión (sin correo) |
 | `nombre` | VARCHAR(100) | NOT NULL — nombre visible de la persona |
 | `contrasena` | VARCHAR(255) | NOT NULL — se guardará hasheada |
-| `rol` | ENUM `rol_usuario` | NOT NULL, DEFAULT `RECEPCIONISTA` — valores: `RECEPCIONISTA`, `DUEÑO` |
+| `rol` | ENUM `rol_usuario` | NOT NULL, DEFAULT `RECEPCIONISTA` — valores: `RECEPCIONISTA`, `DUEÑO`, `CONDUCTOR` |
+| `dni` | VARCHAR(8) | UNIQUE, NULL (obligatorio para rol `CONDUCTOR`, 8 dígitos) |
+| `celular` | VARCHAR(9) | NULL (obligatorio para rol `CONDUCTOR`, 9 dígitos iniciando en 9) |
 
 ### tipo_vehiculo
 
@@ -70,6 +72,7 @@ Registro de ingresos y salidas (tabla central).
 | `id_tarifa` | INTEGER | FK → `tarifa`, NOT NULL |
 | `id_usuario` | INTEGER | FK → `usuario`, NOT NULL |
 | `id_pago` | INTEGER | FK → `pago`, UNIQUE, NULL (se completa al cobrar) |
+| `id_reserva` | INTEGER | FK → `reserva`, UNIQUE, NULL (si ingresó confirmando una reserva web) |
 | `hora_ingreso` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
 | `hora_salida` | TIMESTAMP | NULL mientras la estadía está activa |
 | `nota` | VARCHAR(250) | NULL (observaciones/daños físicos al ingresar; opcional e inmutable) |
@@ -101,6 +104,38 @@ Catálogo de formas de pago (Efectivo, Yape, POS…).
 | --- | --- | --- |
 | `id_metodo_pago` | SERIAL | PK |
 | `nombre` | VARCHAR(50) | UNIQUE, NOT NULL |
+
+### vehiculo_conductor
+
+Vehículos asociados a la cuenta de un conductor (`Sprint 3 / UPAO-21`).
+
+| Columna | Tipo | Restricciones |
+| --- | --- | --- |
+| `id_vehiculo` | SERIAL | PK |
+| `id_usuario` | INTEGER | FK → `usuario`, NOT NULL (ON DELETE CASCADE) |
+| `placa` | VARCHAR(10) | NOT NULL — `UNIQUE(id_usuario, placa)` |
+| `id_tipo_vehiculo` | INTEGER | FK → `tipo_vehiculo`, NOT NULL |
+| `creado_en` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
+
+### reserva
+
+Reservas web realizadas por conductores con adelanto de 1 hora vía Stripe (`Sprint 3 / UPAO-21, UPAO-22, UPAO-8`).
+
+| Columna | Tipo | Restricciones |
+| --- | --- | --- |
+| `id_reserva` | SERIAL | PK |
+| `codigo` | VARCHAR(16) | UNIQUE, NOT NULL (ej. `RES-123456`) |
+| `id_usuario` | INTEGER | FK → `usuario`, NOT NULL |
+| `id_vehiculo` | INTEGER | FK → `vehiculo_conductor`, NOT NULL |
+| `id_tipo_vehiculo` | INTEGER | FK → `tipo_vehiculo`, NOT NULL |
+| `fecha_reserva` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
+| `fecha_limite` | TIMESTAMP | NOT NULL (`fecha_reserva + 30 min`) |
+| `estado` | ENUM `estado_reserva` | NOT NULL, DEFAULT `VIGENTE` (`VIGENTE`, `UTILIZADA`, `ANULADA`, `VENCIDA`) |
+| `monto_adelanto` | DECIMAL(10,2) | NOT NULL |
+| `stripe_payment_intent_id` | VARCHAR(100) | NULL |
+| `estado_pago` | ENUM `estado_pago_reserva` | NOT NULL, DEFAULT `PAGADO` (`PAGADO`, `REEMBOLSADO`) |
+| `fecha_anulacion` | TIMESTAMP | NULL |
+| `creado_en` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
 
 ---
 
