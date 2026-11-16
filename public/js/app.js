@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!sidebar) return;
 
     const rolNormalizado = rol === 'DUEÑO' ? 'DUENO' : rol;
-    if (!rolNormalizado || vistaActiva === 'login') {
+    if (!rolNormalizado || vistaActiva === 'login' || vistaActiva === 'dashboard') {
       sidebar.classList.add('hidden');
       return;
     }

@@ -201,14 +201,14 @@ p {
 }
 
 .app-sidebar {
-  width: 240px;
+  width: 268px;
   flex-shrink: 0;
-  background: var(--surface);
+  background: #F8FAFC;
   border-right: 1px solid var(--border);
-  padding: 20px 12px;
+  padding: 24px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .app-sidebar.hidden {
@@ -221,40 +221,78 @@ p {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text2);
-  padding: 0 10px 6px;
+  padding: 0 4px 4px;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
 }
 
 .sidebar-link {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   text-align: left;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  font-size: 13px;
-  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
   font-family: inherit;
   color: var(--text);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
+.sidebar-link-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #EFF6FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.sidebar-link-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+  transition: color 0.15s ease;
+}
+
+.sidebar-link-text {
+  flex: 1;
+}
+
 .sidebar-link:hover {
-  background: var(--bg);
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.08);
   color: var(--primary);
 }
 
 .sidebar-link.active {
   background: #EFF6FF;
-  border-color: #BFDBFE;
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.08);
   color: var(--primary);
-  font-weight: 600;
+}
+
+.sidebar-link.active .sidebar-link-icon {
+  background: var(--primary);
+}
+
+.sidebar-link.active .sidebar-link-icon svg {
+  color: #FFFFFF;
 }
 
 .app-container {
@@ -284,12 +322,13 @@ p {
   .sidebar-nav {
     flex-direction: row;
     overflow-x: auto;
-    gap: 6px;
+    gap: 8px;
   }
 
   .sidebar-link {
     width: auto;
     white-space: nowrap;
+    flex-shrink: 0;
     padding: 8px 12px;
   }
 }
