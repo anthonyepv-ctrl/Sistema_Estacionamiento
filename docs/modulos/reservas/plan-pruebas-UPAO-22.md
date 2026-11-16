@@ -33,9 +33,8 @@ node tests/test-reservas-sprint3.js
 
 ---
 
-## 4. Trazabilidad en GitHub (Rama `feature/UPAO-21-realizar-reserva` → `develop`)
+## 4. Trazabilidad en GitHub (Rama `feature/UPAO-21-realizar-reserva`)
 
-- **Pull Request hacia `develop` (Blue):** [#25 — Manejo de Reserva Web y Portal del Conductor](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/pull/25)
 - **Backend Anulación y Reembolso (`UPAO-88`):** [`src/routes/reservas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/routes/reservas.js) · [`src/config/stripe.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/config/stripe.js)
 - **Interfaz Mis Reservas y Modal (`UPAO-87`):** [`public/js/reservas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/public/js/reservas.js)
 - **Casos automatizados `SP3-06 / SP3-16 / SP3-17` (`UPAO-89`):** [`tests/test-reservas-sprint3.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/tests/test-reservas-sprint3.js)
