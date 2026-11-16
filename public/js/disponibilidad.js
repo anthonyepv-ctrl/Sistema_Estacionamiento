@@ -178,10 +178,17 @@
       return;
     }
 
-    // Con sesión iniciada la reserva en línea todavía no existe (Historia UPAO-21),
-    // así que el botón informa en lugar de quedarse mudo.
+    if (window.sesionActual && window.sesionActual.rol === 'CONDUCTOR') {
+      limpiarHashDisponibilidad();
+      window.tipoReservaPreseleccionado = tipo === 'motos' ? 'moto' : 'auto';
+      if (typeof window.mostrarPantalla === 'function') {
+        window.mostrarPantalla('conductor-reservas');
+      }
+      return;
+    }
+
     if (typeof window.mostrarToast === 'function') {
-      window.mostrarToast('La reserva en línea aún no está habilitada. Por ahora la disponibilidad es solo informativa.', true);
+      window.mostrarToast('Las reservas web están destinadas a cuentas de Conductor.', true);
     }
   }
 

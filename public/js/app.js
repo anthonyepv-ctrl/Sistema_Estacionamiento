@@ -61,12 +61,54 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.disponibilidadModulo && typeof window.disponibilidadModulo.iniciar === 'function') {
         window.disponibilidadModulo.iniciar();
       }
+    } else if (nombre === 'conductor-reservas') {
+      const viewConductorReservas = document.getElementById('view-conductor-reservas');
+      if (viewConductorReservas) viewConductorReservas.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      if (window.reservasModulo && typeof window.reservasModulo.cargarVistaConductor === 'function') {
+        window.reservasModulo.cargarVistaConductor();
+      }
+    } else if (nombre === 'conductor-historial') {
+      const viewConductorHistorial = document.getElementById('view-conductor-historial');
+      if (viewConductorHistorial) viewConductorHistorial.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      if (window.reservasModulo && typeof window.reservasModulo.cargarHistorialConductor === 'function') {
+        window.reservasModulo.cargarHistorialConductor();
+      }
+    } else if (nombre === 'garita-reservas') {
+      const viewGaritaReservas = document.getElementById('view-garita-reservas');
+      if (viewGaritaReservas) viewGaritaReservas.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      if (window.reservasModulo && typeof window.reservasModulo.cargarGaritaReservas === 'function') {
+        window.reservasModulo.cargarGaritaReservas();
+      }
     }
+
+    actualizarSidebar(nombre, rolActual);
+  }
+
+  function actualizarSidebar(vistaActiva, rol) {
+    const sidebar = document.getElementById('app-sidebar');
+    if (!sidebar) return;
+
+    const rolNormalizado = rol === 'DUEÑO' ? 'DUENO' : rol;
+    if (!rolNormalizado || vistaActiva === 'login') {
+      sidebar.classList.add('hidden');
+      return;
+    }
+
+    sidebar.classList.remove('hidden');
+    sidebar.querySelectorAll('.sidebar-link').forEach((link) => {
+      const roles = (link.getAttribute('data-roles') || '').split(',');
+      link.style.display = roles.includes(rolNormalizado) ? '' : 'none';
+      link.classList.toggle('active', link.getAttribute('data-view') === vistaActiva);
+    });
   }
 
   function aplicarMenuPorRol(rol) {
     const esDueno = rol === 'DUENO' || rol === 'DUEÑO';
     const esRecepcionista = rol === 'RECEPCIONISTA';
+    const esConductor = rol === 'CONDUCTOR';
 
     const cardTarifas = document.getElementById('card-modulo-tarifas');
     const cardIngreso = document.getElementById('card-modulo-ingreso');
@@ -75,6 +117,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardReportes = document.getElementById('card-modulo-reportes');
     const cardEstadisticas = document.getElementById('card-modulo-estadisticas');
     const cardOcupacion = document.getElementById('card-modulo-ocupacion');
+    const cardGaritaReservas = document.getElementById('card-modulo-garita-reservas');
+    const cardConductorReservas = document.getElementById('card-modulo-conductor-reservas');
+    const cardConductorHistorial = document.getElementById('card-modulo-conductor-historial');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
@@ -83,6 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cardReportes) cardReportes.style.display = esDueno ? '' : 'none';
     if (cardEstadisticas) cardEstadisticas.style.display = esDueno ? '' : 'none';
     if (cardOcupacion) cardOcupacion.style.display = esDueno ? '' : 'none';
+    if (cardGaritaReservas) cardGaritaReservas.style.display = (esDueno || esRecepcionista) ? '' : 'none';
+    if (cardConductorReservas) cardConductorReservas.style.display = esConductor ? '' : 'none';
+    if (cardConductorHistorial) cardConductorHistorial.style.display = esConductor ? '' : 'none';
     const cardDisponibilidad = document.getElementById('card-modulo-disponibilidad');
     if (cardDisponibilidad) cardDisponibilidad.style.display = '';
   }
@@ -975,8 +1023,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function activarSesion(sesion) {
+    rolActual = sesion.rol;
+    window.sesionActual = { usuario: sesion.usuario, nombre: sesion.nombre, rol: sesion.rol };
+    guardarSesion({
+      token: sesion.token,
+      usuario: sesion.usuario,
+      nombre: sesion.nombre,
+      rol: sesion.rol
+    });
+    if (sessionUserName) sessionUserName.textContent = sesion.nombre;
+    if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
+    if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
+  }
+
+  document.querySelectorAll('#app-sidebar .sidebar-link').forEach((link) => {
+    link.addEventListener('click', () => {
+      const triggerId = link.getAttribute('data-trigger');
+      const vista = link.getAttribute('data-view');
+      document.querySelectorAll('#app-sidebar .sidebar-link').forEach((b) => b.classList.remove('active'));
+      link.classList.add('active');
+      if (triggerId) {
+        const targetCard = document.getElementById(triggerId);
+        if (targetCard) {
+          targetCard.click();
+          return;
+        }
+      }
+      if (vista) {
+        mostrarPantalla(vista);
+      }
+    });
+  });
+
   window.mostrarPantalla = mostrarPantalla;
   window.mostrarToast = mostrarToast;
+  window.pedirApi = pedirApi;
+  window.activarSesion = activarSesion;
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && viewTarifas.classList.contains('active')) {

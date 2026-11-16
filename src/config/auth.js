@@ -103,5 +103,5 @@ module.exports = {
   verificarToken,
   autenticar,
   autorizar,
-  ROLES: { DUENO: 'DUENO', RECEPCIONISTA: 'RECEPCIONISTA' }
+  ROLES: { DUENO: 'DUENO', RECEPCIONISTA: 'RECEPCIONISTA', CONDUCTOR: 'CONDUCTOR' }
 };

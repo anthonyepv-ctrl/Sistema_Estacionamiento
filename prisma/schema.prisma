@@ -9,19 +9,40 @@ datasource db {
 
 enum Rol {
   RECEPCIONISTA
-  DUENO @map("DUEÑO")
+  DUENO     @map("DUEÑO")
+  CONDUCTOR
 
   @@map("rol_usuario")
 }
 
-model Usuario {
-  id         Int    @id @default(autoincrement()) @map("id_usuario")
-  usuario    String @unique @db.VarChar(50)
-  nombre     String @db.VarChar(100)
-  contrasena String @db.VarChar(255)
-  rol        Rol    @default(RECEPCIONISTA)
+enum EstadoReserva {
+  VIGENTE
+  UTILIZADA
+  ANULADA
+  VENCIDA
 
-  estadias Estadia[]
+  @@map("estado_reserva")
+}
+
+enum EstadoPagoReserva {
+  PAGADO
+  REEMBOLSADO
+
+  @@map("estado_pago_reserva")
+}
+
+model Usuario {
+  id         Int     @id @default(autoincrement()) @map("id_usuario")
+  usuario    String  @unique @db.VarChar(50)
+  nombre     String  @db.VarChar(100)
+  contrasena String  @db.VarChar(255)
+  rol        Rol     @default(RECEPCIONISTA)
+  dni        String? @unique @db.VarChar(8)
+  celular    String? @db.VarChar(9)
+
+  estadias  Estadia[]
+  vehiculos VehiculoConductor[]
+  reservas  Reserva[]
 
   @@map("usuario")
 }
@@ -30,8 +51,10 @@ model TipoVehiculo {
   id     Int    @id @default(autoincrement()) @map("id_tipo_vehiculo")
   nombre String @unique @db.VarChar(50)
 
-  tarifas  Tarifa[]
-  estadias Estadia[]
+  tarifas   Tarifa[]
+  estadias  Estadia[]
+  vehiculos VehiculoConductor[]
+  reservas  Reserva[]
 
   @@map("tipo_vehiculo")
 }
@@ -56,6 +79,7 @@ model Estadia {
   idTarifa       Int       @map("id_tarifa")
   idUsuario      Int       @map("id_usuario")
   idPago         Int?      @unique @map("id_pago")
+  idReserva      Int?      @unique @map("id_reserva")
   horaIngreso    DateTime  @default(now()) @map("hora_ingreso")
   horaSalida     DateTime? @map("hora_salida")
   nota           String?   @db.VarChar(250) @map("nota")
@@ -64,6 +88,7 @@ model Estadia {
   tarifa       Tarifa       @relation(fields: [idTarifa], references: [id], onDelete: Restrict, onUpdate: Cascade)
   usuario      Usuario      @relation(fields: [idUsuario], references: [id], onDelete: Restrict, onUpdate: Cascade)
   pago         Pago?        @relation(fields: [idPago], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  reserva      Reserva?     @relation(fields: [idReserva], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([placa])
   @@map("estadia")
@@ -90,4 +115,44 @@ model MetodoPago {
   pagos Pago[]
 
   @@map("metodo_pago")
+}
+
+model VehiculoConductor {
+  id             Int      @id @default(autoincrement()) @map("id_vehiculo")
+  idUsuario      Int      @map("id_usuario")
+  placa          String   @db.VarChar(10)
+  idTipoVehiculo Int      @map("id_tipo_vehiculo")
+  creadoEn       DateTime @default(now()) @map("creado_en")
+
+  usuario      Usuario      @relation(fields: [idUsuario], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tipoVehiculo TipoVehiculo @relation(fields: [idTipoVehiculo], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reservas     Reserva[]
+
+  @@unique([idUsuario, placa])
+  @@map("vehiculo_conductor")
+}
+
+model Reserva {
+  id                    Int               @id @default(autoincrement()) @map("id_reserva")
+  codigo                String            @unique @db.VarChar(16)
+  idUsuario             Int               @map("id_usuario")
+  idVehiculo            Int               @map("id_vehiculo")
+  idTipoVehiculo        Int               @map("id_tipo_vehiculo")
+  fechaReserva          DateTime          @default(now()) @map("fecha_reserva")
+  fechaLimite           DateTime          @map("fecha_limite")
+  estado                EstadoReserva     @default(VIGENTE)
+  montoAdelanto         Decimal           @db.Decimal(10, 2) @map("monto_adelanto")
+  stripePaymentIntentId String?           @db.VarChar(100) @map("stripe_payment_intent_id")
+  estadoPago            EstadoPagoReserva @default(PAGADO) @map("estado_pago")
+  fechaAnulacion        DateTime?         @map("fecha_anulacion")
+  creadoEn              DateTime          @default(now()) @map("creado_en")
+
+  usuario      Usuario           @relation(fields: [idUsuario], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  vehiculo     VehiculoConductor @relation(fields: [idVehiculo], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tipoVehiculo TipoVehiculo      @relation(fields: [idTipoVehiculo], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  estadia      Estadia?
+
+  @@index([estado, idTipoVehiculo])
+  @@index([idUsuario, estado])
+  @@map("reserva")
 }

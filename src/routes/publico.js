@@ -1,33 +1,52 @@
 const express = require('express');
 const prisma = require('../config/prisma');
 const { obtenerCapacidad } = require('../config/espacios');
+const { expirarReservasVencidas } = require('./reservas');
 
 const router = express.Router();
 
 /**
- * Consulta la cantidad de estadías activas (horaSalida IS NULL) agrupadas por tipo de vehículo.
- * Se agrupa por idTipoVehiculo en lugar de consultar dos nombres fijos, para no perder de vista
- * estadías de otros tipos (p. ej. "Reserva Web") que también ocupan un espacio físico.
+ * Consulta la cantidad de estadías activas (horaSalida IS NULL) y reservas vigentes
+ * agrupadas por tipo de vehículo.
  */
 async function obtenerEstadiasActivasPorTipo() {
-  const [tipos, agrupado] = await Promise.all([
+  await expirarReservasVencidas();
+
+  const [tipos, agrupado, reservasAgrupadas] = await Promise.all([
     prisma.tipoVehiculo.findMany({ select: { id: true, nombre: true } }),
     prisma.estadia.groupBy({
       by: ['idTipoVehiculo'],
       where: { horaSalida: null },
+      _count: { _all: true }
+    }),
+    prisma.reserva.groupBy({
+      by: ['idTipoVehiculo'],
+      where: { estado: 'VIGENTE' },
       _count: { _all: true }
     })
   ]);
 
   const idPorNombre = new Map(tipos.map((tipo) => [tipo.nombre, tipo.id]));
   const conteoPorId = new Map(agrupado.map((fila) => [fila.idTipoVehiculo, fila._count._all]));
+  const reservasPorId = new Map(reservasAgrupadas.map((fila) => [fila.idTipoVehiculo, fila._count._all]));
 
-  const ocupadosAutos = conteoPorId.get(idPorNombre.get('Automóvil / Camioneta')) || 0;
-  const ocupadosMotos = conteoPorId.get(idPorNombre.get('Motocicleta')) || 0;
+  const idAutos = idPorNombre.get('Automóvil / Camioneta');
+  const idMotos = idPorNombre.get('Motocicleta');
+
+  const ocupadosAutos = conteoPorId.get(idAutos) || 0;
+  const ocupadosMotos = conteoPorId.get(idMotos) || 0;
+  const reservasVigentesAutos = reservasPorId.get(idAutos) || 0;
+  const reservasVigentesMotos = reservasPorId.get(idMotos) || 0;
   const totalActivas = agrupado.reduce((acumulado, fila) => acumulado + fila._count._all, 0);
   const otrosEnCochera = totalActivas - ocupadosAutos - ocupadosMotos;
 
-  return { ocupadosAutos, ocupadosMotos, otrosEnCochera };
+  return {
+    ocupadosAutos,
+    ocupadosMotos,
+    otrosEnCochera,
+    reservasVigentesAutos,
+    reservasVigentesMotos
+  };
 }
 
 /**
@@ -45,11 +64,13 @@ function calcularDisponibles(capacidad, enCochera, reservasVigentes = 0) {
 router.get('/disponibilidad', async (req, res) => {
   try {
     const capacidad = obtenerCapacidad();
-    const { ocupadosAutos, ocupadosMotos, otrosEnCochera } = await obtenerEstadiasActivasPorTipo();
-
-    // En Sprint 2, la entidad reserva es trabajo futuro (UPAO-21), por lo que reservasVigentes = 0
-    const reservasVigentesAutos = 0;
-    const reservasVigentesMotos = 0;
+    const {
+      ocupadosAutos,
+      ocupadosMotos,
+      otrosEnCochera,
+      reservasVigentesAutos,
+      reservasVigentesMotos
+    } = await obtenerEstadiasActivasPorTipo();
 
     const disponiblesAutos = calcularDisponibles(capacidad.capacidadAutos, ocupadosAutos, reservasVigentesAutos);
     const disponiblesMotos = calcularDisponibles(capacidad.capacidadMotos, ocupadosMotos, reservasVigentesMotos);

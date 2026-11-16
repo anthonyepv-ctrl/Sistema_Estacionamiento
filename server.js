@@ -11,6 +11,8 @@ const espaciosRoutes = require('./src/routes/espacios');
 const reportesRoutes = require('./src/routes/reportes');
 const ocupacionRoutes = require('./src/routes/ocupacion');
 const publicoRoutes = require('./src/routes/publico');
+const conductorRoutes = require('./src/routes/conductor');
+const reservasRoutes = require('./src/routes/reservas');
 const { autenticar, autorizar } = require('./src/config/auth');
 
 const app = express();
@@ -32,6 +34,8 @@ app.use('/api/tarifas', tarifasRoutes);
 app.use('/api/ingresos', ingresosRoutes);
 app.use('/api/salidas', salidasRoutes);
 app.use('/api/espacios', espaciosRoutes);
+app.use('/api/conductor', autorizar('CONDUCTOR'), conductorRoutes);
+app.use('/api/reservas', reservasRoutes);
 
 // Reportes, gráficos y ocupación son información del negocio: solo el DUEÑO.
 app.use('/api/reportes/ocupacion', autorizar('DUENO'), ocupacionRoutes);
