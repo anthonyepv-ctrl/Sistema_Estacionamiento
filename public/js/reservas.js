@@ -3,6 +3,7 @@
   let stripeElements = null;
   let stripeCardElement = null;
   let configPasarela = null;
+  let publishableKeyUsada = null;
   let intencionActual = null;
   let vehiculosConductor = [];
   let reservaParaAnular = null;
@@ -50,11 +51,7 @@
   }
 
   async function inicializarStripeSiHaceFalta() {
-    if (stripeInstance && stripeCardElement) return true;
-
-    if (!configPasarela) {
-      configPasarela = await window.pedirApi('/api/reservas/config-pasarela');
-    }
+    configPasarela = await window.pedirApi('/api/reservas/config-pasarela');
 
     if (!configPasarela || !configPasarela.habilitado || !configPasarela.publishableKey) {
       throw new Error('La pasarela de pagos con tarjeta no está configurada en el servidor.');
@@ -64,6 +61,15 @@
       throw new Error('No se pudo cargar el formulario seguro de tarjeta. Verifique su conexión a internet.');
     }
 
+    if (stripeInstance && stripeCardElement && publishableKeyUsada === configPasarela.publishableKey) {
+      return true;
+    }
+
+    if (stripeCardElement && typeof stripeCardElement.unmount === 'function') {
+      try { stripeCardElement.unmount(); } catch (_) {}
+    }
+
+    publishableKeyUsada = configPasarela.publishableKey;
     stripeInstance = window.Stripe(configPasarela.publishableKey);
     stripeElements = stripeInstance.elements({ locale: 'es' });
     stripeCardElement = stripeElements.create('card', {
@@ -95,6 +101,59 @@
     }
 
     return true;
+  }
+
+  function actualizarResumenPasarelaDueno(estado) {
+    const badge = document.getElementById('badge-estado-pasarela');
+    const txtOrigen = document.getElementById('texto-origen-pasarela');
+    const txtPk = document.getElementById('texto-pk-pasarela');
+    const txtSk = document.getElementById('texto-sk-pasarela');
+    const inputPk = document.getElementById('input-pasarela-pk');
+
+    if (badge) {
+      if (!estado || !estado.habilitado) {
+        badge.className = 'badge badge-danger mono';
+        badge.textContent = 'SIN CONFIGURAR';
+      } else if (estado.modo === 'PRODUCCION') {
+        badge.className = 'badge badge-success mono';
+        badge.textContent = 'ACTIVA · PRODUCCIÓN';
+      } else {
+        badge.className = 'badge badge-warning mono';
+        badge.textContent = 'ACTIVA · MODO PRUEBA';
+      }
+    }
+
+    if (txtOrigen) {
+      const mapaOrigen = {
+        panel_dueno: 'Panel del Dueño (personalizada en la web)',
+        servidor_env: 'Variables del servidor (por defecto)',
+        sin_configurar: 'Sin configurar'
+      };
+      txtOrigen.textContent = `Origen: ${mapaOrigen[estado && estado.origen] || '—'}`;
+    }
+
+    if (txtPk) {
+      const pk = estado && estado.publishableKey ? estado.publishableKey : null;
+      txtPk.textContent = `Clave Pública: ${pk ? `${pk.slice(0, 18)}...` : '—'}`;
+    }
+
+    if (txtSk) {
+      txtSk.textContent = `Clave Secreta: ${(estado && estado.secretKeyMasked) || '—'}`;
+    }
+
+    if (inputPk && estado && estado.publishableKey && !inputPk.value) {
+      inputPk.value = estado.publishableKey;
+    }
+  }
+
+  async function cargarVistaPasarelaDueno() {
+    try {
+      const estado = await window.pedirApi('/api/reservas/config-pasarela');
+      configPasarela = estado;
+      actualizarResumenPasarelaDueno(estado);
+    } catch (err) {
+      window.mostrarToast(err.message, true);
+    }
   }
 
   async function cargarVehiculosConductor() {
@@ -795,11 +854,76 @@
         cargarGaritaReservas();
       });
     }
+
+    // 10. Configuración de Pasarela de Pagos Stripe para el Dueño (UPAO-21)
+    const cardPasarela = document.getElementById('card-modulo-pasarela');
+    if (cardPasarela) {
+      cardPasarela.addEventListener('click', () => window.mostrarPantalla('pasarela-stripe'));
+    }
+
+    const btnVolverMenuPasarela = document.getElementById('btn-volver-menu-desde-pasarela');
+    if (btnVolverMenuPasarela) {
+      btnVolverMenuPasarela.addEventListener('click', () => window.mostrarPantalla('dashboard'));
+    }
+
+    const formConfigPasarela = document.getElementById('form-config-pasarela-dueno');
+    if (formConfigPasarela) {
+      formConfigPasarela.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pk = document.getElementById('input-pasarela-pk').value.trim();
+        const sk = document.getElementById('input-pasarela-sk').value.trim();
+        const btnGuardar = document.getElementById('btn-guardar-pasarela');
+
+        btnGuardar.classList.add('loading');
+        btnGuardar.disabled = true;
+
+        try {
+          const res = await window.pedirApi('/api/reservas/config-pasarela', {
+            method: 'PUT',
+            body: JSON.stringify({ publishableKey: pk, secretKey: sk })
+          });
+          configPasarela = res;
+          actualizarResumenPasarelaDueno(res);
+          document.getElementById('input-pasarela-sk').value = '';
+          window.mostrarToast(res.mensaje || 'Credenciales de pasarela actualizadas.');
+        } catch (err) {
+          window.mostrarToast(err.message, true);
+        } finally {
+          btnGuardar.classList.remove('loading');
+          btnGuardar.disabled = false;
+        }
+      });
+    }
+
+    const btnRestaurarPasarela = document.getElementById('btn-restaurar-pasarela');
+    if (btnRestaurarPasarela) {
+      btnRestaurarPasarela.addEventListener('click', async () => {
+        btnRestaurarPasarela.classList.add('loading');
+        btnRestaurarPasarela.disabled = true;
+        try {
+          const res = await window.pedirApi('/api/reservas/config-pasarela', {
+            method: 'PUT',
+            body: JSON.stringify({ restaurarPorDefecto: true })
+          });
+          configPasarela = res;
+          document.getElementById('input-pasarela-pk').value = res.publishableKey || '';
+          document.getElementById('input-pasarela-sk').value = '';
+          actualizarResumenPasarelaDueno(res);
+          window.mostrarToast(res.mensaje || 'Claves restauradas.');
+        } catch (err) {
+          window.mostrarToast(err.message, true);
+        } finally {
+          btnRestaurarPasarela.classList.remove('loading');
+          btnRestaurarPasarela.disabled = false;
+        }
+      });
+    }
   });
 
   window.reservasModulo = {
     cargarVistaConductor,
     cargarHistorialConductor,
-    cargarGaritaReservas
+    cargarGaritaReservas,
+    cargarVistaPasarelaDueno
   };
 })();

@@ -5,8 +5,9 @@ const { obtenerCapacidad } = require('../config/espacios');
 const { autorizar } = require('../config/auth');
 const { normalizarPlaca } = require('../utils/placas');
 const {
-  stripeConfigurado,
-  obtenerLlavePublica,
+  obtenerEstadoPasarela,
+  guardarCredencialesPasarela,
+  restaurarCredencialesServidor,
   crearPaymentIntentReserva,
   obtenerPaymentIntent,
   reembolsarPaymentIntent
@@ -54,14 +55,49 @@ function formatearReserva(r) {
 
 /**
  * GET /api/reservas/config-pasarela
- * Devuelve si Stripe está habilitado y su clave pública (pk_test_...).
+ * Devuelve si Stripe está habilitado, su clave pública y estado operativo.
  */
 router.get('/config-pasarela', autorizar('CONDUCTOR', 'RECEPCIONISTA', 'DUENO'), (req, res) => {
-  return res.json({
-    habilitado: stripeConfigurado(),
-    publishableKey: stripeConfigurado() ? obtenerLlavePublica() : null,
-    toleranciaMinutos: TOLERANCIA_MINUTOS
-  });
+  const estado = obtenerEstadoPasarela();
+  const payload = {
+    habilitado: estado.habilitado,
+    publishableKey: estado.publishableKey,
+    toleranciaMinutos: TOLERANCIA_MINUTOS,
+    modo: estado.modo,
+    origen: estado.origen
+  };
+  if (req.sesion.rol === 'DUENO') {
+    payload.secretKeyMasked = estado.secretKeyMasked;
+  }
+  return res.json(payload);
+});
+
+/**
+ * PUT /api/reservas/config-pasarela (UPAO-21 - DUEÑO)
+ * Permite al Product Owner / Dueño configurar o restaurar las API keys de Stripe desde la web.
+ */
+router.put('/config-pasarela', autorizar('DUENO'), (req, res) => {
+  const { publishableKey, secretKey, restaurarPorDefecto } = req.body || {};
+  try {
+    const estado = restaurarPorDefecto === true
+      ? restaurarCredencialesServidor()
+      : guardarCredencialesPasarela({ publishableKey, secretKey });
+    const mensaje = restaurarPorDefecto === true
+      ? 'Se restauraron las credenciales por defecto del servidor.'
+      : 'Credenciales de pasarela Stripe actualizadas correctamente.';
+
+    return res.json({
+      ...estado,
+      toleranciaMinutos: TOLERANCIA_MINUTOS,
+      mensaje
+    });
+  } catch (error) {
+    if (error.statusCode === 400) {
+      return res.status(400).json({ error: error.message });
+    }
+    console.error('Error al actualizar credenciales Stripe:', error);
+    return res.status(500).json({ error: 'No se pudieron actualizar las credenciales de la pasarela.' });
+  }
 });
 
 /**

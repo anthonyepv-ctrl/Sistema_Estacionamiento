@@ -64,6 +64,9 @@
         <button type="button" class="sidebar-link" data-view="tarifas" data-trigger="card-modulo-tarifas" data-roles="DUENO">
           Configurar Tarifas
         </button>
+        <button type="button" class="sidebar-link" data-view="pasarela-stripe" data-trigger="card-modulo-pasarela" data-roles="DUENO">
+          Pasarela de Pagos
+        </button>
         <button type="button" class="sidebar-link" data-view="reportes" data-trigger="card-modulo-reportes" data-roles="DUENO">
           Caja Diaria
         </button>
@@ -420,6 +423,23 @@
             <p>Consulte el historial de ingresos y salidas de sus vehículos, estados actuales y montos abonados.</p>
             <div class="module-card-action">
               <span>Ver Historial →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Módulo de Configuración de Pasarela Stripe (UPAO-21 - Rol Dueño) -->
+        <div class="module-card card-primary" id="card-modulo-pasarela">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Pasarela de Pagos (Stripe)</h2>
+              <span class="module-badge badge-finanzas">Finanzas</span>
+            </div>
+            <p>Configure o actualice sus propias claves API de Stripe (modo prueba o producción) sin intervención técnica.</p>
+            <div class="module-card-action">
+              <span>Configurar Claves →</span>
             </div>
           </div>
         </div>
@@ -1636,6 +1656,92 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------------------------
+         12. CONFIGURACIÓN DE PASARELA DE PAGOS STRIPE (UPAO-21 - ROL DUEÑO)
+         ---------------------------------------------------------------------- -->
+    <section id="view-pasarela-stripe" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-menu-desde-pasarela">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Configuración de Pasarela de Pagos (Stripe)</h1>
+        <p>Gestione las claves API de su cuenta de Stripe directamente desde la aplicación, sin intervención técnica ni configuración en servidores.</p>
+      </div>
+
+      <div class="tarifas-layout" style="align-items: start;">
+        <!-- Columna 1: Estado actual + Formulario -->
+        <div class="card card-form">
+          <div class="card-header">
+            <h2>1. Credenciales API de Stripe</h2>
+            <p class="caption">Ingrese el par de llaves generado en su panel de Stripe</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <div id="box-estado-pasarela-dueno" style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <span class="caption" style="font-weight: 600; color: #1E3A8A;">Estado actual de la pasarela</span>
+              <span id="badge-estado-pasarela" class="badge mono">VERIFICANDO...</span>
+            </div>
+            <p class="caption" id="texto-origen-pasarela" style="margin: 4px 0;">Origen: —</p>
+            <p class="caption mono" id="texto-pk-pasarela" style="margin: 4px 0; word-break: break-all;">Clave Pública: —</p>
+            <p class="caption mono" id="texto-sk-pasarela" style="margin: 4px 0;">Clave Secreta: —</p>
+          </div>
+
+          <form id="form-config-pasarela-dueno" novalidate>
+            <div class="form-group">
+              <label for="input-pasarela-pk" class="form-label">
+                <span>Clave Pública (Publishable Key) <span class="required">*</span></span>
+              </label>
+              <input type="text" id="input-pasarela-pk" class="input-control mono" placeholder="pk_test_... o pk_live_..." autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label for="input-pasarela-sk" class="form-label">
+                <span>Clave Secreta (Secret Key) <span class="required">*</span></span>
+              </label>
+              <input type="password" id="input-pasarela-sk" class="input-control mono" placeholder="sk_test_... / rk_test_... o sk_live_..." autocomplete="new-password">
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
+              <button type="submit" id="btn-guardar-pasarela" class="btn btn-primary" style="flex: 2;">
+                Guardar y Activar API Keys
+              </button>
+              <button type="button" id="btn-restaurar-pasarela" class="btn btn-secondary" style="flex: 1;">
+                Restaurar Claves del Servidor
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Columna 2: Guía paso a paso para el Product Owner / Dueño -->
+        <div class="card">
+          <div class="card-header">
+            <h2>2. Guía Paso a Paso (Sin Intervención Técnica)</h2>
+            <p class="caption">Cómo obtener sus claves desde Stripe en menos de 2 minutos</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+
+          <ol style="padding-left: 20px; line-height: 1.65; color: #334155; font-size: 14px; margin: 0;">
+            <li style="margin-bottom: 10px;">
+              Cree o inicie sesión en su cuenta de <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" style="color: #1E3A8A; font-weight: 600;">Stripe Dashboard → Developers → API keys</a>.
+            </li>
+            <li style="margin-bottom: 10px;">
+              Copie la <strong>Publishable key</strong> (<code>pk_test_...</code> o <code>pk_live_...</code>) y la <strong>Secret key</strong> (<code>sk_test_...</code> o <code>sk_live_...</code>). Ambas deben pertenecer al mismo entorno.
+            </li>
+            <li style="margin-bottom: 10px;">
+              Pegue ambas claves en el formulario de la izquierda y presione <strong>Guardar y Activar API Keys</strong>. La pasarela quedará lista de inmediato para las reservas web.
+            </li>
+            <li>
+              <strong>Modo Prueba vs. Producción:</strong> use <code>pk_test_</code> / <code>sk_test_</code> para simulaciones sin cobro real, y cambie a <code>pk_live_</code> / <code>sk_live_</code> cuando desee recibir pagos reales en la cuenta bancaria vinculada a su Stripe.
+            </li>
+          </ol>
         </div>
       </div>
     </section>

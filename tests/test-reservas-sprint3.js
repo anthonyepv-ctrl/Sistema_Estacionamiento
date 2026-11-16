@@ -102,6 +102,72 @@ async function ejecutarPruebas() {
     }
     console.log('✅ [SP3-02] Configuración de pasarela Stripe verificada (pk_test_... activa).');
 
+    // 2b. Autogestión de API Keys Stripe por rol DUEÑO (UPAO-21)
+    const resPutCond = await fetch(`${BASE_URL}/api/reservas/config-pasarela`, {
+      method: 'PUT',
+      headers: headersConductor,
+      body: JSON.stringify({ publishableKey: 'pk_test_1234567890abcd', secretKey: 'sk_test_1234567890abcd' })
+    });
+    if (resPutCond.status !== 403) {
+      throw new Error(`Se esperaba 403 para CONDUCTOR en PUT /config-pasarela, obtuvo ${resPutCond.status}`);
+    }
+
+    const resLoginDueno = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario: 'admin', contrasena: '123456' })
+    });
+    const sesionDueno = await resLoginDueno.json();
+    if (!resLoginDueno.ok || !sesionDueno.token) {
+      throw new Error(`Fallo login DUEÑO en SP3-02b: ${JSON.stringify(sesionDueno)}`);
+    }
+    const headersDueno = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${sesionDueno.token}`
+    };
+
+    const resPutInv = await fetch(`${BASE_URL}/api/reservas/config-pasarela`, {
+      method: 'PUT',
+      headers: headersDueno,
+      body: JSON.stringify({ publishableKey: 'clave_invalida', secretKey: 'sk_test_1234567890abcd' })
+    });
+    if (resPutInv.status !== 400) {
+      throw new Error(`Se esperaba 400 con PK inválida, obtuvo ${resPutInv.status}`);
+    }
+
+    const resPutMix = await fetch(`${BASE_URL}/api/reservas/config-pasarela`, {
+      method: 'PUT',
+      headers: headersDueno,
+      body: JSON.stringify({ publishableKey: 'pk_test_1234567890abcd', secretKey: 'sk_live_1234567890abcd' })
+    });
+    if (resPutMix.status !== 400) {
+      throw new Error(`Se esperaba 400 al mezclar test/live, obtuvo ${resPutMix.status}`);
+    }
+
+    const resPutOk = await fetch(`${BASE_URL}/api/reservas/config-pasarela`, {
+      method: 'PUT',
+      headers: headersDueno,
+      body: JSON.stringify({
+        publishableKey: 'pk_test_9999999999panel',
+        secretKey: 'sk_test_9999999999panel'
+      })
+    });
+    const putOkData = await resPutOk.json();
+    if (!resPutOk.ok || putOkData.origen !== 'panel_dueno' || !putOkData.secretKeyMasked) {
+      throw new Error(`Fallo al guardar claves del dueño: ${JSON.stringify(putOkData)}`);
+    }
+
+    const resRestaurar = await fetch(`${BASE_URL}/api/reservas/config-pasarela`, {
+      method: 'PUT',
+      headers: headersDueno,
+      body: JSON.stringify({ restaurarPorDefecto: true })
+    });
+    const restaurarData = await resRestaurar.json();
+    if (!resRestaurar.ok || restaurarData.origen !== 'servidor_env') {
+      throw new Error(`Fallo al restaurar claves del servidor: ${JSON.stringify(restaurarData)}`);
+    }
+    console.log('✅ [SP3-02b] Autogestión de API Keys Stripe por DUEÑO (403/400/guardar/restaurar) verificada.');
+
     // 3. Validación Poka-Yoke + Registro de vehículo del conductor (UPAO-21)
     const resVehInvalido = await fetch(`${BASE_URL}/api/conductor/vehiculos`, {
       method: 'POST',
@@ -440,7 +506,7 @@ async function ejecutarPruebas() {
     }
     console.log('✅ [SP3-18] Búsqueda en garita sin coincidencias retorna lista vacía (UPAO-8).');
 
-    console.log('\n🎉 TODAS LAS PRUEBAS DEL SPRINT 3 PASARON EXITOSAMENTE (20/20 verificaciones).');
+    console.log('\n🎉 TODAS LAS PRUEBAS DEL SPRINT 3 PASARON EXITOSAMENTE (21/21 verificaciones).');
   } finally {
     // Limpieza de datos de prueba en staging
     try {

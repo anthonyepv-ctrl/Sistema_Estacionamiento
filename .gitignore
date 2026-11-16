@@ -38,3 +38,6 @@ docs/modulos/espacios/evidencias/*.webm
 # Grabaciones crudas de Playwright: se versiona solo el MP4 transcodificado
 docs/modulos/**/evidencias/**/*.webm
 .tmp-video-*/
+
+# Credenciales Stripe ingresadas por el dueño desde la UI (nunca versionar)
+src/config/stripe-keys.json

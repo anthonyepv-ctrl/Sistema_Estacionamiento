@@ -52,6 +52,10 @@
 4. **Control de acceso por rol:** `/api/conductor/vehiculos`, `/api/reservas/intencion-pago` y `/api/reservas` exigen sesión válida con rol `CONDUCTOR`.
 5. **Protagonismo de reserva y modal de pago limpio:** en el módulo del conductor, **Realizar Reserva Web** ocupa la columna principal (`3fr`) y **Mis Vehículos** la columna secundaria (`2fr`). El cliente visualiza el adelanto (`S/ 0.00`) y completa el cobro en un modal limpio de tarjeta sin tecnicismos internos del proveedor de pagos.
 
+### 3.6. Autogestión de credenciales de pasarela por el Dueño (Sin intervención técnica)
+- Para que el Product Owner o Dueño pueda operar la cochera desde cero sin acceder al panel de infraestructura ni editar variables de entorno, el módulo incorpora la vista **Pasarela de Pagos (Stripe)** (`#view-pasarela-stripe`, visible solo para rol `DUENO`).
+- El sistema utiliza las variables del servidor (`STRIPE_PUBLISHABLE_KEY` / `STRIPE_SECRET_KEY`) como respaldo inicial y permite al `DUENO` ingresar, validar (`pk_test_`/`pk_live_` + `sk_test_`/`sk_live_` del mismo entorno) o restaurar sus propias claves API directamente desde la aplicación (`src/config/stripe.js`, persistencia local excluida de Git en `src/config/stripe-keys.json`).
+
 ---
 
 ## 4. Endpoints Planificados (`UPAO-21`)
@@ -60,7 +64,8 @@
 | --- | --- | --- | --- |
 | `POST` | `/api/auth/registro-conductor` | Público | Crea cuenta `CONDUCTOR` y emite token HMAC. |
 | `GET/POST/DELETE` | `/api/conductor/vehiculos` | `CONDUCTOR` | Gestiona vehículos del conductor con validación MTC/Poka-Yoke y `precioAdelanto`. |
-| `GET` | `/api/reservas/config-pasarela` | Autenticado | Retorna `publishableKey` de pasarela y `toleranciaMinutos` (30). |
+| `GET` | `/api/reservas/config-pasarela` | Autenticado | Retorna `publishableKey`, `toleranciaMinutos` (30), `modo` y `origen`. |
+| `PUT` | `/api/reservas/config-pasarela` | `DUENO` | Valida, guarda o restaura las credenciales API de Stripe ingresadas por el Dueño. |
 | `POST` | `/api/reservas/intencion-pago` | `CONDUCTOR` | Valida cupo/placa y crea intención de pago en PEN (1h de tarifa). |
 | `POST` | `/api/reservas` | `CONDUCTOR` | Verifica pago aprobado y registra reserva `VIGENTE` (+30 min). |
 
@@ -72,7 +77,7 @@
 
 | ID | Caso de Prueba | Datos de Prueba | Resultado Esperado | Estado |
 | --- | --- | --- | --- | --- |
-| **CP-21-01** | 1- Válido: Pasarela de pago activa y registro de `CONDUCTOR` | `GET /api/reservas/config-pasarela` + `POST /api/auth/registro-conductor` (DNI 8 dígitos, celular `9XXXXXXXX`) | Retorna clave pública, `toleranciaMinutos=30`, crea usuario `CONDUCTOR` y emite token HMAC. | Pendiente |
+| **CP-21-01** | 1- Válido: Pasarela de pago activa, autogestión `DUENO` y registro `CONDUCTOR` | `GET/PUT /api/reservas/config-pasarela` + `POST /api/auth/registro-conductor` (DNI 8 dígitos, celular `9XXXXXXXX`) | Retorna clave pública, permite al `DUENO` actualizar/restaurar API keys (rechaza `CONDUCTOR` 403 y llaves inválidas 400), crea `CONDUCTOR` y emite token HMAC. | Pendiente |
 | **CP-21-02** | 2- Válido: Registro de vehículo SUNARP/MTC y vista previa de adelanto | `POST /api/conductor/vehiculos` (`ABC-123` / `T9Z-814`, Auto) + `GET /api/conductor/vehiculos` | Registra vehículo y devuelve `precioAdelanto` igual a 1 hora de tarifa vigente (`S/`). | Pendiente |
 | **CP-21-03** | 3- Válido: Pago adelantado con tarjeta (PEN) y reserva `VIGENTE` por 30 min | `POST /api/reservas/intencion-pago` + tarjeta de prueba aprobada + `POST /api/reservas` | Crea reserva `VIGENTE` (30 min), `estadoPago: PAGADO` y descuenta 1 espacio en `/api/publico/disponibilidad`. | Pendiente |
 | **CP-21-04** | 4- Inválido: Placa repetitiva o formato no válido MTC (Poka-Yoke) | `POST /api/conductor/vehiculos` con `AAA-000` o `123456` | Rechaza con HTTP `400 Bad Request` y alerta de formato inválido. | Pendiente |

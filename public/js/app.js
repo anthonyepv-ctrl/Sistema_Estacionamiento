@@ -82,6 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.reservasModulo && typeof window.reservasModulo.cargarGaritaReservas === 'function') {
         window.reservasModulo.cargarGaritaReservas();
       }
+    } else if (nombre === 'pasarela-stripe') {
+      const viewPasarela = document.getElementById('view-pasarela-stripe');
+      if (viewPasarela) viewPasarela.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      if (window.reservasModulo && typeof window.reservasModulo.cargarVistaPasarelaDueno === 'function') {
+        window.reservasModulo.cargarVistaPasarelaDueno();
+      }
     }
 
     actualizarSidebar(nombre, rolActual);
@@ -120,8 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardGaritaReservas = document.getElementById('card-modulo-garita-reservas');
     const cardConductorReservas = document.getElementById('card-modulo-conductor-reservas');
     const cardConductorHistorial = document.getElementById('card-modulo-conductor-historial');
+    const cardPasarela = document.getElementById('card-modulo-pasarela');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
+    if (cardPasarela) cardPasarela.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
     if (cardSalida) cardSalida.style.display = esRecepcionista ? '' : 'none';
     if (cardAforo) cardAforo.style.display = (esDueno || esRecepcionista) ? '' : 'none';
