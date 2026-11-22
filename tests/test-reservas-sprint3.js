@@ -1,4 +1,5 @@
 require('dotenv').config();
+const http = require('http');
 const { spawn } = require('child_process');
 const prisma = require('../src/config/prisma');
 const { obtenerCapacidad, guardarCapacidad } = require('../src/config/espacios');
@@ -21,31 +22,108 @@ async function esperarServidor(intentos = 30) {
   throw new Error('El servidor de pruebas no respondió a tiempo.');
 }
 
-async function confirmarPaymentIntentEnStripe(paymentIntentId) {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  const body = new URLSearchParams();
-  body.append('payment_method', 'pm_card_visa');
+function iniciarMockCulqi() {
+  let seq = 0;
+  const server = http.createServer((req, res) => {
+    let rawBody = '';
+    req.on('data', (chunk) => { rawBody += chunk; });
+    req.on('end', () => {
+      let body = {};
+      try { body = rawBody ? JSON.parse(rawBody) : {}; } catch (_) {}
+      seq += 1;
 
-  const res = await fetch(`https://api.stripe.com/v1/payment_intents/${encodeURIComponent(paymentIntentId)}/confirm`, {
+      if (req.method === 'POST' && req.url === '/v2/charges') {
+        if (String(body.source_id || '').includes('rechazado')) {
+          res.writeHead(402, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ user_message: 'Tarjeta rechazada en pruebas.' }));
+        }
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({
+          id: `chr_test_sp3_${Date.now()}_${seq}`,
+          object: 'charge',
+          amount: body.amount,
+          currency_code: body.currency_code
+        }));
+      }
+
+      if (req.method === 'POST' && req.url === '/v2/refunds') {
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({
+          id: `ref_test_sp3_${Date.now()}_${seq}`,
+          object: 'refund',
+          charge_id: body.charge_id,
+          amount: body.amount,
+          reason: body.reason
+        }));
+      }
+
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ user_message: 'Ruta mock Culqi no soportada' }));
+    });
+  });
+
+  return new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address();
+      resolve({ server, url: `http://127.0.0.1:${port}/v2` });
+    });
+  });
+}
+
+async function crearTokenPruebaCulqi(usarMock) {
+  if (usarMock) {
+    return `tkn_test_sp3_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  const publicKey = process.env.CULQI_PUBLIC_KEY;
+  const res = await fetch('https://secure.culqi.com/v2/tokens', {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${Buffer.from(`${secretKey}:`).toString('base64')}`,
-      'Content-Type': 'application/x-www-form-urlencoded'
+      Authorization: `Bearer ${publicKey}`,
+      'Content-Type': 'application/json'
     },
-    body: body.toString()
+    body: JSON.stringify({
+      card_number: process.env.CULQI_TEST_CARD || '4111111111111111',
+      cvv: '123',
+      expiration_month: '12',
+      expiration_year: '2030',
+      email: 'conductor.sp3@cochera.pe'
+    })
   });
 
   const data = await res.json();
-  if (!res.ok) {
-    throw new Error(`Error confirmando PaymentIntent en Stripe: ${data?.error?.message || res.status}`);
+  if (!res.ok || !data.id) {
+    throw new Error(`Error generando token de prueba Culqi: ${data?.user_message || data?.merchant_message || res.status}`);
   }
-  return data;
+  return data.id;
 }
 
 async function ejecutarPruebas() {
-  console.log('=== INICIANDO SUITE INTEGRAL SPRINT 3 (UPAO-21, UPAO-22, UPAO-8, UPAO-23) ===');
+  console.log('=== INICIANDO SUITE INTEGRAL SPRINT 3 (UPAO-21, UPAO-22, UPAO-8, UPAO-23 · CULQI PERÚ) ===');
+
+  const usarMock = process.env.CULQI_MOCK === '1'
+    || !process.env.CULQI_PUBLIC_KEY
+    || !process.env.CULQI_SECRET_KEY;
+
+  const mockCulqi = usarMock ? await iniciarMockCulqi() : null;
+  if (usarMock) {
+    console.log('ℹ️  Modo CULQI_MOCK activo (sin llaves reales en .env).');
+  }
+
+  const envServidor = {
+    ...process.env,
+    PORT: String(PORT),
+    PAYMENT_GATEWAY: 'culqi'
+  };
+  if (usarMock) {
+    envServidor.CULQI_API_BASE = mockCulqi.url;
+    envServidor.CULQI_PUBLIC_KEY = 'pk_test_mock_sprint3_1234';
+    envServidor.CULQI_SECRET_KEY = 'sk_test_mock_sprint3_1234';
+    envServidor.PASARELA_ENCRYPTION_KEY = envServidor.PASARELA_ENCRYPTION_KEY || 'test-aes256-secret-key-32-chars!!';
+  }
+
   const srv = spawn(process.execPath, ['server.js'], {
-    env: { ...process.env, PORT: String(PORT) },
+    env: envServidor,
     stdio: 'pipe'
   });
 
@@ -92,17 +170,17 @@ async function ejecutarPruebas() {
     };
     console.log(`✅ [SP3-01] Registro y autenticación de CONDUCTOR (${usuarioTest}) exitoso.`);
 
-    // 2. Verificar configuración de pasarela Stripe
+    // 2. Verificar configuración de pasarela Culqi
     const resCfg = await fetch(`${BASE_URL}/api/reservas/config-pasarela`, {
       headers: headersConductor
     });
     const cfg = await resCfg.json();
-    if (!resCfg.ok || !cfg.habilitado || !String(cfg.publishableKey).startsWith('pk_test_')) {
-      throw new Error(`Configuración Stripe inválida: ${JSON.stringify(cfg)}`);
+    if (!resCfg.ok || !cfg.habilitado || cfg.proveedor !== 'culqi' || !String(cfg.publishableKey).startsWith('pk_test_')) {
+      throw new Error(`Configuración Culqi inválida: ${JSON.stringify(cfg)}`);
     }
-    console.log('✅ [SP3-02] Configuración de pasarela Stripe verificada (pk_test_... activa).');
+    console.log('✅ [SP3-02] Configuración de pasarela Culqi verificada (pk_test_... activa).');
 
-    // 2b. Autogestión de API Keys Stripe por rol DUEÑO (UPAO-21)
+    // 2b. Autogestión de API Keys Culqi por rol DUEÑO (UPAO-21)
     const resPutCond = await fetch(`${BASE_URL}/api/reservas/config-pasarela`, {
       method: 'PUT',
       headers: headersConductor,
@@ -166,7 +244,7 @@ async function ejecutarPruebas() {
     if (!resRestaurar.ok || restaurarData.origen !== 'servidor_env') {
       throw new Error(`Fallo al restaurar claves del servidor: ${JSON.stringify(restaurarData)}`);
     }
-    console.log('✅ [SP3-02b] Autogestión de API Keys Stripe por DUEÑO (403/400/guardar/restaurar) verificada.');
+    console.log('✅ [SP3-02b] Autogestión de API Keys Culqi por DUEÑO (403/400/guardar/restaurar) verificada.');
 
     // 3. Validación Poka-Yoke + Registro de vehículo del conductor (UPAO-21)
     const resVehInvalido = await fetch(`${BASE_URL}/api/conductor/vehiculos`, {
@@ -190,36 +268,36 @@ async function ejecutarPruebas() {
     const idVehiculo = dataVeh.id;
     console.log(`✅ [SP3-03] Vehículo ${placaTest} registrado con validación SUNARP/MTC y Poka-Yoke.`);
 
-    // 4. Crear intención de pago Stripe + confirmar con tarjeta Visa de prueba + crear Reserva #1 (UPAO-21)
+    // 4. Preparar pago + Token Culqi + crear Reserva #1 (UPAO-21)
     const resDispAntes = await fetch(`${BASE_URL}/api/publico/disponibilidad`);
     const dispAntes = await resDispAntes.json();
     const reservasAutosAntes = dispAntes.autos.reservasVigentes;
 
-    const resIntencion1 = await fetch(`${BASE_URL}/api/reservas/intencion-pago`, {
+    const resPrep1 = await fetch(`${BASE_URL}/api/reservas/preparar-pago`, {
       method: 'POST',
       headers: headersConductor,
       body: JSON.stringify({ idVehiculo })
     });
-    const intencion1 = await resIntencion1.json();
-    if (!resIntencion1.ok || !intencion1.paymentIntentId) {
-      throw new Error(`Fallo al crear PaymentIntent #1: ${JSON.stringify(intencion1)}`);
+    const prep1 = await resPrep1.json();
+    if (!resPrep1.ok || !prep1.publishableKey || !prep1.montoCentimos) {
+      throw new Error(`Fallo al preparar pago #1: ${JSON.stringify(prep1)}`);
     }
 
-    await confirmarPaymentIntentEnStripe(intencion1.paymentIntentId);
-
+    const token1 = await crearTokenPruebaCulqi(usarMock);
     const resCrear1 = await fetch(`${BASE_URL}/api/reservas`, {
       method: 'POST',
       headers: headersConductor,
       body: JSON.stringify({
         idVehiculo,
-        paymentIntentId: intencion1.paymentIntentId
+        sourceToken: token1,
+        email: 'conductor.sp3@cochera.pe'
       })
     });
     const dataReserva1 = await resCrear1.json();
     if (resCrear1.status !== 201 || dataReserva1.reserva.estado !== 'VIGENTE') {
       throw new Error(`Fallo al crear Reserva #1: ${JSON.stringify(dataReserva1)}`);
     }
-    console.log(`✅ [SP3-04] Reserva #1 (${dataReserva1.reserva.codigo}) creada con pago Stripe (${intencion1.paymentIntentId}).`);
+    console.log(`✅ [SP3-04] Reserva #1 (${dataReserva1.reserva.codigo}) creada con pago Culqi (${dataReserva1.reserva.pasarelaPagoId}).`);
 
     // 5. Verificar descuento de cupo en vista pública (UPAO-21 / UPAO-20)
     const resDispDurante = await fetch(`${BASE_URL}/api/publico/disponibilidad`);
@@ -229,7 +307,7 @@ async function ejecutarPruebas() {
     }
     console.log('✅ [SP3-05] Disponibilidad pública refleja la reserva vigente en tiempo real.');
 
-    // 6. Anular Reserva #1 y verificar reembolso en Stripe + liberación de cupo (UPAO-22)
+    // 6. Anular Reserva #1 y verificar reembolso en Culqi + liberación de cupo (UPAO-22)
     const resAnular = await fetch(`${BASE_URL}/api/reservas/${dataReserva1.reserva.id}/anular`, {
       method: 'POST',
       headers: headersConductor,
@@ -245,23 +323,17 @@ async function ejecutarPruebas() {
     if (dispDespuesAnular.autos.reservasVigentes !== reservasAutosAntes) {
       throw new Error('El cupo no se liberó tras anular la reserva.');
     }
-    console.log(`✅ [SP3-06] Reserva #1 anulada con reembolso Stripe (${dataAnular.reserva.estadoPago}) y cupo liberado (UPAO-22).`);
+    console.log(`✅ [SP3-06] Reserva #1 anulada con reembolso Culqi (${dataAnular.reserva.estadoPago}) y cupo liberado (UPAO-22).`);
 
     // 7. Crear Reserva #2 -> Buscar y Confirmar en Garita como Recepcionista (UPAO-8) -> Registrar Salida -> Consultar Historial (UPAO-23)
-    const resIntencion2 = await fetch(`${BASE_URL}/api/reservas/intencion-pago`, {
-      method: 'POST',
-      headers: headersConductor,
-      body: JSON.stringify({ idVehiculo })
-    });
-    const intencion2 = await resIntencion2.json();
-    await confirmarPaymentIntentEnStripe(intencion2.paymentIntentId);
-
+    const token2 = await crearTokenPruebaCulqi(usarMock);
     const resCrear2 = await fetch(`${BASE_URL}/api/reservas`, {
       method: 'POST',
       headers: headersConductor,
       body: JSON.stringify({
         idVehiculo,
-        paymentIntentId: intencion2.paymentIntentId
+        sourceToken: token2,
+        email: 'conductor.sp3@cochera.pe'
       })
     });
     const dataReserva2 = await resCrear2.json();
@@ -357,7 +429,7 @@ async function ejecutarPruebas() {
     const resSinTokenReserva = await fetch(`${BASE_URL}/api/reservas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idVehiculo, paymentIntentId: 'pi_invalido' })
+      body: JSON.stringify({ idVehiculo, sourceToken: 'tkn_test_invalido_123' })
     });
     if (resSinTokenReserva.status !== 401) {
       throw new Error(`Se esperaba 401 sin token en POST /api/reservas, recibió ${resSinTokenReserva.status}`);
@@ -376,7 +448,7 @@ async function ejecutarPruebas() {
       capacidadAutos: dispParaCero.autos.enCochera + dispParaCero.autos.reservasVigentes,
       capacidadMotos: capAntesCero.capacidadMotos
     });
-    const resCupoCero = await fetch(`${BASE_URL}/api/reservas/intencion-pago`, {
+    const resCupoCero = await fetch(`${BASE_URL}/api/reservas/preparar-pago`, {
       method: 'POST',
       headers: headersConductor,
       body: JSON.stringify({ idVehiculo })
@@ -387,39 +459,34 @@ async function ejecutarPruebas() {
     }
     console.log('✅ [SP3-12] Bloqueo 409 con aforo lleno verificado.');
 
-    // 8.3 Pago Stripe no confirmado -> 402 (UPAO-21) y doble reserva vigente -> 409 (UPAO-21)
-    const resIntencionSinConfirmar = await fetch(`${BASE_URL}/api/reservas/intencion-pago`, {
-      method: 'POST',
-      headers: headersConductor,
-      body: JSON.stringify({ idVehiculo })
-    });
-    const intencionSinConfirmar = await resIntencionSinConfirmar.json();
-    if (!resIntencionSinConfirmar.ok || !intencionSinConfirmar.paymentIntentId) {
-      throw new Error(`Fallo creando intención para prueba de pago no confirmado: ${JSON.stringify(intencionSinConfirmar)}`);
-    }
+    // 8.3 Pago Culqi inválido/no aprobado -> 402 (UPAO-21) y doble reserva vigente -> 409 (UPAO-21)
     const resPagoNoConfirmado = await fetch(`${BASE_URL}/api/reservas`, {
       method: 'POST',
       headers: headersConductor,
-      body: JSON.stringify({ idVehiculo, paymentIntentId: intencionSinConfirmar.paymentIntentId })
+      body: JSON.stringify({ idVehiculo, sourceToken: 'tkn_invalido' })
     });
     if (resPagoNoConfirmado.status !== 402) {
-      throw new Error(`Se esperaba 402 con pago no confirmado, recibió ${resPagoNoConfirmado.status}`);
+      throw new Error(`Se esperaba 402 con token inválido, recibió ${resPagoNoConfirmado.status}`);
     }
-    console.log('✅ [SP3-13] Rechazo 402 cuando el PaymentIntent no fue aprobado.');
+    console.log('✅ [SP3-13] Rechazo 402 cuando el token/pago Culqi no es válido.');
 
     // Crear Reserva #3 vigente para probar doble reserva, aislamiento entre conductores y vencimiento
-    await confirmarPaymentIntentEnStripe(intencionSinConfirmar.paymentIntentId);
+    const token3 = await crearTokenPruebaCulqi(usarMock);
     const resCrear3 = await fetch(`${BASE_URL}/api/reservas`, {
       method: 'POST',
       headers: headersConductor,
-      body: JSON.stringify({ idVehiculo, paymentIntentId: intencionSinConfirmar.paymentIntentId })
+      body: JSON.stringify({
+        idVehiculo,
+        sourceToken: token3,
+        email: 'conductor.sp3@cochera.pe'
+      })
     });
     const dataReserva3 = await resCrear3.json();
     if (resCrear3.status !== 201) {
       throw new Error(`Fallo creando Reserva #3: ${JSON.stringify(dataReserva3)}`);
     }
 
-    const resDobleReserva = await fetch(`${BASE_URL}/api/reservas/intencion-pago`, {
+    const resDobleReserva = await fetch(`${BASE_URL}/api/reservas/preparar-pago`, {
       method: 'POST',
       headers: headersConductor,
       body: JSON.stringify({ idVehiculo })
@@ -528,6 +595,7 @@ async function ejecutarPruebas() {
     } catch (_) {}
     await prisma.$disconnect();
     srv.kill();
+    if (mockCulqi) mockCulqi.server.close();
   }
 }
 

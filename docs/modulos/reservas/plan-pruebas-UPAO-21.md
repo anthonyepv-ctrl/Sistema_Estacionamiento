@@ -1,8 +1,9 @@
 # Plan de Pruebas y Depuración — Realizar Reserva Web (`UPAO-21` / Subtarea `UPAO-85`)
 
 > **Historia de Usuario:** `UPAO-21` — Realizar reserva (5 Story Points)  
-> **Subtarea Jira:** `UPAO-85` — Probar y depurar registro de conductor, vehículos, reserva y pago con tarjeta  
-> **Matriz complementaria:** [`docs/modulos/reservas/Casos_de_Prueba_Sprint3.xlsx`](Casos_de_Prueba_Sprint3.xlsx)
+> **Subtarea Jira:** `UPAO-85` — Probar y depurar registro de conductor, vehículos, reserva y pago con Culqi Perú  
+> **Matriz complementaria:** [`docs/modulos/reservas/Casos_de_Prueba_Sprint3.xlsx`](Casos_de_Prueba_Sprint3.xlsx)  
+> **Verificación real en Culqi Integración (22/11/2026):** Suite completa `node tests/test-reservas-sprint3.js` ejecutada contra la API real de Culqi Integración (`pk_test_...` / `sk_test_...`) y PostgreSQL Neon Staging con **21/21 verificaciones aprobadas** (cargo real de prueba `chr_test_eVACWgY1YOt4kYK6` y reembolso real vía `POST /v2/refunds`).
 
 ---
 
@@ -10,21 +11,22 @@
 
 | ID | Caso de Prueba | Resultado Obtenido | Estado |
 | --- | --- | --- | --- |
-| **CP-21-01** | 1- Válido: Pasarela de pago activa, autogestión `DUENO` y registro `CONDUCTOR` | `SP3-01`, `SP3-02` y `SP3-02b` verificados en `test-reservas-sprint3.js`: retorna clave pública (`pk_test_...`), valida `PUT /config-pasarela` (`403` a conductor, `400` a llaves inválidas/mixtas, `200` guardar/restaurar como `DUENO`), crea usuario `CONDUCTOR` y emite token HMAC. | ✅ Aprobado |
-| **CP-21-02** | 2- Válido: Registro de vehículo SUNARP/MTC y vista previa de adelanto | `SP3-03` y UI (`capturar_ui.js`) verificados: registra vehículo válido y `GET /api/conductor/vehiculos` devuelve `precioAdelanto` de 1h antes de abrir el modal de pago. | ✅ Aprobado |
-| **CP-21-03** | 3- Válido: Pago adelantado con tarjeta (PEN) y reserva `VIGENTE` por 30 min | `SP3-04` y `SP3-05` verificados: crea intención de pago aprobada, registra reserva `VIGENTE` (+30 min) y descuenta 1 espacio en `/api/publico/disponibilidad`. | ✅ Aprobado |
+| **CP-21-01** | 1- Válido: Pasarela Culqi activa, autogestión `DUENO` cifrada en BD y registro `CONDUCTOR` | `UNIT-01`, `UNIT-02`, `SP3-01`, `SP3-02` y `SP3-02b` verificados: retorna `pk_test_...`, rechaza `CONDUCTOR` (`403`), rechaza `rk_` y mezcla `test`/`live` (`400`), persiste `llave_secreta_cifrada` en `configuracion_pasarela` con AES-256-GCM y restaura defaults del servidor. | ✅ Aprobado |
+| **CP-21-02** | 2- Válido: Registro de vehículo SUNARP/MTC y vista previa con piso mínimo `S/ 3.00` | `UNIT-03` y `SP3-03` verificados: registra vehículos válidos, aplica piso mínimo `S/ 3.00` (`300` céntimos) a Motocicleta y devuelve `precioAdelanto` en `/api/conductor/vehiculos` y `/api/reservas/preparar-pago`. | ✅ Aprobado |
+| **CP-21-03** | 3- Válido: Pago adelantado con Culqi (PEN) y reserva `VIGENTE` por 30 min | `UNIT-04`, `SP3-04` y `SP3-05` verificados contra Culqi Integración real (`chr_test_eVACWgY1YOt4kYK6`): ejecuta `POST /v2/charges` en `PEN` con `Idempotency-Key`, crea reserva `VIGENTE` (+30 min) y descuenta 1 espacio en `/api/publico/disponibilidad`. | ✅ Aprobado |
 | **CP-21-04** | 4- Inválido: Placa repetitiva o formato no válido MTC (Poka-Yoke) | `SP3-03` verificado: rechaza `AAA-000` con HTTP `400 Bad Request` y mensaje de validación. | ✅ Aprobado |
 | **CP-21-05** | 5- Inválido: Reserva sin iniciar sesión (sin token) | `SP3-11` verificado: `POST /api/reservas` sin cabecera `Authorization` retorna HTTP `401 Unauthorized`. | ✅ Aprobado |
-| **CP-21-06** | 6- Inválido: Sin espacios disponibles para el tipo de vehículo | `SP3-12` verificado: cuando `disponibles = 0`, `POST /api/reservas/intencion-pago` rechaza con HTTP `409 Conflict`. | ✅ Aprobado |
-| **CP-21-07** | 7- Inválido: Placa con reserva vigente o estadía activa previa | `SP3-14` verificado: al intentar crear una segunda reserva `VIGENTE` para la misma placa, retorna HTTP `409 Conflict`. | ✅ Aprobado |
-| **CP-21-08** | 8- Inválido: Pago con tarjeta fallido o no confirmado | `SP3-13` verificado: al enviar un `paymentIntentId` no aprobado a `POST /api/reservas`, rechaza con HTTP `402 Payment Required`. | ✅ Aprobado |
+| **CP-21-06** | 6- Inválido: Sin espacios disponibles para el tipo de vehículo | `SP3-12` verificado: cuando `disponibles = 0`, `POST /api/reservas/preparar-pago` rechaza con HTTP `409 Conflict`. | ✅ Aprobado |
+| **CP-21-07** | 7- Inválido: Placa con reserva vigente o estadía activa previa | `SP3-14` verificado: al intentar preparar/crear una segunda reserva `VIGENTE` para la misma placa, retorna HTTP `409 Conflict`. | ✅ Aprobado |
+| **CP-21-08** | 8- Inválido: Token o pago Culqi inválido o rechazado | `SP3-13` verificado: al enviar `sourceToken: 'tkn_invalido'` a `POST /api/reservas`, rechaza con HTTP `402 Payment Required`. | ✅ Aprobado |
 
 ---
 
 ## 2. Comandos de Ejecución
 
 ```bash
-node tests/test-reservas-sprint3.js
+node tests/test-pasarela-culqi-unit.js
+CULQI_MOCK=1 node tests/test-reservas-sprint3.js
 npm run test:regresion
 ```
 
@@ -34,14 +36,14 @@ npm run test:regresion
 
 | ID Defecto | Descripción | Causa Raíz | Solución Aplicada | Estado |
 | --- | --- | --- | --- | --- |
-| **DEF-21-01** | Redirección en confirmación de pago con tarjeta (`PEN`) | La configuración por defecto exigía `return_url` para métodos con redirección al confirmar por API/Elements. | Se configuró `'automatic_payment_methods[allow_redirects]': 'never'` en `src/config/stripe.js`. | Cerrado |
-| **DEF-21-02** | Jerarquía visual y jerga técnica en `#view-conductor-reservas` | *Mis Vehículos* ocupaba la columna principal (`3fr`) desplazando *Realizar Reserva*, y el formulario exponía texto interno (`Stripe Test Mode`) al cliente final. | Se colocó **1. Realizar Reserva Web** en la columna protagonista (`3fr`), **2. Mis Vehículos** a la derecha (`2fr`) y el cobro con tarjeta en el modal limpio `#modal-pago-reserva`. | Cerrado |
+| **DEF-21-01** | Incompatibilidad de Stripe en producción para RUC 10 en Perú | Stripe no opera nativamente en Perú para personas naturales con negocio ni procesa Yape. | Se migró a **Culqi Perú** (Checkout v4 + REST `/v2/charges` y `/v2/refunds`) detrás de un adaptador agnóstico (`src/payments/` + `public/js/pasarela-adapter.js`). | Cerrado |
+| **DEF-21-02** | Pérdida de llaves del Dueño en Render Free y almacenamiento en texto plano | Las credenciales personalizadas se guardaban en archivo JSON local (`stripe-keys.json`), efímero ante reinicios en Render. | Se creó tabla PostgreSQL `configuracion_pasarela` con cifrado **AES-256-GCM** en `src/payments/configStore.js`. | Cerrado |
+| **DEF-21-03** | Tarifa de motocicleta (`S/ 2.50`) inferior al mínimo de Culqi (`S/ 3.00`) | Culqi rechaza cargos menores a `300` céntimos en `POST /v2/charges`. | Se implementó `calcularMontoAdelanto` con piso `S/ 3.00` para reservas web y activación condicional de Yape según mínimo vigente. | Cerrado |
+| **DEF-21-04** | Riesgo de cobro huérfano ante colisión de último cupo | El cobro ocurría antes de adquirir `pg_advisory_xact_lock`. | Se pre-valida cupo antes del cobro, se usa `Idempotency-Key` + `@unique pasarela_pago_id` y se ejecuta reembolso compensatorio automático si falla la transacción. | Cerrado |
 
 ---
 
-## 4. Trazabilidad en GitHub (Rama `feature/UPAO-21-realizar-reserva`)
+## 4. Trazabilidad en GitHub
 
-- **BD y Migración (`UPAO-79`):** [Commit `758b47e`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/758b47e7bca2628ff1b011d709923c81afc476ba)
-- **API Backend (`UPAO-84`):** [Commit `c810227`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/c810227c66c0e8914950c1c16030c533a2297e3c) · [`src/config/stripe.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/src/config/stripe.js) · [`src/routes/reservas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/src/routes/reservas.js)
-- **UI, Modal de Pago y Panel Pasarela (`UPAO-83`):** [`public/index.html`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/public/index.html) · [`public/js/reservas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/public/js/reservas.js)
-- **Suite Sprint 3 (`UPAO-85`):** [`tests/test-reservas-sprint3.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/tests/test-reservas-sprint3.js)
+- **Migración inicial de reservas (`UPAO-79`):** [Commit `758b47e`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/commit/758b47e7bca2628ff1b011d709923c81afc476ba)
+- **Adaptador agnóstico y Culqi Perú (`src/payments/`):** `src/payments/{index,culqi,configStore}.js` · `src/routes/reservas.js` · `public/js/pasarela-adapter.js` · `public/js/reservas.js` · `tests/test-pasarela-culqi-unit.js` · `tests/test-reservas-sprint3.js`

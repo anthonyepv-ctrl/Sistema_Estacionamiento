@@ -5,18 +5,24 @@ const { obtenerCapacidad } = require('../config/espacios');
 const { autorizar } = require('../config/auth');
 const { normalizarPlaca } = require('../utils/placas');
 const {
+  MONTO_MINIMO_RESERVA_SOLES,
+  obtenerMinimoYapeSoles,
+  calcularMontoAdelanto,
+  obtenerProveedorActivo,
   obtenerEstadoPasarela,
   guardarCredencialesPasarela,
   restaurarCredencialesServidor,
-  crearPaymentIntentReserva,
-  obtenerPaymentIntent,
-  reembolsarPaymentIntent
-} = require('../config/stripe');
+  cobrarReserva,
+  reembolsarCargo
+} = require('../payments');
 
 const router = express.Router();
 
 const LLAVE_LOCK_AFORO = 770000;
 const TOLERANCIA_MINUTOS = 30;
+const REGEX_TOKEN_CULQI = /^(tkn|ype)_(test|live)_[A-Za-z0-9_-]{6,}$/;
+const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const anulacionesEnCurso = new Set();
 
 /**
  * Marca como VENCIDA cualquier reserva VIGENTE cuya fechaLimite ya expiró.
@@ -42,6 +48,9 @@ function formatearReserva(r) {
     estado: r.estado,
     estadoPago: r.estadoPago,
     montoAdelanto: Number(r.montoAdelanto),
+    pasarelaProveedor: r.pasarelaProveedor || null,
+    pasarelaPagoId: r.pasarelaPagoId || null,
+    pasarelaReembolsoId: r.pasarelaReembolsoId || null,
     fechaReserva: r.fechaReserva,
     fechaLimite: r.fechaLimite,
     fechaAnulacion: r.fechaAnulacion,
@@ -55,62 +64,82 @@ function formatearReserva(r) {
 
 /**
  * GET /api/reservas/config-pasarela
- * Devuelve si Stripe está habilitado, su clave pública y estado operativo.
+ * Devuelve si la pasarela activa (Culqi Perú) está habilitada, su clave pública y reglas operativas.
  */
-router.get('/config-pasarela', autorizar('CONDUCTOR', 'RECEPCIONISTA', 'DUENO'), (req, res) => {
-  const estado = obtenerEstadoPasarela();
-  const payload = {
-    habilitado: estado.habilitado,
-    publishableKey: estado.publishableKey,
-    toleranciaMinutos: TOLERANCIA_MINUTOS,
-    modo: estado.modo,
-    origen: estado.origen
-  };
-  if (req.sesion.rol === 'DUENO') {
-    payload.secretKeyMasked = estado.secretKeyMasked;
+router.get('/config-pasarela', autorizar('CONDUCTOR', 'RECEPCIONISTA', 'DUENO'), async (req, res) => {
+  try {
+    const estado = await obtenerEstadoPasarela();
+    const payload = {
+      habilitado: estado.habilitado,
+      proveedor: estado.proveedor,
+      publishableKey: estado.publishableKey,
+      toleranciaMinutos: TOLERANCIA_MINUTOS,
+      montoMinimoSoles: MONTO_MINIMO_RESERVA_SOLES,
+      yapeMinimoSoles: obtenerMinimoYapeSoles(),
+      modo: estado.modo,
+      origen: estado.origen
+    };
+    if (req.sesion.rol === 'DUENO') {
+      payload.secretKeyMasked = estado.secretKeyMasked;
+    }
+    return res.json(payload);
+  } catch (error) {
+    console.error('Error al consultar configuración de pasarela:', error);
+    return res.status(500).json({ error: 'No se pudo consultar la configuración de la pasarela.' });
   }
-  return res.json(payload);
 });
 
 /**
  * PUT /api/reservas/config-pasarela (UPAO-21 - DUEÑO)
- * Permite al Product Owner / Dueño configurar o restaurar las API keys de Stripe desde la web.
+ * Permite al Product Owner / Dueño configurar o restaurar las API keys de Culqi desde la web.
  */
-router.put('/config-pasarela', autorizar('DUENO'), (req, res) => {
+router.put('/config-pasarela', autorizar('DUENO'), async (req, res) => {
   const { publishableKey, secretKey, restaurarPorDefecto } = req.body || {};
   try {
     const estado = restaurarPorDefecto === true
-      ? restaurarCredencialesServidor()
-      : guardarCredencialesPasarela({ publishableKey, secretKey });
+      ? await restaurarCredencialesServidor()
+      : await guardarCredencialesPasarela({
+          publishableKey,
+          secretKey,
+          idUsuario: req.sesion.sub
+        });
+
     const mensaje = restaurarPorDefecto === true
       ? 'Se restauraron las credenciales por defecto del servidor.'
-      : 'Credenciales de pasarela Stripe actualizadas correctamente.';
+      : 'Credenciales de pasarela Culqi actualizadas y guardadas en base de datos.';
 
     return res.json({
       ...estado,
       toleranciaMinutos: TOLERANCIA_MINUTOS,
+      montoMinimoSoles: MONTO_MINIMO_RESERVA_SOLES,
+      yapeMinimoSoles: obtenerMinimoYapeSoles(),
       mensaje
     });
   } catch (error) {
-    if (error.statusCode === 400) {
-      return res.status(400).json({ error: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
     }
-    console.error('Error al actualizar credenciales Stripe:', error);
+    console.error('Error al actualizar credenciales de pasarela:', error);
     return res.status(500).json({ error: 'No se pudieron actualizar las credenciales de la pasarela.' });
   }
 });
 
 /**
- * POST /api/reservas/intencion-pago (UPAO-21)
- * Valida cupo, no duplicidad y crea el PaymentIntent en Stripe (1 hora de tarifa vigente).
+ * POST /api/reservas/preparar-pago (UPAO-21)
+ * Pre-valida cupo, no duplicidad y calcula el monto exacto en PEN antes de abrir Checkout v4.
  */
-router.post('/intencion-pago', autorizar('CONDUCTOR'), async (req, res) => {
+router.post('/preparar-pago', autorizar('CONDUCTOR'), async (req, res) => {
   const idVehiculo = Number((req.body || {}).idVehiculo);
   if (!Number.isInteger(idVehiculo) || idVehiculo <= 0) {
     return res.status(400).json({ error: 'Seleccione un vehículo válido de su cuenta.' });
   }
 
   try {
+    const estadoPasarela = await obtenerEstadoPasarela();
+    if (!estadoPasarela.habilitado || !estadoPasarela.publishableKey) {
+      return res.status(503).json({ error: 'La pasarela de pagos (Culqi) aún no está configurada en el servidor.' });
+    }
+
     await expirarReservasVencidas();
 
     const vehiculo = await prisma.vehiculoConductor.findUnique({
@@ -152,18 +181,20 @@ router.post('/intencion-pago', autorizar('CONDUCTOR'), async (req, res) => {
       return res.status(409).json({ error: 'No hay espacios disponibles para este tipo de vehículo (Aforo lleno).' });
     }
 
-    const montoAdelanto = Number(tarifa.precioHora);
-    const intent = await crearPaymentIntentReserva({
-      montoSoles: montoAdelanto,
-      codigoReserva: `TMP-${req.sesion.sub}-${Date.now()}`,
-      idUsuario: req.sesion.sub,
-      placa: vehiculo.placa
-    });
+    const precioTarifa = Number(tarifa.precioHora);
+    const montoAdelanto = calcularMontoAdelanto(precioTarifa);
+    const montoCentimos = Math.round(montoAdelanto * 100);
+    const yapeMinimoSoles = obtenerMinimoYapeSoles();
 
     return res.json({
-      clientSecret: intent.client_secret,
-      paymentIntentId: intent.id,
+      proveedor: estadoPasarela.proveedor,
+      publishableKey: estadoPasarela.publishableKey,
       montoAdelanto,
+      montoCentimos,
+      moneda: 'PEN',
+      yapeHabilitado: montoAdelanto >= yapeMinimoSoles,
+      yapeMinimoSoles,
+      montoMinimoAplicado: montoAdelanto > precioTarifa,
       placa: vehiculo.placa,
       tipo: vehiculo.tipoVehiculo.nombre
     });
@@ -171,40 +202,100 @@ router.post('/intencion-pago', autorizar('CONDUCTOR'), async (req, res) => {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ error: error.message });
     }
-    console.error('Error al iniciar pago de reserva:', error);
-    return res.status(500).json({ error: 'No se pudo iniciar el pago de la reserva.' });
+    console.error('Error al preparar pago de reserva:', error);
+    return res.status(500).json({ error: 'No se pudo preparar el pago de la reserva.' });
   }
 });
 
 /**
  * POST /api/reservas (UPAO-21)
- * Verifica que el PaymentIntent en Stripe esté `succeeded` y registra la reserva de forma atómica.
+ * Pre-valida cupo, ejecuta el cargo idempotente en Culqi y registra la reserva atópicamente
+ * con reembolso compensatorio automático ante colisión de último cupo.
  */
 router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
-  const { idVehiculo: idVehiculoRaw, paymentIntentId } = req.body || {};
+  const { idVehiculo: idVehiculoRaw, sourceToken, email, idempotencyKey } = req.body || {};
   const idVehiculo = Number(idVehiculoRaw);
 
   if (!Number.isInteger(idVehiculo) || idVehiculo <= 0) {
     return res.status(400).json({ error: 'Seleccione un vehículo válido.' });
   }
-  if (!paymentIntentId || typeof paymentIntentId !== 'string') {
-    return res.status(400).json({ error: 'Falta la confirmación del pago de la reserva.' });
+  if (!sourceToken || typeof sourceToken !== 'string') {
+    return res.status(400).json({ error: 'Falta el token de confirmación del pago.' });
+  }
+  const tokenLimpio = sourceToken.trim();
+  if (!REGEX_TOKEN_CULQI.test(tokenLimpio)) {
+    return res.status(402).json({ error: 'El token de pago es inválido o no fue aprobado por Culqi.' });
   }
 
-  try {
-    const intent = await obtenerPaymentIntent(paymentIntentId);
-    if (intent.status !== 'succeeded') {
-      return res.status(402).json({ error: 'El pago aún no fue aprobado por Stripe. No se registró la reserva.' });
-    }
+  let cargo = null;
+  let montoAdelanto = 0;
 
-    const vehiculo = await prisma.vehiculoConductor.findUnique({
-      where: { id: idVehiculo },
-      include: { tipoVehiculo: true }
-    });
+  try {
+    const [vehiculo, usuario] = await Promise.all([
+      prisma.vehiculoConductor.findUnique({
+        where: { id: idVehiculo },
+        include: { tipoVehiculo: true }
+      }),
+      prisma.usuario.findUnique({
+        where: { id: req.sesion.sub },
+        select: { id: true, dni: true }
+      })
+    ]);
 
     if (!vehiculo || vehiculo.idUsuario !== req.sesion.sub) {
       return res.status(404).json({ error: 'Vehículo no encontrado en su cuenta.' });
     }
+
+    await expirarReservasVencidas();
+
+    const [estadiaActivaPrev, reservaVigentePrev, tarifaPrev] = await Promise.all([
+      prisma.estadia.findFirst({ where: { placa: vehiculo.placa, horaSalida: null } }),
+      prisma.reserva.findFirst({ where: { idVehiculo: vehiculo.id, estado: 'VIGENTE' } }),
+      prisma.tarifa.findFirst({ where: { idTipoVehiculo: vehiculo.idTipoVehiculo, estado: true } })
+    ]);
+
+    if (estadiaActivaPrev || reservaVigentePrev) {
+      return res.status(409).json({
+        error: `El vehículo ${vehiculo.placa} ya cuenta con una reserva vigente o un ingreso activo.`
+      });
+    }
+    if (!tarifaPrev) {
+      return res.status(500).json({ error: 'No hay una tarifa vigente configurada para este tipo de vehículo.' });
+    }
+
+    const capacidadPrevConfig = obtenerCapacidad();
+    const capacidadPrevTipo = esTipoAuto(vehiculo.tipoVehiculo.nombre)
+      ? capacidadPrevConfig.capacidadAutos
+      : capacidadPrevConfig.capacidadMotos;
+
+    const [enCocheraPrev, reservasPrev] = await Promise.all([
+      prisma.estadia.count({ where: { idTipoVehiculo: vehiculo.idTipoVehiculo, horaSalida: null } }),
+      prisma.reserva.count({ where: { idTipoVehiculo: vehiculo.idTipoVehiculo, estado: 'VIGENTE' } })
+    ]);
+
+    if (enCocheraPrev + reservasPrev >= capacidadPrevTipo) {
+      return res.status(409).json({ error: 'No hay espacios disponibles para este tipo de vehículo (Aforo lleno).' });
+    }
+
+    montoAdelanto = calcularMontoAdelanto(tarifaPrev.precioHora);
+    const emailRaw = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const emailFinal = REGEX_EMAIL.test(emailRaw)
+      ? emailRaw
+      : `conductor.${usuario && usuario.dni ? usuario.dni : req.sesion.sub}@cochera.pe`;
+
+    const claveIdempotencia = (idempotencyKey && String(idempotencyKey).trim().slice(0, 64))
+      || crypto.randomUUID();
+
+    cargo = await cobrarReserva({
+      montoSoles: montoAdelanto,
+      sourceToken: tokenLimpio,
+      email: emailFinal,
+      idempotencyKey: claveIdempotencia,
+      metadata: {
+        placa: vehiculo.placa,
+        idUsuario: String(req.sesion.sub)
+      }
+    });
 
     const reserva = await prisma.$transaction(async (tx) => {
       const llaveAforo = LLAVE_LOCK_AFORO + vehiculo.idTipoVehiculo;
@@ -212,7 +303,7 @@ router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
 
       await expirarReservasVencidas(tx);
 
-      const yaPagado = await tx.reserva.findFirst({ where: { stripePaymentIntentId: intent.id } });
+      const yaPagado = await tx.reserva.findFirst({ where: { pasarelaPagoId: cargo.id } });
       if (yaPagado) {
         return yaPagado;
       }
@@ -263,8 +354,9 @@ router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
           fechaReserva: ahora,
           fechaLimite,
           estado: 'VIGENTE',
-          montoAdelanto: Number(tarifa.precioHora),
-          stripePaymentIntentId: intent.id,
+          montoAdelanto: calcularMontoAdelanto(tarifa.precioHora),
+          pasarelaPagoId: cargo.id,
+          pasarelaProveedor: cargo.proveedor,
           estadoPago: 'PAGADO'
         },
         include: {
@@ -280,6 +372,25 @@ router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
       mensaje: `Reserva ${reserva.codigo} confirmada para ${vehiculo.placa}.`
     });
   } catch (error) {
+    if (cargo && cargo.id) {
+      let reembolsoComp = null;
+      try {
+        reembolsoComp = await reembolsarCargo({
+          chargeId: cargo.id,
+          montoSoles: montoAdelanto,
+          reason: 'solicitud_comprador',
+          idempotencyKey: `comp-${cargo.id}`
+        });
+        console.warn(`Reembolso compensatorio ejecutado: charge=${cargo.id}, refund=${reembolsoComp.id}`);
+      } catch (compErr) {
+        console.error(`CRÍTICO: Falló reembolso compensatorio para charge=${cargo.id}:`, compErr);
+      }
+      const status = error.statusCode || 409;
+      return res.status(status).json({
+        error: `${error.message || 'El espacio ya no estaba disponible.'} El cobro fue revertido automáticamente.`
+      });
+    }
+
     if (error.statusCode) {
       return res.status(error.statusCode).json({ error: error.message });
     }
@@ -312,14 +423,19 @@ router.get('/mias', autorizar('CONDUCTOR'), async (req, res) => {
 
 /**
  * Controlador de Anulación de Reserva (UPAO-22)
- * Cumple con el análisis y diseño de ANULAR_RESERVA_ANALiSIS_DISEÑO.md
- * Admite DELETE /api/reservas/:id y POST /api/reservas/:id/anular
+ * Admite DELETE /api/reservas/:id y POST /api/reservas/:id/anular.
+ * Protegido contra doble clic simultáneo y carrera con ingreso en garita.
  */
 const anularReservaHandler = async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({ error: 'ID de reserva debe ser numérico.' });
   }
+
+  if (anulacionesEnCurso.has(id)) {
+    return res.status(409).json({ error: 'Ya hay una anulación en curso para esta reserva.' });
+  }
+  anulacionesEnCurso.add(id);
 
   try {
     await expirarReservasVencidas();
@@ -339,40 +455,49 @@ const anularReservaHandler = async (req, res) => {
       return res.status(409).json({ error: 'Solo reservas vigentes pueden ser anuladas' });
     }
 
-    let idReembolso = null;
-    if (reserva.stripePaymentIntentId) {
-      try {
-        const refund = await reembolsarPaymentIntent(reserva.stripePaymentIntentId);
-        idReembolso = (refund && refund.id) ? refund.id : `re_${reserva.stripePaymentIntentId}`;
-      } catch (err) {
-        console.error('Error al invocar reembolso en pasarela:', err);
-        return res.status(502).json({ error: 'No se pudo procesar el reembolso' });
-      }
+    const proveedorActivo = obtenerProveedorActivo();
+    if (reserva.pasarelaPagoId && reserva.pasarelaProveedor && reserva.pasarelaProveedor !== proveedorActivo) {
+      return res.status(409).json({
+        error: `Esta reserva fue cobrada con un proveedor previo (${reserva.pasarelaProveedor}) y no puede reembolsarse automáticamente desde ${proveedorActivo}.`
+      });
     }
 
-    const actualizada = await prisma.reserva.update({
-      where: { id },
-      data: {
-        estado: 'ANULADA',
-        estadoPago: 'REEMBOLSADO',
-        fechaAnulacion: new Date(),
-        stripePaymentIntentId: reserva.stripePaymentIntentId
-      },
-      include: { vehiculo: true, tipoVehiculo: true }
-    });
+    let reembolso = null;
+    if (reserva.pasarelaPagoId) {
+      reembolso = await reembolsarCargo({
+        chargeId: reserva.pasarelaPagoId,
+        montoSoles: Number(reserva.montoAdelanto),
+        reason: 'solicitud_comprador',
+        idempotencyKey: `refund-res-${reserva.id}`
+      });
+    }
+
+    const actualizada = await prisma.$transaction(async (tx) => {
+      const llaveAforo = LLAVE_LOCK_AFORO + reserva.idTipoVehiculo;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${llaveAforo})`;
+
+      const resLock = await tx.reserva.findUnique({ where: { id } });
+      if (!resLock || resLock.estado !== 'VIGENTE') {
+        const err = new Error('Solo reservas vigentes pueden ser anuladas');
+        err.statusCode = 409;
+        throw err;
+      }
+
+      return tx.reserva.update({
+        where: { id },
+        data: {
+          estado: 'ANULADA',
+          estadoPago: 'REEMBOLSADO',
+          pasarelaReembolsoId: reembolso ? reembolso.id : null,
+          fechaAnulacion: new Date()
+        },
+        include: { vehiculo: true, tipoVehiculo: true }
+      });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return res.json({
-      mensaje: 'Reserva anulada y reembolso procesado',
-      reserva: {
-        id: actualizada.id,
-        codigo: actualizada.codigo,
-        estado: actualizada.estado,
-        fechaAnulacion: actualizada.fechaAnulacion,
-        idReembolsoStripe: idReembolso,
-        placa: actualizada.vehiculo ? actualizada.vehiculo.placa : null,
-        tipo: actualizada.tipoVehiculo ? actualizada.tipoVehiculo.nombre : null,
-        montoAdelanto: Number(actualizada.montoAdelanto)
-      }
+      reserva: formatearReserva(actualizada),
+      mensaje: 'Reserva anulada y reembolso procesado'
     });
   } catch (error) {
     if (error.statusCode) {
@@ -380,6 +505,8 @@ const anularReservaHandler = async (req, res) => {
     }
     console.error('Error al anular reserva:', error);
     return res.status(500).json({ error: 'No se pudo anular la reserva.' });
+  } finally {
+    anulacionesEnCurso.delete(id);
   }
 };
 
@@ -468,6 +595,10 @@ router.post('/:id/confirmar', autorizar('RECEPCIONISTA', 'DUENO'), async (req, r
     return res.status(400).json({ error: 'Identificador de reserva inválido.' });
   }
 
+  if (anulacionesEnCurso.has(id)) {
+    return res.status(409).json({ error: 'La reserva está siendo anulada por el conductor en este momento.' });
+  }
+
   const notaRaw = req.body && req.body.nota !== undefined && req.body.nota !== null ? String(req.body.nota).trim() : '';
   if (notaRaw.length > 250) {
     return res.status(400).json({ error: 'La nota no puede exceder los 250 caracteres.' });
@@ -478,24 +609,30 @@ router.post('/:id/confirmar', autorizar('RECEPCIONISTA', 'DUENO'), async (req, r
     const resultado = await prisma.$transaction(async (tx) => {
       await expirarReservasVencidas(tx);
 
+      const reservaPrevia = await tx.reserva.findUnique({
+        where: { id },
+        select: { id: true, idTipoVehiculo: true }
+      });
+
+      if (!reservaPrevia) {
+        const err = new Error('Reserva no encontrada.');
+        err.statusCode = 404;
+        throw err;
+      }
+
+      const llaveAforo = LLAVE_LOCK_AFORO + reservaPrevia.idTipoVehiculo;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${llaveAforo})`;
+
       const reserva = await tx.reserva.findUnique({
         where: { id },
         include: { vehiculo: true, tipoVehiculo: true }
       });
 
-      if (!reserva) {
-        const err = new Error('Reserva no encontrada.');
-        err.statusCode = 404;
-        throw err;
-      }
-      if (reserva.estado !== 'VIGENTE') {
-        const err = new Error(`No se puede admitir el ingreso: la reserva está en estado ${reserva.estado}.`);
+      if (!reserva || reserva.estado !== 'VIGENTE') {
+        const err = new Error(`No se puede admitir el ingreso: la reserva está en estado ${reserva ? reserva.estado : 'NO_DISPONIBLE'}.`);
         err.statusCode = 409;
         throw err;
       }
-
-      const llaveAforo = LLAVE_LOCK_AFORO + reserva.idTipoVehiculo;
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${llaveAforo})`;
 
       const estadiaActiva = await tx.estadia.findFirst({
         where: { placa: reserva.vehiculo.placa, horaSalida: null }

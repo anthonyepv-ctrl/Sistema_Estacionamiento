@@ -147,7 +147,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 - **Proyecto / clave:** `UPAO`.
 - **URL del tablero:** _TODO (pendiente de confirmar)_.
-- **Metodología:** trabajo por **sprints** (actual: **Sprint 2**).
+- **Metodología:** trabajo por **sprints** (actual: **Sprint 3**).
 - **Tipos de incidencia:** `Epic`, `Historia`, `Subtask`.
 - **Estados del flujo:** `Por hacer` → `En curso` → `Listo`.
 - **Prioridad por defecto:** `Medium`.
@@ -187,8 +187,8 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | --- | --- | --- | --- | --- |
 | UPAO-21 | Realizar reserva | En curso | 5 | Manejo de Reserva Web |
 | UPAO-22 | Anular reserva | En curso | 3 | Manejo de Reserva Web |
-| UPAO-8 | Buscar reservas | En curso | 2 | Manejo de Reserva Web |
-| UPAO-23 | Consultar historial de estados | En curso | 2 | Manejo de Reserva Web |
+| UPAO-8 | Buscar reservas | Por hacer | 2 | Manejo de Reserva Web |
+| UPAO-23 | Consultar historial de estados | Por hacer | 2 | Manejo de Reserva Web |
 
 > **Estrategia Blue / Green:** La rama `develop` despliega en el ambiente **Blue (Staging)** para pruebas continuas; la rama `main` despliega en el ambiente **Green (Producción)** solo al validar cada historia (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
 

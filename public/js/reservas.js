@@ -1,10 +1,6 @@
 (function () {
-  let stripeInstance = null;
-  let stripeElements = null;
-  let stripeCardElement = null;
   let configPasarela = null;
-  let publishableKeyUsada = null;
-  let intencionActual = null;
+  let preparacionActual = null;
   let vehiculosConductor = [];
   let reservaParaAnular = null;
 
@@ -49,59 +45,6 @@
       return '<span class="badge badge-warning mono vencida">VENCIDA</span>';
     }
     return `<span class="badge mono">${estado || '—'}</span>`;
-  }
-
-  async function inicializarStripeSiHaceFalta() {
-    configPasarela = await window.pedirApi('/api/reservas/config-pasarela');
-
-    if (!configPasarela || !configPasarela.habilitado || !configPasarela.publishableKey) {
-      throw new Error('La pasarela de pagos con tarjeta no está configurada en el servidor.');
-    }
-
-    if (typeof window.Stripe !== 'function') {
-      throw new Error('No se pudo cargar el formulario seguro de tarjeta. Verifique su conexión a internet.');
-    }
-
-    if (stripeInstance && stripeCardElement && publishableKeyUsada === configPasarela.publishableKey) {
-      return true;
-    }
-
-    if (stripeCardElement && typeof stripeCardElement.unmount === 'function') {
-      try { stripeCardElement.unmount(); } catch (_) {}
-    }
-
-    publishableKeyUsada = configPasarela.publishableKey;
-    stripeInstance = window.Stripe(configPasarela.publishableKey);
-    stripeElements = stripeInstance.elements({ locale: 'es' });
-    stripeCardElement = stripeElements.create('card', {
-      hidePostalCode: true,
-      style: {
-        base: {
-          color: '#0F172A',
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '13.5px',
-          '::placeholder': { color: '#94A3B8' }
-        },
-        invalid: {
-          color: '#EF4444',
-          iconColor: '#EF4444'
-        }
-      }
-    });
-
-    const contenedorCard = document.getElementById('stripe-card-element');
-    if (contenedorCard) {
-      contenedorCard.innerHTML = '';
-      stripeCardElement.mount('#stripe-card-element');
-      stripeCardElement.on('change', (ev) => {
-        const errDiv = document.getElementById('stripe-card-errors');
-        if (errDiv) {
-          errDiv.textContent = ev.error ? ev.error.message : '';
-        }
-      });
-    }
-
-    return true;
   }
 
   function actualizarResumenPasarelaDueno(estado) {
@@ -385,21 +328,28 @@
   }
 
   async function cargarVistaConductor() {
-    ocultarCheckoutStripe();
+    ocultarCheckoutPasarela();
     await Promise.all([
       cargarVehiculosConductor(),
       cargarMisReservas()
     ]);
   }
 
-  function ocultarCheckoutStripe() {
-    intencionActual = null;
+  function ocultarCheckoutPasarela() {
+    preparacionActual = null;
+    if (window.PasarelaPago && typeof window.PasarelaPago.cancelarSiPendiente === 'function') {
+      window.PasarelaPago.cancelarSiPendiente();
+    }
     const modalPago = document.getElementById('modal-pago-reserva');
-    const errDiv = document.getElementById('stripe-card-errors');
+    const errDiv = document.getElementById('pasarela-pago-errors');
+    const avisoMin = document.getElementById('modal-pago-minimo-aviso');
+    const btnConfirmar = document.getElementById('btn-confirmar-pago-reserva');
     if (modalPago) modalPago.classList.add('hidden');
     if (errDiv) errDiv.textContent = '';
-    if (stripeCardElement && typeof stripeCardElement.clear === 'function') {
-      stripeCardElement.clear();
+    if (avisoMin) avisoMin.classList.add('hidden');
+    if (btnConfirmar) {
+      btnConfirmar.classList.remove('loading');
+      btnConfirmar.disabled = false;
     }
   }
 
@@ -656,16 +606,16 @@
       });
     }
 
-    // 5. Preparar intención de pago Stripe (UPAO-21)
+    // 5. Preparar resumen de pago Culqi (UPAO-21)
     const selectVehiculoReserva = document.getElementById('reserva-vehiculo-select');
     if (selectVehiculoReserva) {
       selectVehiculoReserva.addEventListener('change', () => {
-        ocultarCheckoutStripe();
+        ocultarCheckoutPasarela();
         actualizarVistaPreviaAdelanto();
       });
     }
 
-    const btnPrepararPago = document.getElementById('btn-preparar-pago-stripe');
+    const btnPrepararPago = document.getElementById('btn-preparar-pago');
     if (btnPrepararPago) {
       btnPrepararPago.addEventListener('click', async () => {
         const selectVehiculo = document.getElementById('reserva-vehiculo-select');
@@ -680,21 +630,32 @@
         btnPrepararPago.disabled = true;
 
         try {
-          await inicializarStripeSiHaceFalta();
-
-          intencionActual = await window.pedirApi('/api/reservas/intencion-pago', {
+          preparacionActual = await window.pedirApi('/api/reservas/preparar-pago', {
             method: 'POST',
             body: JSON.stringify({ idVehiculo })
           });
 
           const elMonto = document.getElementById('reserva-monto-adelanto');
-          if (elMonto) elMonto.textContent = formatearSoles(intencionActual.montoAdelanto);
+          if (elMonto) elMonto.textContent = formatearSoles(preparacionActual.montoAdelanto);
 
           const modalPagoVeh = document.getElementById('modal-pago-vehiculo');
           const modalPagoMonto = document.getElementById('modal-pago-monto');
+          const modalPagoMetodos = document.getElementById('modal-pago-metodos');
+          const avisoMin = document.getElementById('modal-pago-minimo-aviso');
+          const errDiv = document.getElementById('pasarela-pago-errors');
           const vehSel = vehiculosConductor.find((v) => v.id === idVehiculo);
+
           if (modalPagoVeh) modalPagoVeh.textContent = vehSel ? `${vehSel.placa} (${vehSel.tipo})` : 'Vehículo seleccionado';
-          if (modalPagoMonto) modalPagoMonto.textContent = formatearSoles(intencionActual.montoAdelanto);
+          if (modalPagoMonto) modalPagoMonto.textContent = formatearSoles(preparacionActual.montoAdelanto);
+          if (modalPagoMetodos) {
+            modalPagoMetodos.textContent = preparacionActual.yapeHabilitado
+              ? 'Tarjetas de crédito o débito (Visa, Mastercard, Amex, Diners) y Yape.'
+              : `Tarjetas de crédito o débito (Visa, Mastercard, Amex, Diners). Yape habilitado desde ${formatearSoles(preparacionActual.yapeMinimoSoles || 6)}.`;
+          }
+          if (avisoMin) {
+            avisoMin.classList.toggle('hidden', !preparacionActual.montoMinimoAplicado);
+          }
+          if (errDiv) errDiv.textContent = '';
 
           const modalPago = document.getElementById('modal-pago-reserva');
           if (modalPago) modalPago.classList.remove('hidden');
@@ -707,61 +668,61 @@
       });
     }
 
-    const btnCancelarCheckout = document.getElementById('btn-cancelar-checkout-stripe');
+    const btnCancelarCheckout = document.getElementById('btn-cancelar-checkout');
     if (btnCancelarCheckout) {
       btnCancelarCheckout.addEventListener('click', () => {
-        ocultarCheckoutStripe();
+        ocultarCheckoutPasarela();
       });
     }
 
-    // 6. Confirmar pago en Stripe y crear Reserva (UPAO-21)
+    // 6. Tokenizar en Culqi Checkout v4 y crear Reserva atómica (UPAO-21)
     const formCrearReserva = document.getElementById('form-crear-reserva');
     if (formCrearReserva) {
       formCrearReserva.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!intencionActual || !stripeInstance || !stripeCardElement) {
-          window.mostrarToast('Primero prepare el pago con tarjeta.', true);
+        if (!preparacionActual || !window.PasarelaPago) {
+          window.mostrarToast('Primero prepare el pago de la reserva.', true);
           return;
         }
 
         const btnConfirmar = document.getElementById('btn-confirmar-pago-reserva');
-        const errDiv = document.getElementById('stripe-card-errors');
+        const errDiv = document.getElementById('pasarela-pago-errors');
         if (errDiv) errDiv.textContent = '';
 
-        btnConfirmar.classList.add('loading');
-        btnConfirmar.disabled = true;
-
         try {
-          const resultadoStripe = await stripeInstance.confirmCardPayment(intencionActual.clientSecret, {
-            payment_method: {
-              card: stripeCardElement
-            }
+          const tokenRes = await window.PasarelaPago.iniciarPago({
+            proveedor: preparacionActual.proveedor,
+            publishableKey: preparacionActual.publishableKey,
+            montoCentimos: preparacionActual.montoCentimos,
+            titulo: `Reserva ${preparacionActual.placa}`,
+            yapeHabilitado: preparacionActual.yapeHabilitado
           });
 
-          if (resultadoStripe.error) {
-            if (errDiv) errDiv.textContent = resultadoStripe.error.message;
-            throw new Error(resultadoStripe.error.message || 'La tarjeta fue rechazada.');
-          }
-
-          if (!resultadoStripe.paymentIntent || resultadoStripe.paymentIntent.status !== 'succeeded') {
-            throw new Error('El pago no pudo completarse con la tarjeta.');
-          }
+          btnConfirmar.classList.add('loading');
+          btnConfirmar.disabled = true;
 
           const selectVehiculo = document.getElementById('reserva-vehiculo-select');
           const idVehiculo = Number(selectVehiculo.value);
+          const idempotencyKey = window.crypto && typeof window.crypto.randomUUID === 'function'
+            ? window.crypto.randomUUID()
+            : `res-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
           const respuestaReserva = await window.pedirApi('/api/reservas', {
             method: 'POST',
             body: JSON.stringify({
               idVehiculo,
-              paymentIntentId: resultadoStripe.paymentIntent.id
+              sourceToken: tokenRes.sourceToken,
+              email: tokenRes.email || '',
+              idempotencyKey
             })
           });
 
           window.mostrarToast(respuestaReserva.mensaje || 'Reserva creada exitosamente.');
-          ocultarCheckoutStripe();
+          ocultarCheckoutPasarela();
           await cargarMisReservas();
         } catch (err) {
+          if (err && err.cancelado) return;
+          if (errDiv) errDiv.textContent = err.message;
           window.mostrarToast(err.message, true);
         } finally {
           btnConfirmar.classList.remove('loading');
@@ -925,10 +886,10 @@
       });
     }
 
-    // 10. Configuración de Pasarela de Pagos Stripe para el Dueño (UPAO-21)
+    // 10. Configuración de Pasarela de Pagos Culqi Perú para el Dueño (UPAO-21)
     const cardPasarela = document.getElementById('card-modulo-pasarela');
     if (cardPasarela) {
-      cardPasarela.addEventListener('click', () => window.mostrarPantalla('pasarela-stripe'));
+      cardPasarela.addEventListener('click', () => window.mostrarPantalla('pasarela-pagos'));
     }
 
     const btnVolverMenuPasarela = document.getElementById('btn-volver-menu-desde-pasarela');

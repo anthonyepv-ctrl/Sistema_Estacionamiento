@@ -122,7 +122,7 @@ Vehículos asociados a la cuenta de un conductor (`Sprint 3 / UPAO-21`).
 
 ### reserva
 
-Reservas web realizadas por conductores con adelanto de 1 hora vía Stripe (`Sprint 3 / UPAO-21, UPAO-22, UPAO-8`).
+Reservas web realizadas por conductores con adelanto de 1 hora (mínimo `S/ 3.00`) vía Culqi Perú (`Sprint 3 / UPAO-21, UPAO-22, UPAO-8`).
 
 | Columna | Tipo | Restricciones |
 | --- | --- | --- |
@@ -135,10 +135,25 @@ Reservas web realizadas por conductores con adelanto de 1 hora vía Stripe (`Spr
 | `fecha_limite` | TIMESTAMP | NOT NULL (`fecha_reserva + 30 min`) |
 | `estado` | ENUM `estado_reserva` | NOT NULL, DEFAULT `VIGENTE` (`VIGENTE`, `UTILIZADA`, `ANULADA`, `VENCIDA`) |
 | `monto_adelanto` | DECIMAL(10,2) | NOT NULL |
-| `stripe_payment_intent_id` | VARCHAR(100) | NULL |
+| `pasarela_pago_id` | VARCHAR(100) | UNIQUE, NULL (ID del cargo en Culqi `chr_...`) |
+| `pasarela_proveedor` | VARCHAR(30) | NOT NULL, DEFAULT `'culqi'` |
+| `pasarela_reembolso_id` | VARCHAR(100) | NULL (ID de devolución en Culqi `ref_...`) |
 | `estado_pago` | ENUM `estado_pago_reserva` | NOT NULL, DEFAULT `PAGADO` (`PAGADO`, `REEMBOLSADO`) |
 | `fecha_anulacion` | TIMESTAMP | NULL |
 | `creado_en` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
+
+### configuracion_pasarela
+
+Credenciales de la pasarela configuradas por el `DUEÑO` desde la web (`Sprint 3 / UPAO-21`), persistidas en PostgreSQL para sobrevivir reinicios/redeploys en Render.
+
+| Columna | Tipo | Restricciones |
+| --- | --- | --- |
+| `id_configuracion` | SERIAL | PK |
+| `proveedor` | VARCHAR(30) | UNIQUE, NOT NULL (ej. `'culqi'`) |
+| `llave_publica` | VARCHAR(120) | NOT NULL (`pk_test_...` o `pk_live_...`) |
+| `llave_secreta_cifrada` | TEXT | NOT NULL (cifrada con AES-256-GCM en servidor) |
+| `actualizado_por_id` | INTEGER | FK → `usuario`, NULL (`ON DELETE SET NULL`) |
+| `actualizado_en` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
 
 ---
 
