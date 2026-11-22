@@ -273,7 +273,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
         if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
 
-        mostrarPantalla('dashboard');
+        const destinoPendiente = window.redirigirTrasLogin;
+        window.redirigirTrasLogin = null;
+        if (sesion.rol === 'CONDUCTOR' && destinoPendiente === 'conductor-reservas') {
+          mostrarPantalla('conductor-reservas');
+        } else {
+          mostrarPantalla('dashboard');
+        }
       } catch (error) {
         mostrarToast(error.message, true);
       } finally {

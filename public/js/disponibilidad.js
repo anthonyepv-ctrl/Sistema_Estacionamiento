@@ -167,9 +167,11 @@
       if (disponibles === 0) return;
     }
 
-    // Regla CA-06: sin sesión, "Reservar espacio" lleva a la pantalla de Login
+    // Regla CA-06: sin sesión, "Reservar espacio" lleva a Login y retorna directo a reservas tras autenticar
     if (!haySesionActiva()) {
       limpiarHashDisponibilidad();
+      window.tipoReservaPreseleccionado = tipo === 'motos' ? 'moto' : 'auto';
+      window.redirigirTrasLogin = 'conductor-reservas';
       if (typeof window.mostrarPantalla === 'function') {
         window.mostrarPantalla('login');
       }

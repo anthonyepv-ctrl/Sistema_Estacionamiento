@@ -8,9 +8,9 @@
 [Portada Pública /api/publico/disponibilidad]
         │  Disponibles = max(0, Capacidad - EnCochera - ReservasVigentes)
         ▼
-[Conductor pulsa "Reservar espacio"]
-        ├── Sin sesión ──► [Login / Registro CONDUCTOR] (DNI 8d, Celular 9d, Usuario, Clave)
-        └── Con sesión ──► [Mis Vehículos] (Placa MTC + Poka-Yoke)
+[Conductor pulsa "Reservar espacio" (Auto / Moto)]
+        ├── Sin sesión ──► [Login / Registro CONDUCTOR] ──► retorno directo a Reservas (tipo preseleccionado)
+        └── Con sesión ──► [Realizar Reserva / Mis Vehículos] (Placa MTC + Poka-Yoke)
                                 │  Muestra adelanto (1h tarifa vigente, mínimo S/ 3.00)
                                 ▼
                     [Culqi Checkout v4 (PEN · Tarjeta / Yape)]

@@ -150,6 +150,9 @@
           const candidato = vehiculosConductor.find((v) => v.tipoCodigo === window.tipoReservaPreseleccionado);
           if (candidato) {
             selectReserva.value = String(candidato.id);
+          } else {
+            const selectTipoNuevo = document.getElementById('vehiculo-tipo');
+            if (selectTipoNuevo) selectTipoNuevo.value = window.tipoReservaPreseleccionado;
           }
           window.tipoReservaPreseleccionado = null;
         } else if (valorPrevio && vehiculosConductor.some((v) => String(v.id) === String(valorPrevio))) {

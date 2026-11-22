@@ -13,7 +13,7 @@
   - **DNI** (`#reg-dni`, exactamente 8 dígitos).
   - **Celular** (`#reg-celular`, 9 dígitos iniciando en `9`).
   - **Usuario** (`#reg-usuario`) y **Contraseña** (`#reg-password`, mínimo 6 caracteres).
-- Emite sesión inmediata con rol `CONDUCTOR` y redirige al portal de reservas.
+- Emite sesión inmediata con rol `CONDUCTOR` y redirige directo al portal de reservas (`#view-conductor-reservas`). Si el usuario llegó desde **Disponibilidad Pública** pulsando *Reservar espacio (Auto / Moto)*, tanto el inicio de sesión como el registro retornan automáticamente al panel de reservas con el tipo de vehículo preseleccionado.
 
 ---
 
