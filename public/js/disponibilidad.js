@@ -19,7 +19,7 @@
   const dispCuposAutos = document.getElementById('disp-cupos-autos');
   const dispTextoAutos = document.getElementById('disp-texto-autos');
   const cuposBoxAutos = document.getElementById('cupos-box-autos');
-  const btnReservarAutos = document.getElementById('btn-reservar-autos');
+  const btnReservarAutos = document.getElementById('btn-reservar-auto') || document.getElementById('btn-reservar-autos');
   const dispActualizadoAutos = document.getElementById('disp-actualizado-autos');
 
   const dispCapacidadMotos = document.getElementById('disp-capacidad-motos');
@@ -28,7 +28,7 @@
   const dispCuposMotos = document.getElementById('disp-cupos-motos');
   const dispTextoMotos = document.getElementById('disp-texto-motos');
   const cuposBoxMotos = document.getElementById('cupos-box-motos');
-  const btnReservarMotos = document.getElementById('btn-reservar-motos');
+  const btnReservarMotos = document.getElementById('btn-reservar-moto') || document.getElementById('btn-reservar-motos');
   const dispActualizadoMotos = document.getElementById('disp-actualizado-motos');
 
   const btnVolverDisponibilidad = document.getElementById('btn-volver-disponibilidad');
@@ -162,12 +162,10 @@
   function manejarAccionReservar(tipo) {
     const data = datosDisponibilidad ? datosDisponibilidad[tipo] : null;
 
-    if (!data) return;
-
-    const disponibles = Math.max(0, Number(data.disponibles) || 0);
-
-    // Guard de seguridad: Si no hay cupos disponibles, no se permite ninguna acción
-    if (disponibles === 0) return;
+    if (data) {
+      const disponibles = Math.max(0, Number(data.disponibles) || 0);
+      if (disponibles === 0) return;
+    }
 
     // Regla CA-06: sin sesión, "Reservar espacio" lleva a la pantalla de Login
     if (!haySesionActiva()) {
