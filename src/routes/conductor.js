@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../config/prisma');
 const { validarPlacaYTipo } = require('../utils/placas');
+const { calcularMontoAdelanto } = require('../payments');
 
 const router = express.Router();
 
@@ -31,7 +32,10 @@ router.get('/vehiculos', async (req, res) => {
         idTipoVehiculo: v.idTipoVehiculo,
         tipo: v.tipoVehiculo.nombre,
         tipoCodigo: v.tipoVehiculo.nombre === 'Motocicleta' ? 'moto' : 'auto',
-        precioAdelanto: mapaTarifas.get(v.idTipoVehiculo) ?? null,
+        precioHoraTarifa: mapaTarifas.get(v.idTipoVehiculo) ?? null,
+        precioAdelanto: mapaTarifas.has(v.idTipoVehiculo)
+          ? calcularMontoAdelanto(mapaTarifas.get(v.idTipoVehiculo))
+          : null,
         creadoEn: v.creadoEn
       }))
     });

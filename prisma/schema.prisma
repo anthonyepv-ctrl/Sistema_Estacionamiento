@@ -40,9 +40,10 @@ model Usuario {
   dni        String? @unique @db.VarChar(8)
   celular    String? @db.VarChar(9)
 
-  estadias  Estadia[]
-  vehiculos VehiculoConductor[]
-  reservas  Reserva[]
+  estadias                Estadia[]
+  vehiculos               VehiculoConductor[]
+  reservas                Reserva[]
+  configuracionesPasarela ConfiguracionPasarela[]
 
   @@map("usuario")
 }
@@ -141,9 +142,11 @@ model Reserva {
   fechaReserva          DateTime          @default(now()) @map("fecha_reserva")
   fechaLimite           DateTime          @map("fecha_limite")
   estado                EstadoReserva     @default(VIGENTE)
-  montoAdelanto         Decimal           @db.Decimal(10, 2) @map("monto_adelanto")
-  stripePaymentIntentId String?           @db.VarChar(100) @map("stripe_payment_intent_id")
-  estadoPago            EstadoPagoReserva @default(PAGADO) @map("estado_pago")
+  montoAdelanto       Decimal           @db.Decimal(10, 2) @map("monto_adelanto")
+  pasarelaPagoId      String?           @unique @db.VarChar(100) @map("pasarela_pago_id")
+  pasarelaProveedor   String            @default("culqi") @db.VarChar(30) @map("pasarela_proveedor")
+  pasarelaReembolsoId String?           @db.VarChar(100) @map("pasarela_reembolso_id")
+  estadoPago          EstadoPagoReserva @default(PAGADO) @map("estado_pago")
   fechaAnulacion        DateTime?         @map("fecha_anulacion")
   creadoEn              DateTime          @default(now()) @map("creado_en")
 
@@ -155,4 +158,17 @@ model Reserva {
   @@index([estado, idTipoVehiculo])
   @@index([idUsuario, estado])
   @@map("reserva")
+}
+
+model ConfiguracionPasarela {
+  id                  Int      @id @default(autoincrement()) @map("id_configuracion")
+  proveedor           String   @unique @db.VarChar(30)
+  llavePublica        String   @db.VarChar(120) @map("llave_publica")
+  llaveSecretaCifrada String   @db.Text @map("llave_secreta_cifrada")
+  actualizadoPorId    Int?     @map("actualizado_por_id")
+  actualizadoEn       DateTime @updatedAt @map("actualizado_en")
+
+  actualizadoPor Usuario? @relation(fields: [actualizadoPorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@map("configuracion_pasarela")
 }

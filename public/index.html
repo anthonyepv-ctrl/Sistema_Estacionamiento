@@ -74,7 +74,7 @@
           <span class="sidebar-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><circle cx="7" cy="7" r="1.5"/></svg></span>
           <span class="sidebar-link-text">Configurar Tarifas</span>
         </button>
-        <button type="button" class="sidebar-link" data-view="pasarela-stripe" data-trigger="card-modulo-pasarela" data-roles="DUENO">
+        <button type="button" class="sidebar-link" data-view="pasarela-pagos" data-trigger="card-modulo-pasarela" data-roles="DUENO">
           <span class="sidebar-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
           <span class="sidebar-link-text">Pasarela de Pagos</span>
         </button>
@@ -436,17 +436,17 @@
           </div>
         </div>
 
-        <!-- Módulo de Configuración de Pasarela Stripe (UPAO-21 - Rol Dueño) -->
+        <!-- Módulo de Configuración de Pasarela Culqi Perú (UPAO-21 - Rol Dueño) -->
         <div class="module-card card-primary" id="card-modulo-pasarela">
           <div class="module-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           </div>
           <div class="module-card-body">
             <div class="module-card-top">
-              <h2>Pasarela de Pagos (Stripe)</h2>
+              <h2>Pasarela de Pagos (Culqi Perú)</h2>
               <span class="module-badge badge-finanzas">Finanzas</span>
             </div>
-            <p>Configure o actualice sus propias claves API de Stripe (modo prueba o producción) sin intervención técnica.</p>
+            <p>Configure o actualice sus claves API de Culqi Perú (tarjetas y Yape, modo integración o producción).</p>
             <div class="module-card-action">
               <span>Configurar Claves →</span>
             </div>
@@ -1338,15 +1338,15 @@
 
       <div class="page-title-group">
         <h1>Reservas de Estacionamiento</h1>
-        <p>Reserve su espacio abonando 1 hora de adelanto con tarjeta y administre sus vehículos registrados (tolerancia de llegada: 30 minutos).</p>
+        <p>Asegure su espacio por 30 minutos con adelanto descontable al salir.</p>
       </div>
 
       <div class="tarifas-layout" style="align-items: start;">
         <!-- Columna 1 (Protagonista, 3fr): Realizar Reserva Web (UPAO-21) -->
         <div class="card">
           <div class="card-header">
-            <h2>1. Realizar Reserva Web</h2>
-            <p class="caption">Seleccione su vehículo y asegure su lugar abonando 1 hora de adelanto (descontable al salir)</p>
+            <h2>1. Realizar Reserva</h2>
+            <p class="caption">Seleccione su vehículo y confirme su espacio en segundos</p>
           </div>
           <div class="accent-bar-sm"></div>
 
@@ -1360,29 +1360,39 @@
                 <option value="">-- Seleccione un vehículo registrado --</option>
               </select>
               <div class="input-feedback" id="feedback-reserva-vehiculo"></div>
-              <p id="hint-sin-vehiculos-reserva" class="caption hidden" style="margin-top: 6px; color: #92400E;">
-                Primero registre un vehículo en el panel "2. Mis Vehículos" de la derecha para habilitar la reserva.
-              </p>
+              <div id="hint-sin-vehiculos-reserva" class="hidden" style="margin-top: 10px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <p class="caption" style="margin: 0; color: #92400E;">
+                  Aún no tienes vehículos registrados en tu cuenta. Registra tu placa para poder reservar.
+                </p>
+                <button type="button" id="btn-ir-a-registrar-vehiculo" class="btn btn-secondary btn-sm" style="align-self: flex-start;">
+                  + Registrar mi primer vehículo
+                </button>
+              </div>
             </div>
 
-            <div id="box-resumen-adelanto" class="hidden" style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+            <div id="box-resumen-adelanto" class="hidden" style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span class="caption" style="color: #1E3A8A; font-weight: 600;">Adelanto por 1 hora (Tarifa vigente):</span>
+                <span class="caption" style="color: #1E3A8A; font-weight: 600;">Adelanto (1h · mín. S/ 3.00):</span>
                 <span id="reserva-monto-adelanto" class="mono" style="font-size: 1.35rem; font-weight: 700; color: #1E3A8A;">S/ 0.00</span>
               </div>
               <p class="caption" style="margin-top: 6px; color: #475569;">
-                Este monto se descontará automáticamente del total al registrar su salida. Si anula dentro de los 30 minutos de vigencia, se reembolsará íntegramente a su tarjeta.
+                Se descuenta al salir. Si anulas dentro de los 30 min, se devuelve a tu medio de pago.
               </p>
             </div>
 
-            <button type="button" id="btn-preparar-pago-stripe" class="btn btn-primary btn-block">
+            <div style="display: flex; align-items: center; gap: 8px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 12px; color: #334155;">
+              <span aria-hidden="true">🔒</span>
+              <span><strong>Pago seguro con Culqi</strong> · Tarjetas y Yape · Devolución el mismo día</span>
+            </div>
+
+            <button type="button" id="btn-preparar-pago" class="btn btn-primary btn-block">
               Pagar Adelanto y Reservar
             </button>
           </form>
         </div>
 
         <!-- Columna 2 (Secundaria, 2fr): Mis Vehículos -->
-        <div class="card">
+        <div class="card" id="card-mis-vehiculos">
           <div class="card-header">
             <h2>2. Mis Vehículos</h2>
             <p class="caption">Registre la placa SUNARP/MTC de sus vehículos para reservar en un clic</p>
@@ -1436,12 +1446,12 @@
         </div>
       </div>
 
-      <!-- Modal limpio de Pago con Tarjeta (UPAO-21) -->
+      <!-- Modal limpio de Pago con Culqi Perú (UPAO-21) -->
       <div id="modal-pago-reserva" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-pago-titulo">
         <div class="modal-card">
           <div class="modal-header">
             <h3 id="modal-pago-titulo">Pago de Adelanto de Reserva</h3>
-            <p class="caption" style="margin-top: 4px;">Complete los datos de su tarjeta de crédito o débito para confirmar su espacio por 30 minutos.</p>
+            <p class="caption" style="margin-top: 4px;">Confirme el resumen de su reserva y complete el pago seguro con Culqi para asegurar su espacio por 30 minutos.</p>
           </div>
           <div class="modal-body">
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
@@ -1455,21 +1465,23 @@
               </div>
             </div>
 
-            <div id="stripe-checkout-box">
-              <label class="form-label" style="margin-bottom: 8px;">
-                <span>Datos de tu tarjeta</span>
-                <span class="required">*</span>
-              </label>
-              <div id="stripe-card-element" style="padding: 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF;"></div>
-              <div id="stripe-card-errors" class="input-feedback error" role="alert" style="margin-top: 8px;"></div>
+            <div id="pasarela-resumen-box" style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 14px;">
+              <div style="font-size: 13px; font-weight: 600; color: #1E3A8A; margin-bottom: 4px;">Métodos de pago habilitados</div>
+              <p class="caption" id="modal-pago-metodos" style="margin: 0; color: #334155;">
+                Tarjetas de crédito o débito (Visa, Mastercard, Amex, Diners).
+              </p>
+              <p class="caption hidden" id="modal-pago-minimo-aviso" style="margin: 6px 0 0 0; color: #92400E;">
+                Se aplica el monto mínimo en línea de S/ 3.00 exigido por la pasarela (se descontará íntegro en tu salida).
+              </p>
+              <div id="pasarela-pago-errors" class="input-feedback error" role="alert" style="margin-top: 8px;"></div>
             </div>
           </div>
           <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
-            <button type="button" id="btn-cancelar-checkout-stripe" class="btn btn-secondary">
+            <button type="button" id="btn-cancelar-checkout" class="btn btn-secondary">
               Cancelar
             </button>
             <button type="submit" form="form-crear-reserva" id="btn-confirmar-pago-reserva" class="btn btn-primary">
-              Confirmar Pago y Reservar
+              Pagar con Culqi y Reservar
             </button>
           </div>
         </div>
@@ -1524,13 +1536,13 @@
             <h3 id="modal-anular-titulo">¿Seguro que deseas anular esta reserva?</h3>
           </div>
           <div class="modal-body">
-            <p>El pago será reembolsado y el espacio volverá a estar disponible.</p>
+            <p>El pago será reembolsado al mismo medio de pago y el espacio volverá a estar disponible inmediatamente.</p>
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
               <p style="margin: 0 0 6px 0;"><strong>Reserva:</strong> <span class="mono" id="modal-anular-codigo">RES-0000</span></p>
               <p style="margin: 0 0 6px 0;"><strong>Placa:</strong> <span class="mono" id="modal-anular-placa">ABC-123</span> (<span id="modal-anular-tipo">Auto</span>)</p>
               <p style="margin: 0;"><strong>Monto a Reembolsar:</strong> <span class="mono" id="modal-anular-monto" style="color: #10B981; font-weight: 700;">S/ 0.00</span></p>
             </div>
-            <p class="caption" style="color: #64748B;">Esta acción es irreversible y cambiará el estado de la reserva a <strong>ANULADA</strong>.</p>
+            <p class="caption" style="color: #64748B;">Esta acción es irreversible y cambiará el estado de la reserva a <strong>ANULADA</strong>. En anulaciones del mismo día la reversión es inmediata en la pasarela; el reflejo en su banco o app puede tomar entre 24 horas y 3 días hábiles según su entidad financiera.</p>
           </div>
           <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
             <button type="button" id="btn-cancelar-anular" class="btn btn-secondary">Cancelar</button>
@@ -1675,9 +1687,9 @@
     </section>
 
     <!-- ----------------------------------------------------------------------
-         12. CONFIGURACIÓN DE PASARELA DE PAGOS STRIPE (UPAO-21 - ROL DUEÑO)
+         12. CONFIGURACIÓN DE PASARELA DE PAGOS CULQI PERÚ (UPAO-21 - ROL DUEÑO)
          ---------------------------------------------------------------------- -->
-    <section id="view-pasarela-stripe" class="view-section">
+    <section id="view-pasarela-pagos" class="view-section">
       <div class="view-top-bar">
         <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-menu-desde-pasarela">
           ← Volver al Menú Principal
@@ -1685,16 +1697,16 @@
       </div>
 
       <div class="page-title-group">
-        <h1>Configuración de Pasarela de Pagos (Stripe)</h1>
-        <p>Gestione las claves API de su cuenta de Stripe directamente desde la aplicación, sin intervención técnica ni configuración en servidores.</p>
+        <h1>Configuración de Pasarela de Pagos (Culqi Perú)</h1>
+        <p>Gestione las llaves API de su cuenta de Culqi (RUC 10 o RUC 20, tarjetas y Yape) directamente desde la aplicación y guardadas de forma cifrada en base de datos.</p>
       </div>
 
       <div class="tarifas-layout" style="align-items: start;">
         <!-- Columna 1: Estado actual + Formulario -->
         <div class="card card-form">
           <div class="card-header">
-            <h2>1. Credenciales API de Stripe</h2>
-            <p class="caption">Ingrese el par de llaves generado en su panel de Stripe</p>
+            <h2>1. Credenciales API de Culqi</h2>
+            <p class="caption">Ingrese el par de llaves generado en CulqiPanel (Integración o Producción)</p>
           </div>
           <div class="accent-bar-sm"></div>
 
@@ -1704,23 +1716,23 @@
               <span id="badge-estado-pasarela" class="badge mono">VERIFICANDO...</span>
             </div>
             <p class="caption" id="texto-origen-pasarela" style="margin: 4px 0;">Origen: —</p>
-            <p class="caption mono" id="texto-pk-pasarela" style="margin: 4px 0; word-break: break-all;">Clave Pública: —</p>
-            <p class="caption mono" id="texto-sk-pasarela" style="margin: 4px 0;">Clave Secreta: —</p>
+            <p class="caption mono" id="texto-pk-pasarela" style="margin: 4px 0; word-break: break-all;">Llave Pública: —</p>
+            <p class="caption mono" id="texto-sk-pasarela" style="margin: 4px 0;">Llave Secreta: —</p>
           </div>
 
           <form id="form-config-pasarela-dueno" novalidate>
             <div class="form-group">
               <label for="input-pasarela-pk" class="form-label">
-                <span>Clave Pública (Publishable Key) <span class="required">*</span></span>
+                <span>Llave Pública (Public Key) <span class="required">*</span></span>
               </label>
               <input type="text" id="input-pasarela-pk" class="input-control mono" placeholder="pk_test_... o pk_live_..." autocomplete="off">
             </div>
 
             <div class="form-group">
               <label for="input-pasarela-sk" class="form-label">
-                <span>Clave Secreta (Secret Key) <span class="required">*</span></span>
+                <span>Llave Secreta (Secret Key) <span class="required">*</span></span>
               </label>
-              <input type="password" id="input-pasarela-sk" class="input-control mono" placeholder="sk_test_... / rk_test_... o sk_live_..." autocomplete="new-password">
+              <input type="password" id="input-pasarela-sk" class="input-control mono" placeholder="sk_test_... o sk_live_..." autocomplete="new-password">
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
@@ -1737,31 +1749,31 @@
         <!-- Columna 2: Guía paso a paso para el Product Owner / Dueño -->
         <div class="card">
           <div class="card-header">
-            <h2>2. Guía Paso a Paso (Sin Intervención Técnica)</h2>
-            <p class="caption">Obtenga y active sus propias credenciales de Stripe en menos de 2 minutos</p>
+            <h2>2. Guía Paso a Paso (Culqi Perú · RUC 10)</h2>
+            <p class="caption">Active sus credenciales de Culqi para cobrar con tarjetas peruanas y Yape</p>
           </div>
           <div class="accent-bar-sm"></div>
 
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px;">
-              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 6px;">1. Ingrese a su cuenta de Stripe</div>
-              <p class="caption" style="margin: 0 0 8px 0; color: #334155;">Acceda directamente a la sección de claves API en su panel de desarrolladores:</p>
-              <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #EFF6FF; color: #1E3A8A; border: 1px solid #BFDBFE; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
-                Abrir Panel de Claves en Stripe ↗
+              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 6px;">1. Ingrese a CulqiPanel</div>
+              <p class="caption" style="margin: 0 0 8px 0; color: #334155;">Entre con su cuenta comercial (RUC 10 o RUC 20) y vaya a <strong>Desarrollo → API Keys</strong> (asegúrese de habilitar <strong>Yape</strong> en la configuración del Checkout):</p>
+              <a href="https://panel.culqi.com" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #EFF6FF; color: #1E3A8A; border: 1px solid #BFDBFE; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
+                Abrir CulqiPanel ↗
               </a>
             </div>
 
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px;">
-              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 4px;">2. Copie sus dos claves</div>
+              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 4px;">2. Copie sus dos llaves</div>
               <p class="caption" style="margin: 0; color: #334155; line-height: 1.5;">
-                Copie la <strong>Publishable key</strong> (<code class="mono">pk_...</code>) y la <strong>Secret key</strong> (<code class="mono">sk_...</code> o <code class="mono">rk_...</code>). Ambas deben pertenecer al mismo entorno.
+                Copie la <strong>Llave Pública</strong> (<code class="mono">pk_...</code>) y la <strong>Llave Secreta</strong> (<code class="mono">sk_...</code>). Ambas deben pertenecer al mismo entorno.
               </p>
             </div>
 
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px;">
-              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 4px;">3. Pegue y active en un clic</div>
+              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 4px;">3. Pegue y guarde de forma persistente</div>
               <p class="caption" style="margin: 0; color: #334155; line-height: 1.5;">
-                Pegue ambas llaves en el formulario de la izquierda y presione <strong>Guardar y Activar API Keys</strong>. El cambio entra en vigencia al instante sin reiniciar el servidor.
+                Pegue ambas llaves en el formulario de la izquierda y presione <strong>Guardar y Activar API Keys</strong>. La llave secreta se cifra en PostgreSQL y sobrevive reinicios del servidor.
               </p>
             </div>
 
@@ -1769,10 +1781,10 @@
               <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 8px;">4. Elija el modo de operación</div>
               <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #334155;">
                 <div style="padding: 6px 10px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 6px;">
-                  <strong>Modo Prueba (<code class="mono">pk_test_</code> / <code class="mono">sk_test_</code>):</strong> simula reservas y reembolsos sin cobrar dinero real.
+                  <strong>Modo Integración (<code class="mono">pk_test_</code> / <code class="mono">sk_test_</code>):</strong> simula reservas y devoluciones en Soles sin cobrar dinero real.
                 </div>
                 <div style="padding: 6px 10px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px;">
-                  <strong>Modo Producción (<code class="mono">pk_live_</code> / <code class="mono">sk_live_</code>):</strong> procesa cobros reales directo a su cuenta bancaria.
+                  <strong>Modo Producción (<code class="mono">pk_live_</code> / <code class="mono">sk_live_</code>):</strong> procesa cobros reales con tarjetas peruanas y Yape hacia su cuenta bancaria.
                 </div>
               </div>
             </div>
@@ -1791,8 +1803,9 @@
     <p>Sistema de Gestión de Cochera · Moneda: PEN (S/)</p>
   </footer>
 
-  <!-- SDK oficial de Stripe.js v3 para pago con tarjeta en modo prueba -->
-  <script src="https://js.stripe.com/v3/"></script>
+  <!-- SDK oficial de Culqi Checkout v4 (tarjetas y Yape en PEN) -->
+  <script src="https://checkout.culqi.com/js/v4"></script>
+  <script src="js/pasarela-adapter.js"></script>
 
   <!-- Lógica JavaScript (Vainilla) -->
   <script src="js/app.js"></script>

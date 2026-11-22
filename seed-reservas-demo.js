@@ -63,7 +63,8 @@ async function seedConductorYReservas() {
       fechaLimite: en30Min,
       estado: 'VIGENTE',
       montoAdelanto: 4.50,
-      stripePaymentIntentId: 'pi_test_vigente_1001',
+      pasarelaPagoId: 'chr_test_vigente_1001',
+      pasarelaProveedor: 'culqi',
       estadoPago: 'PAGADO'
     }
   });
@@ -79,7 +80,8 @@ async function seedConductorYReservas() {
       fechaLimite: hace1Hora,
       estado: 'UTILIZADA',
       montoAdelanto: 4.50,
-      stripePaymentIntentId: 'pi_test_utilizada_1002',
+      pasarelaPagoId: 'chr_test_utilizada_1002',
+      pasarelaProveedor: 'culqi',
       estadoPago: 'PAGADO'
     }
   });
@@ -95,7 +97,8 @@ async function seedConductorYReservas() {
       fechaLimite: hace1Hora,
       estado: 'ANULADA',
       montoAdelanto: 4.50,
-      stripePaymentIntentId: 'pi_test_anulada_1003',
+      pasarelaPagoId: 'chr_test_anulada_1003',
+      pasarelaProveedor: 'culqi',
       estadoPago: 'REEMBOLSADO',
       fechaAnulacion: hace1Hora
     }
@@ -112,7 +115,8 @@ async function seedConductorYReservas() {
       fechaLimite: hace1Hora,
       estado: 'VENCIDA',
       montoAdelanto: 4.50,
-      stripePaymentIntentId: 'pi_test_vencida_1004',
+      pasarelaPagoId: 'chr_test_vencida_1004',
+      pasarelaProveedor: 'culqi',
       estadoPago: 'PAGADO'
     }
   });

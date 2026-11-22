@@ -82,8 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.reservasModulo && typeof window.reservasModulo.cargarGaritaReservas === 'function') {
         window.reservasModulo.cargarGaritaReservas();
       }
-    } else if (nombre === 'pasarela-stripe') {
-      const viewPasarela = document.getElementById('view-pasarela-stripe');
+    } else if (nombre === 'pasarela-pagos') {
+      const viewPasarela = document.getElementById('view-pasarela-pagos');
       if (viewPasarela) viewPasarela.classList.add('active');
       headerUserSection.style.display = 'flex';
       if (window.reservasModulo && typeof window.reservasModulo.cargarVistaPasarelaDueno === 'function') {
