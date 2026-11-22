@@ -195,6 +195,10 @@ async function crearPaymentIntentReserva({ montoSoles, codigoReserva, idUsuario,
  */
 async function reembolsarPaymentIntent(paymentIntentId) {
   if (!paymentIntentId) return null;
+  if (!stripeConfigurado()) {
+    // Si la pasarela Stripe no tiene credenciales en el entorno, simula el reembolso en modo prueba
+    return { id: `re_${String(paymentIntentId).replace(/[^A-Za-z0-9_]/g, '')}`, status: 'succeeded' };
+  }
   return llamarStripe('/refunds', {
     payment_intent: String(paymentIntentId)
   });

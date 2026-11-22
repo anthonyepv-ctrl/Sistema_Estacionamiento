@@ -1475,12 +1475,12 @@
         </div>
       </div>
 
-      <!-- Listado de Mis Reservas (UPAO-21 y UPAO-22 Anular Reserva) -->
+      <!-- Listado de Mis Reservas (UPAO-22 - Sección 7.1) -->
       <div class="card card-table" style="margin-top: 24px;">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
             <h2>3. Mis Reservas</h2>
-            <p class="caption">Historial de reservas generadas, tiempo límite de llegada y opción de anulación con reembolso</p>
+            <p class="caption">Consulte sus reservas activas e históricas, estado, placa, fecha/hora y monto, con anulación en un clic para reservas vigentes.</p>
           </div>
           <button type="button" id="btn-refrescar-mis-reservas" class="btn btn-secondary btn-sm">
             ↻ Actualizar Estado
@@ -1488,6 +1488,12 @@
         </div>
         <div class="accent-bar-sm"></div>
 
+        <!-- Vista de Tarjetas de Reserva (§7.1 Tarjeta de Reserva) -->
+        <div id="contenedor-tarjetas-reservas" class="reservas-cards-grid" style="padding: 16px;">
+          <!-- Inyectado dinámicamente con class="card reserva-card" -->
+        </div>
+
+        <!-- Vista Tabular de Mis Reservas -->
         <div class="table-container">
           <table class="data-table">
             <thead>
@@ -1497,9 +1503,9 @@
                 <th>Tipo</th>
                 <th>Creación</th>
                 <th>Límite (30 min)</th>
-                <th class="text-right">Adelanto</th>
+                <th class="text-right">Monto</th>
                 <th>Estado</th>
-                <th class="text-right">Acciones</th>
+                <th class="text-right">Acción</th>
               </tr>
             </thead>
             <tbody id="tbody-mis-reservas">
@@ -1511,25 +1517,24 @@
         </div>
       </div>
 
-      <!-- Modal de Confirmación para Anular Reserva (UPAO-22) -->
-      <div id="modal-anular-reserva" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-anular-titulo">
-        <div class="modal-card">
+      <!-- Modal de Confirmación para Anular Reserva (UPAO-22 - Sección 7.2) -->
+      <div id="modal-anular" class="modal modal-backdrop hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-anular-titulo">
+        <div class="modal-content modal-card">
           <div class="modal-header">
-            <h3 id="modal-anular-titulo">Confirmar Anulación de Reserva</h3>
+            <h3 id="modal-anular-titulo">¿Seguro que deseas anular esta reserva?</h3>
           </div>
           <div class="modal-body">
-            <p>¿Está seguro de que desea anular la reserva <strong class="mono" id="modal-anular-codigo">RES-0000</strong> para el vehículo <strong class="mono" id="modal-anular-placa">ABC-123</strong>?</p>
-            <p class="caption" style="margin-top: 8px;">
-              Se liberará el cupo inmediatamente y se ejecutará el reembolso automático de <strong class="mono" id="modal-anular-monto">S/ 0.00</strong> de forma automática a su tarjeta.
-            </p>
+            <p>El pago será reembolsado y el espacio volverá a estar disponible.</p>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
+              <p style="margin: 0 0 6px 0;"><strong>Reserva:</strong> <span class="mono" id="modal-anular-codigo">RES-0000</span></p>
+              <p style="margin: 0 0 6px 0;"><strong>Placa:</strong> <span class="mono" id="modal-anular-placa">ABC-123</span> (<span id="modal-anular-tipo">Auto</span>)</p>
+              <p style="margin: 0;"><strong>Monto a Reembolsar:</strong> <span class="mono" id="modal-anular-monto" style="color: #10B981; font-weight: 700;">S/ 0.00</span></p>
+            </div>
+            <p class="caption" style="color: #64748B;">Esta acción es irreversible y cambiará el estado de la reserva a <strong>ANULADA</strong>.</p>
           </div>
           <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
-            <button type="button" id="btn-cerrar-modal-anular" class="btn btn-secondary">
-              Volver
-            </button>
-            <button type="button" id="btn-confirmar-anular-reserva" class="btn btn-danger">
-              Sí, Anular y Reembolsar
-            </button>
+            <button type="button" id="btn-cancelar-anular" class="btn btn-secondary">Cancelar</button>
+            <button type="button" id="btn-confirmar-anular" class="btn btn-danger">Confirmar</button>
           </div>
         </div>
       </div>

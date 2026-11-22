@@ -35,17 +35,18 @@
   }
 
   function badgeEstadoReserva(estado) {
-    if (estado === 'VIGENTE') {
-      return '<span class="badge badge-success mono">VIGENTE</span>';
+    const est = String(estado || '').toUpperCase();
+    if (est === 'VIGENTE') {
+      return '<span class="badge badge-success mono vigente">VIGENTE</span>';
     }
-    if (estado === 'UTILIZADA') {
-      return '<span class="badge badge-primary mono" style="background:#DBEAFE;color:#1E3A8A;">UTILIZADA</span>';
+    if (est === 'UTILIZADA') {
+      return '<span class="badge badge-primary mono utilizada">UTILIZADA</span>';
     }
-    if (estado === 'ANULADA') {
-      return '<span class="badge badge-danger mono">ANULADA</span>';
+    if (est === 'ANULADA') {
+      return '<span class="badge badge-danger mono anulada">ANULADA</span>';
     }
-    if (estado === 'VENCIDA') {
-      return '<span class="badge badge-warning mono" style="background:#FEF3C7;color:#92400E;">VENCIDA</span>';
+    if (est === 'VENCIDA') {
+      return '<span class="badge badge-warning mono vencida">VENCIDA</span>';
     }
     return `<span class="badge mono">${estado || '—'}</span>`;
   }
@@ -254,75 +255,133 @@
 
   async function cargarMisReservas() {
     const tbody = document.getElementById('tbody-mis-reservas');
-    if (!tbody) return;
+    const contenedorCards = document.getElementById('contenedor-tarjetas-reservas');
+    if (!tbody && !contenedorCards) return;
 
     try {
       const data = await window.pedirApi('/api/reservas/mias');
       const reservas = data.reservas || [];
 
       if (reservas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="caption" style="text-align:center;">No registra reservas hasta el momento.</td></tr>';
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="8" class="caption" style="text-align:center;">No registra reservas hasta el momento.</td></tr>';
+        }
+        if (contenedorCards) {
+          contenedorCards.innerHTML = '<p class="caption" style="text-align:center;grid-column:1/-1;">No registra reservas hasta el momento.</p>';
+        }
         return;
       }
 
-      tbody.innerHTML = reservas.map((r) => {
-        const puedeAnular = r.estado === 'VIGENTE';
-        return `
-          <tr>
-            <td class="mono" style="font-weight:700;">${r.codigo}</td>
-            <td class="mono">${r.placa}</td>
-            <td>${r.tipo}</td>
-            <td class="mono">${formatearFechaHora(r.fechaReserva)}</td>
-            <td class="mono">${formatearFechaHora(r.fechaLimite)}</td>
-            <td class="text-right mono">${formatearSoles(r.montoAdelanto)}</td>
-            <td>${badgeEstadoReserva(r.estado)}</td>
-            <td class="text-right">
+      // 1. Renderizar Tarjetas de Reserva (§7.1 del Análisis y Diseño)
+      if (contenedorCards) {
+        contenedorCards.innerHTML = reservas.map((r) => {
+          const puedeAnular = r.estado === 'VIGENTE';
+          return `
+            <div class="card reserva-card" data-id="${r.id}">
+              <h4>
+                <span>Reserva #${r.id}</span>
+                <span class="mono" style="font-size:0.85rem;color:var(--text-muted);">${r.codigo}</span>
+              </h4>
+              <p><strong>Placa:</strong> <span class="mono" style="font-weight:700;">${r.placa}</span></p>
+              <p><strong>Tipo:</strong> ${r.tipo || 'Automóvil'}</p>
+              <p><strong>Periodo:</strong> <span class="mono" style="font-size:0.82rem;">${formatearFechaHora(r.fechaReserva)} → ${formatearFechaHora(r.fechaLimite)}</span></p>
+              <p><strong>Estado:</strong> ${badgeEstadoReserva(r.estado)}</p>
+              <div class="reserva-monto-tag">
+                <span class="caption">Monto Adelanto:</span>
+                <span class="mono" style="font-size:1.05rem;color:var(--primary);font-weight:700;">${formatearSoles(r.montoAdelanto)}</span>
+              </div>
               ${puedeAnular ? `
-                <button type="button" class="btn btn-danger btn-sm btn-abrir-anular-reserva"
+                <button type="button" class="btn-anular btn btn-danger btn-abrir-anular-reserva"
                   data-id="${r.id}"
                   data-codigo="${r.codigo}"
                   data-placa="${r.placa}"
+                  data-tipo="${r.tipo || 'Automóvil'}"
                   data-monto="${r.montoAdelanto}">
-                  Anular Reserva
+                  Anular reserva
                 </button>
-              ` : '<span class="caption">—</span>'}
-            </td>
-          </tr>
-        `;
-      }).join('');
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      }
 
-      tbody.querySelectorAll('.btn-abrir-anular-reserva').forEach((btn) => {
+      // 2. Renderizar Tabla de Mis Reservas
+      if (tbody) {
+        tbody.innerHTML = reservas.map((r) => {
+          const puedeAnular = r.estado === 'VIGENTE';
+          return `
+            <tr>
+              <td class="mono" style="font-weight:700;">${r.codigo}</td>
+              <td class="mono" style="font-weight:700;">${r.placa}</td>
+              <td>${r.tipo || 'Automóvil'}</td>
+              <td class="mono">${formatearFechaHora(r.fechaReserva)}</td>
+              <td class="mono">${formatearFechaHora(r.fechaLimite)}</td>
+              <td class="text-right mono" style="font-weight:600;">${formatearSoles(r.montoAdelanto)}</td>
+              <td>${badgeEstadoReserva(r.estado)}</td>
+              <td class="text-right">
+                ${puedeAnular ? `
+                  <button type="button" class="btn btn-danger btn-sm btn-anular btn-abrir-anular-reserva"
+                    data-id="${r.id}"
+                    data-codigo="${r.codigo}"
+                    data-placa="${r.placa}"
+                    data-tipo="${r.tipo || 'Automóvil'}"
+                    data-monto="${r.montoAdelanto}">
+                    Anular reserva
+                  </button>
+                ` : '<span class="caption">—</span>'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 3. Vincular botones de Anulación
+      document.querySelectorAll('.btn-abrir-anular-reserva').forEach((btn) => {
         btn.addEventListener('click', () => {
           abrirModalAnularReserva({
             id: Number(btn.getAttribute('data-id')),
             codigo: btn.getAttribute('data-codigo'),
             placa: btn.getAttribute('data-placa'),
+            tipo: btn.getAttribute('data-tipo') || 'Automóvil',
             montoAdelanto: Number(btn.getAttribute('data-monto'))
           });
         });
       });
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="8" class="caption" style="text-align:center;color:#EF4444;">${err.message}</td></tr>`;
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="8" class="caption" style="text-align:center;color:#EF4444;">${err.message}</td></tr>`;
+      }
+      if (contenedorCards) {
+        contenedorCards.innerHTML = `<p class="caption" style="text-align:center;color:#EF4444;grid-column:1/-1;">${err.message}</p>`;
+      }
     }
   }
 
   function abrirModalAnularReserva(reserva) {
     reservaParaAnular = reserva;
-    const modal = document.getElementById('modal-anular-reserva');
+    const modal = document.getElementById('modal-anular') || document.getElementById('modal-anular-reserva');
     const elCodigo = document.getElementById('modal-anular-codigo');
     const elPlaca = document.getElementById('modal-anular-placa');
+    const elTipo = document.getElementById('modal-anular-tipo');
     const elMonto = document.getElementById('modal-anular-monto');
 
     if (elCodigo) elCodigo.textContent = reserva.codigo;
     if (elPlaca) elPlaca.textContent = reserva.placa;
+    if (elTipo) elTipo.textContent = reserva.tipo || 'Automóvil';
     if (elMonto) elMonto.textContent = formatearSoles(reserva.montoAdelanto);
-    if (modal) modal.classList.remove('hidden');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+    }
   }
 
   function cerrarModalAnularReserva() {
     reservaParaAnular = null;
-    const modal = document.getElementById('modal-anular-reserva');
-    if (modal) modal.classList.add('hidden');
+    const modal = document.getElementById('modal-anular') || document.getElementById('modal-anular-reserva');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
   }
 
   async function cargarVistaConductor() {
@@ -711,35 +770,46 @@
       });
     }
 
-    // 7. Modal de Anulación de Reserva (UPAO-22)
-    const btnCerrarModalAnular = document.getElementById('btn-cerrar-modal-anular');
-    if (btnCerrarModalAnular) {
-      btnCerrarModalAnular.addEventListener('click', cerrarModalAnularReserva);
-    }
+    // 7. Modal de Anulación de Reserva (UPAO-22 - Sección 7.2 y 7.3)
+    const btnsCerrarModal = [
+      document.getElementById('btn-cancelar-anular'),
+      document.getElementById('btn-cerrar-modal-anular')
+    ].filter(Boolean);
 
-    const btnConfirmarAnular = document.getElementById('btn-confirmar-anular-reserva');
-    if (btnConfirmarAnular) {
-      btnConfirmarAnular.addEventListener('click', async () => {
+    btnsCerrarModal.forEach((btn) => {
+      btn.addEventListener('click', cerrarModalAnularReserva);
+    });
+
+    const btnsConfirmarAnular = [
+      document.getElementById('btn-confirmar-anular'),
+      document.getElementById('btn-confirmar-anular-reserva')
+    ].filter(Boolean);
+
+    btnsConfirmarAnular.forEach((btnConfirmar) => {
+      btnConfirmar.addEventListener('click', async () => {
         if (!reservaParaAnular) return;
-        btnConfirmarAnular.classList.add('loading');
-        btnConfirmarAnular.disabled = true;
+        btnConfirmar.classList.add('loading');
+        btnConfirmar.disabled = true;
 
         try {
-          const res = await window.pedirApi(`/api/reservas/${reservaParaAnular.id}/anular`, {
-            method: 'POST',
-            body: JSON.stringify({})
+          // Invoca DELETE /api/reservas/:id según §4 y §7.2 de la especificación
+          const res = await window.pedirApi(`/api/reservas/${reservaParaAnular.id}`, {
+            method: 'DELETE'
           });
           cerrarModalAnularReserva();
-          window.mostrarToast(res.mensaje || 'Reserva anulada y reembolsada.');
+          window.mostrarToast(res.mensaje || 'Reserva anulada y reembolso procesado');
           await cargarMisReservas();
+          if (window.disponibilidadModulo && typeof window.disponibilidadModulo.consultar === 'function') {
+            window.disponibilidadModulo.consultar();
+          }
         } catch (err) {
           window.mostrarToast(err.message, true);
         } finally {
-          btnConfirmarAnular.classList.remove('loading');
-          btnConfirmarAnular.disabled = false;
+          btnConfirmar.classList.remove('loading');
+          btnConfirmar.disabled = false;
         }
       });
-    }
+    });
 
     // 9. Aviso "RESERVADO" en el flujo normal de ingreso (UPAO-8)
     const inputPlacaIngreso = document.getElementById('input-placa');

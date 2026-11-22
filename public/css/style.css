@@ -1825,3 +1825,118 @@ select.input-control {
 .modal-body {
   margin-top: 14px;
 }
+
+/* ==========================================================================
+   MÓDULO DE RESERVAS Y ANULACIÓN (UPAO-22) - ESTILOS ESPECÍFICOS
+   Basado estrictamente en ANULAR_RESERVA_ANALiSIS_DISEÑO.md (§7 y §12)
+   ========================================================================== */
+
+/* Cuadrícula de Tarjetas de Reserva (§7.1) */
+.reservas-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.card.reserva-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card.reserva-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.1);
+  border-color: #CBD5E1;
+}
+
+.card.reserva-card h4 {
+  margin: 0 0 10px 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card.reserva-card p {
+  margin: 4px 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.card.reserva-card p strong {
+  color: var(--text-main);
+}
+
+.card.reserva-card .reserva-monto-tag {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Botón Anular con acción destructiva (§7.1) */
+.btn-anular,
+.btn-anular.btn-danger {
+  margin-top: 14px;
+  width: 100%;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Badges de estado de Reserva según diseño (§7.1) */
+.badge.vigente {
+  background: #DEF7EC !important;
+  color: #03543F !important;
+  border: 1px solid #BCF0DA !important;
+}
+
+.badge.anulada {
+  background: #FDE8E8 !important;
+  color: #9B1C1C !important;
+  border: 1px solid #FBD5D5 !important;
+}
+
+.badge.utilizada {
+  background: #E1EFFE !important;
+  color: #1E429F !important;
+  border: 1px solid #C3DDFD !important;
+}
+
+.badge.vencida {
+  background: #FEF08A !important;
+  color: #713F12 !important;
+  border: 1px solid #FDE047 !important;
+}
+
+/* Modal de Anulación (§7.2) */
+#modal-anular .modal-content,
+.modal#modal-anular .modal-card {
+  max-width: 480px;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+

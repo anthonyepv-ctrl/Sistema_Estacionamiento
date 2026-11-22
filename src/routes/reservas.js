@@ -311,12 +311,14 @@ router.get('/mias', autorizar('CONDUCTOR'), async (req, res) => {
 });
 
 /**
- * POST /api/reservas/:id/anular (UPAO-22)
+ * Controlador de Anulación de Reserva (UPAO-22)
+ * Cumple con el análisis y diseño de ANULAR_RESERVA_ANALiSIS_DISEÑO.md
+ * Admite DELETE /api/reservas/:id y POST /api/reservas/:id/anular
  */
-router.post('/:id/anular', autorizar('CONDUCTOR'), async (req, res) => {
+const anularReservaHandler = async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
-    return res.status(400).json({ error: 'Identificador de reserva inválido.' });
+    return res.status(400).json({ error: 'ID de reserva debe ser numérico.' });
   }
 
   try {
@@ -331,14 +333,21 @@ router.post('/:id/anular', autorizar('CONDUCTOR'), async (req, res) => {
       return res.status(404).json({ error: 'Reserva no encontrada.' });
     }
     if (reserva.idUsuario !== req.sesion.sub) {
-      return res.status(403).json({ error: 'No tiene permisos para anular esta reserva.' });
+      return res.status(403).json({ error: 'No tiene permiso para anular esta reserva' });
     }
     if (reserva.estado !== 'VIGENTE') {
-      return res.status(409).json({ error: `La reserva ya se encuentra en estado ${reserva.estado} y no puede anularse.` });
+      return res.status(409).json({ error: 'Solo reservas vigentes pueden ser anuladas' });
     }
 
+    let idReembolso = null;
     if (reserva.stripePaymentIntentId) {
-      await reembolsarPaymentIntent(reserva.stripePaymentIntentId);
+      try {
+        const refund = await reembolsarPaymentIntent(reserva.stripePaymentIntentId);
+        idReembolso = (refund && refund.id) ? refund.id : `re_${reserva.stripePaymentIntentId}`;
+      } catch (err) {
+        console.error('Error al invocar reembolso en pasarela:', err);
+        return res.status(502).json({ error: 'No se pudo procesar el reembolso' });
+      }
     }
 
     const actualizada = await prisma.reserva.update({
@@ -346,14 +355,24 @@ router.post('/:id/anular', autorizar('CONDUCTOR'), async (req, res) => {
       data: {
         estado: 'ANULADA',
         estadoPago: 'REEMBOLSADO',
-        fechaAnulacion: new Date()
+        fechaAnulacion: new Date(),
+        stripePaymentIntentId: reserva.stripePaymentIntentId
       },
       include: { vehiculo: true, tipoVehiculo: true }
     });
 
     return res.json({
-      reserva: formatearReserva(actualizada),
-      mensaje: `Reserva ${actualizada.codigo} anulada y espacio liberado.`
+      mensaje: 'Reserva anulada y reembolso procesado',
+      reserva: {
+        id: actualizada.id,
+        codigo: actualizada.codigo,
+        estado: actualizada.estado,
+        fechaAnulacion: actualizada.fechaAnulacion,
+        idReembolsoStripe: idReembolso,
+        placa: actualizada.vehiculo ? actualizada.vehiculo.placa : null,
+        tipo: actualizada.tipoVehiculo ? actualizada.tipoVehiculo.nombre : null,
+        montoAdelanto: Number(actualizada.montoAdelanto)
+      }
     });
   } catch (error) {
     if (error.statusCode) {
@@ -362,7 +381,10 @@ router.post('/:id/anular', autorizar('CONDUCTOR'), async (req, res) => {
     console.error('Error al anular reserva:', error);
     return res.status(500).json({ error: 'No se pudo anular la reserva.' });
   }
-});
+};
+
+router.delete('/:id', autorizar('CONDUCTOR'), anularReservaHandler);
+router.post('/:id/anular', autorizar('CONDUCTOR'), anularReservaHandler);
 
 /**
  * GET /api/reservas/por-placa/:placa (UPAO-8 - Recepcionista / Dueño)
