@@ -615,6 +615,16 @@
       });
     }
 
+    const btnIrARegistrarVehiculo = document.getElementById('btn-ir-a-registrar-vehiculo');
+    if (btnIrARegistrarVehiculo) {
+      btnIrARegistrarVehiculo.addEventListener('click', () => {
+        const cardVeh = document.getElementById('card-mis-vehiculos');
+        const inputPlaca = document.getElementById('vehiculo-placa');
+        if (cardVeh) cardVeh.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (inputPlaca) setTimeout(() => inputPlaca.focus(), 250);
+      });
+    }
+
     const btnPrepararPago = document.getElementById('btn-preparar-pago');
     if (btnPrepararPago) {
       btnPrepararPago.addEventListener('click', async () => {
@@ -622,6 +632,14 @@
         const idVehiculo = selectVehiculo ? Number(selectVehiculo.value) : 0;
 
         if (!idVehiculo) {
+          if (vehiculosConductor.length === 0) {
+            window.mostrarToast('Primero registra tu placa en "2. Mis Vehículos" para poder reservar.', true);
+            const cardVeh = document.getElementById('card-mis-vehiculos');
+            const inputPlaca = document.getElementById('vehiculo-placa');
+            if (cardVeh) cardVeh.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (inputPlaca) setTimeout(() => inputPlaca.focus(), 250);
+            return;
+          }
           window.mostrarToast('Seleccione primero uno de sus vehículos registrados.', true);
           return;
         }
