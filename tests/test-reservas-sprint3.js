@@ -128,6 +128,7 @@ async function ejecutarPruebas() {
   });
 
   const capacidadOriginal = obtenerCapacidad();
+  const configPasarelaOriginal = await prisma.configuracionPasarela.findUnique({ where: { proveedor: 'culqi' } });
   const sufijo = String(Date.now()).slice(-4);
   const usuarioTest = `cond_sp3_${sufijo}`;
   const usuarioTestB = `cond_sp3b_${sufijo}`;
@@ -591,6 +592,22 @@ async function ejecutarPruebas() {
       console.error('Aviso limpiando datos de prueba:', e.message);
     }
     try {
+      if (configPasarelaOriginal) {
+        await prisma.configuracionPasarela.upsert({
+          where: { proveedor: 'culqi' },
+          update: {
+            llavePublica: configPasarelaOriginal.llavePublica,
+            llaveSecretaCifrada: configPasarelaOriginal.llaveSecretaCifrada,
+            actualizadoPorId: configPasarelaOriginal.actualizadoPorId
+          },
+          create: {
+            proveedor: configPasarelaOriginal.proveedor,
+            llavePublica: configPasarelaOriginal.llavePublica,
+            llaveSecretaCifrada: configPasarelaOriginal.llaveSecretaCifrada,
+            actualizadoPorId: configPasarelaOriginal.actualizadoPorId
+          }
+        });
+      }
       guardarCapacidad(capacidadOriginal);
     } catch (_) {}
     await prisma.$disconnect();

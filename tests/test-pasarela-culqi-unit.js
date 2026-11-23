@@ -75,6 +75,7 @@ async function ejecutarPruebasUnitarias() {
   });
 
   const capacidadOriginal = obtenerCapacidad();
+  const configPasarelaOriginal = await prisma.configuracionPasarela.findUnique({ where: { proveedor: 'culqi' } });
   const sufijo = String(Date.now()).slice(-4);
   const usuarioTest = `cond_unit_${sufijo}`;
   const dniTest = `7685${sufijo}`;
@@ -260,7 +261,24 @@ async function ejecutarPruebasUnitarias() {
         await prisma.vehiculoConductor.deleteMany({ where: { idUsuario: u.id } });
         await prisma.usuario.delete({ where: { id: u.id } });
       }
-      await prisma.configuracionPasarela.deleteMany({ where: { proveedor: 'culqi' } });
+      if (configPasarelaOriginal) {
+        await prisma.configuracionPasarela.upsert({
+          where: { proveedor: 'culqi' },
+          update: {
+            llavePublica: configPasarelaOriginal.llavePublica,
+            llaveSecretaCifrada: configPasarelaOriginal.llaveSecretaCifrada,
+            actualizadoPorId: configPasarelaOriginal.actualizadoPorId
+          },
+          create: {
+            proveedor: configPasarelaOriginal.proveedor,
+            llavePublica: configPasarelaOriginal.llavePublica,
+            llaveSecretaCifrada: configPasarelaOriginal.llaveSecretaCifrada,
+            actualizadoPorId: configPasarelaOriginal.actualizadoPorId
+          }
+        });
+      } else {
+        await prisma.configuracionPasarela.deleteMany({ where: { proveedor: 'culqi' } });
+      }
     } catch (e) {
       console.error('Aviso limpiando datos de prueba unitarios:', e.message);
     }
