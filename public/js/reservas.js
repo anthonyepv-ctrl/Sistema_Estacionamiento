@@ -14,8 +14,8 @@
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true
-    });
+      hour12: false
+    }).replace(',', '');
   }
 
   function formatearSoles(monto) {
@@ -267,12 +267,13 @@
               <td class="text-right">
                 ${puedeAnular ? `
                   <button type="button" class="btn btn-danger btn-sm btn-anular btn-abrir-anular-reserva"
+                    title="Anular reserva"
                     data-id="${r.id}"
                     data-codigo="${r.codigo}"
                     data-placa="${r.placa}"
                     data-tipo="${r.tipo || 'Automóvil'}"
                     data-monto="${r.montoAdelanto}">
-                    Anular reserva
+                    Anular
                   </button>
                 ` : '<span class="caption">—</span>'}
               </td>

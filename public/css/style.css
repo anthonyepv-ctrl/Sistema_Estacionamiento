@@ -1952,6 +1952,21 @@ select.input-control {
   display: block;
 }
 
+.reservas-vista-desktop .data-table {
+  font-size: 12.5px;
+}
+
+.reservas-vista-desktop .data-table th,
+.reservas-vista-desktop .data-table td {
+  padding: 10px 8px;
+  white-space: nowrap;
+}
+
+.reservas-vista-desktop .data-table .btn-anular {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
 .reservas-vista-movil {
   display: none;
 }
