@@ -92,6 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     actualizarSidebar(nombre, rolActual);
+
+    if (nombre && nombre !== 'login') {
+      try { localStorage.setItem('cochera_vista_activa', nombre); } catch (_) {}
+    }
   }
 
   function actualizarSidebar(vistaActiva, rol) {
@@ -295,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rolActual = '';
       window.sesionActual = null;
       olvidarSesion();
+      try { localStorage.removeItem('cochera_vista_activa'); } catch (_) {}
       if (sessionUserName) sessionUserName.textContent = '';
       if (sessionUserRole) sessionUserRole.textContent = '';
       if (sessionUserBadge) sessionUserBadge.textContent = '';
@@ -1103,7 +1108,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (sesionRestaurada) {
-    mostrarPantalla('dashboard');
+    let vistaGuardada = null;
+    try { vistaGuardada = localStorage.getItem('cochera_vista_activa'); } catch (_) {}
+    const rolNorm = rolActual === 'DUEÑO' ? 'DUENO' : rolActual;
+    const linkGuardado = vistaGuardada && vistaGuardada !== 'dashboard' && vistaGuardada !== 'login'
+      ? document.querySelector(`#app-sidebar .sidebar-link[data-view="${vistaGuardada}"]`)
+      : null;
+    const permitido = linkGuardado && (linkGuardado.getAttribute('data-roles') || '').split(',').includes(rolNorm);
+
+    if (permitido) {
+      mostrarPantalla(vistaGuardada);
+      setTimeout(() => linkGuardado.click(), 0);
+    } else {
+      mostrarPantalla('dashboard');
+    }
   } else if (window.location.hash === '#login') {
     mostrarPantalla('login');
   } else {
