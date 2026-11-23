@@ -1102,10 +1102,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionUserBadge) sessionUserBadge.textContent = sesionRestaurada.rol || '';
   }
 
-  if (window.location.hash === '#login') {
-    mostrarPantalla('login');
-  } else if (sesionRestaurada) {
+  if (sesionRestaurada) {
     mostrarPantalla('dashboard');
+  } else if (window.location.hash === '#login') {
+    mostrarPantalla('login');
   } else {
     // Por defecto para todo el público conductor: Vista de Disponibilidad (UPAO-20)
     mostrarPantalla('disponibilidad');
