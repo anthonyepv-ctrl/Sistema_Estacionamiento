@@ -201,7 +201,7 @@ async function ejecutarPruebasUnitarias() {
       body: JSON.stringify({ idVehiculo: dataVeh.id })
     });
     const prepData = await resPrep.json();
-    if (!resPrep.ok || prepData.montoCentimos !== 300 || prepData.yapeHabilitado !== false) {
+    if (!resPrep.ok || prepData.montoCentimos !== 300 || prepData.yapeHabilitado !== true) {
       throw new Error(`Respuesta inesperada en preparar-pago para moto: ${JSON.stringify(prepData)}`);
     }
     console.log('✅ [UNIT-03] Piso mínimo S/ 3.00 (300 céntimos) aplicado a Motocicleta correctamente.');

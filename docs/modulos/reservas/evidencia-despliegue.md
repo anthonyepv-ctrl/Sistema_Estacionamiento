@@ -33,7 +33,7 @@ En el panel **Environment** del servicio web `cochera-sp-stating` en Render debe
 - `CULQI_PUBLIC_KEY`: llave pública de integración o producción (`pk_test_...` / `pk_live_...`).
 - `CULQI_SECRET_KEY`: llave privada de integración o producción (`sk_test_...` / `sk_live_...`).
 - `PASARELA_ENCRYPTION_KEY`: clave simétrica para cifrado AES-256-GCM en `configuracion_pasarela`.
-- `CULQI_YAPE_MINIMO_SOLES`: `6` (monto mínimo para habilitar Yape en Checkout v4).
+- `CULQI_YAPE_MINIMO_SOLES`: `3` (monto mínimo para habilitar Yape en Checkout v4).
 
 ---
 

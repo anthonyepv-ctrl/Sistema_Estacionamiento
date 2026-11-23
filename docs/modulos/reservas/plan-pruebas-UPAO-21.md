@@ -43,6 +43,7 @@ npm run test:regresion
 | **DEF-21-05** | Botones *Reservar espacio para Auto / Moto* sin respuesta en disponibilidad pública | `public/index.html` usaba IDs en singular (`btn-reservar-auto`/`moto`) y `disponibilidad.js` buscaba en plural (`-autos`/`-motos`). | Se corrigieron los selectores en `disponibilidad.js` y se conectó retorno directo tras login. | Cerrado |
 | **DEF-21-06** | UX móvil sobrecargada y sin CTA directo cuando el conductor aún no registra vehículo | Cabecera cortaba `Cerrar Sesión`, navegación duplicada y mensaje textual sin botón de acción en móvil. | Se limpió el header móvil, se añadió botón `+ Registrar mi primer vehículo` y se redujeron textos redundantes en `#view-conductor-reservas` y `#view-pasarela-pagos`. | Cerrado |
 | **DEF-21-07** | Pérdida de sesión / regreso forzado al Menú Principal al recargar la página | La sesión vivía en `sessionStorage` y `app.js` siempre forzaba `mostrarPantalla('dashboard')` tras recargar. | Se migró la sesión a `localStorage` y se persiste la vista activa (`cochera_vista_activa`) restaurándola tras recargar. | Cerrado |
+| **DEF-21-08** | Opción Yape oculta en Checkout v4 para reservas de S/ 5.00 | El umbral preventivo `CULQI_YAPE_MINIMO_SOLES` estaba fijado en `S/ 6.00` (aplica a Órdenes QR, no a tokenización directa en Checkout v4). | Se ajustó `CULQI_YAPE_MINIMO_SOLES` por defecto a `3.00` en `src/payments/index.js` y `.env.example`, habilitando Yape y tarjetas desde `S/ 3.00`. | Cerrado |
 
 ---
 

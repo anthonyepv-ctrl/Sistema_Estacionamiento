@@ -671,7 +671,7 @@
           if (modalPagoMetodos) {
             modalPagoMetodos.textContent = preparacionActual.yapeHabilitado
               ? 'Tarjetas de crédito o débito (Visa, Mastercard, Amex, Diners) y Yape.'
-              : `Tarjetas de crédito o débito (Visa, Mastercard, Amex, Diners). Yape habilitado desde ${formatearSoles(preparacionActual.yapeMinimoSoles || 6)}.`;
+              : `Tarjetas de crédito o débito (Visa, Mastercard, Amex, Diners). Yape habilitado desde ${formatearSoles(preparacionActual.yapeMinimoSoles || 3)}.`;
           }
           if (avisoMin) {
             avisoMin.classList.toggle('hidden', !preparacionActual.montoMinimoAplicado);
