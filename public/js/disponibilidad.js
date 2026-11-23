@@ -241,7 +241,7 @@
       if (btnVolverDisponibilidad) {
         btnVolverDisponibilidad.innerHTML = haySesionActiva()
           ? '← Volver al Menú Principal'
-          : '<span>👤 Acceso de Personal</span> <span class="mono" style="font-size: 0.75rem; opacity: 0.85;">(Iniciar Sesión)</span>';
+          : '<span>Iniciar Sesión</span>';
       }
     },
     detener: () => {
