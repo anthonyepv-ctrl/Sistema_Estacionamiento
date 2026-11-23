@@ -19,6 +19,7 @@ const {
 const router = express.Router();
 
 const LLAVE_LOCK_AFORO = 770000;
+const LLAVE_LOCK_RESERVA_NS = 780000;
 const TOLERANCIA_MINUTOS = 30;
 const REGEX_TOKEN_CULQI = /^(tkn|ype)_(test|live)_[A-Za-z0-9_-]{6,}$/;
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -438,66 +439,81 @@ const anularReservaHandler = async (req, res) => {
   anulacionesEnCurso.add(id);
 
   try {
-    await expirarReservasVencidas();
+    const resultado = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${LLAVE_LOCK_RESERVA_NS}::int, ${id}::int)`;
 
-    const reserva = await prisma.reserva.findUnique({
-      where: { id },
-      include: { vehiculo: true, tipoVehiculo: true }
-    });
-
-    if (!reserva) {
-      return res.status(404).json({ error: 'Reserva no encontrada.' });
-    }
-    if (reserva.idUsuario !== req.sesion.sub) {
-      return res.status(403).json({ error: 'No tiene permiso para anular esta reserva' });
-    }
-    if (reserva.estado !== 'VIGENTE') {
-      return res.status(409).json({ error: 'Solo reservas vigentes pueden ser anuladas' });
-    }
-
-    const proveedorActivo = obtenerProveedorActivo();
-    if (reserva.pasarelaPagoId && reserva.pasarelaProveedor && reserva.pasarelaProveedor !== proveedorActivo) {
-      return res.status(409).json({
-        error: `Esta reserva fue cobrada con un proveedor previo (${reserva.pasarelaProveedor}) y no puede reembolsarse automáticamente desde ${proveedorActivo}.`
+      const resLock = await tx.reserva.findUnique({
+        where: { id },
+        include: { vehiculo: true, tipoVehiculo: true }
       });
-    }
 
-    let reembolso = null;
-    if (reserva.pasarelaPagoId) {
-      reembolso = await reembolsarCargo({
-        chargeId: reserva.pasarelaPagoId,
-        montoSoles: Number(reserva.montoAdelanto),
-        reason: 'solicitud_comprador',
-        idempotencyKey: `refund-res-${reserva.id}`
-      });
-    }
-
-    const actualizada = await prisma.$transaction(async (tx) => {
-      const llaveAforo = LLAVE_LOCK_AFORO + reserva.idTipoVehiculo;
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${llaveAforo})`;
-
-      const resLock = await tx.reserva.findUnique({ where: { id } });
-      if (!resLock || resLock.estado !== 'VIGENTE') {
+      if (!resLock) {
+        const err = new Error('Reserva no encontrada.');
+        err.statusCode = 404;
+        throw err;
+      }
+      if (resLock.idUsuario !== req.sesion.sub) {
+        const err = new Error('No tiene permiso para anular esta reserva');
+        err.statusCode = 403;
+        throw err;
+      }
+      if (resLock.estado !== 'VIGENTE') {
         const err = new Error('Solo reservas vigentes pueden ser anuladas');
         err.statusCode = 409;
         throw err;
       }
 
-      return tx.reserva.update({
+      const ahora = new Date();
+      if (resLock.fechaLimite < ahora) {
+        await tx.reserva.update({
+          where: { id },
+          data: { estado: 'VENCIDA' }
+        });
+        return { expirada: true };
+      }
+
+      const proveedorActivo = obtenerProveedorActivo();
+      if (resLock.pasarelaPagoId && resLock.pasarelaProveedor && resLock.pasarelaProveedor !== proveedorActivo) {
+        const err = new Error(
+          `Esta reserva fue cobrada con un proveedor previo (${resLock.pasarelaProveedor}) y no puede reembolsarse automáticamente desde ${proveedorActivo}.`
+        );
+        err.statusCode = 409;
+        throw err;
+      }
+
+      let reembolso = null;
+      if (resLock.pasarelaPagoId && !resLock.pasarelaReembolsoId) {
+        reembolso = await reembolsarCargo({
+          chargeId: resLock.pasarelaPagoId,
+          montoSoles: Number(resLock.montoAdelanto),
+          reason: 'solicitud_comprador',
+          idempotencyKey: `refund-res-${resLock.id}`
+        });
+      }
+
+      const actualizada = await tx.reserva.update({
         where: { id },
         data: {
           estado: 'ANULADA',
-          estadoPago: 'REEMBOLSADO',
-          pasarelaReembolsoId: reembolso ? reembolso.id : null,
+          estadoPago: reembolso ? 'REEMBOLSADO' : resLock.estadoPago,
+          pasarelaReembolsoId: reembolso ? reembolso.id : resLock.pasarelaReembolsoId,
           fechaAnulacion: new Date()
         },
         include: { vehiculo: true, tipoVehiculo: true }
       });
-    }, { maxWait: 10000, timeout: 20000 });
+
+      return { expirada: false, actualizada, reembolsado: Boolean(reembolso) };
+    }, { maxWait: 10000, timeout: 30000 });
+
+    if (resultado.expirada) {
+      return res.status(409).json({ error: 'Solo reservas vigentes pueden ser anuladas' });
+    }
 
     return res.json({
-      reserva: formatearReserva(actualizada),
-      mensaje: 'Reserva anulada y reembolso procesado'
+      reserva: formatearReserva(resultado.actualizada),
+      mensaje: resultado.reembolsado
+        ? 'Reserva anulada y reembolso procesado'
+        : 'Reserva anulada correctamente'
     });
   } catch (error) {
     if (error.statusCode) {
@@ -622,6 +638,7 @@ router.post('/:id/confirmar', autorizar('RECEPCIONISTA', 'DUENO'), async (req, r
 
       const llaveAforo = LLAVE_LOCK_AFORO + reservaPrevia.idTipoVehiculo;
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${llaveAforo})`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${LLAVE_LOCK_RESERVA_NS}::int, ${id}::int)`;
 
       const reserva = await tx.reserva.findUnique({
         where: { id },

@@ -2,7 +2,7 @@ function obtenerBaseUrl() {
   return (process.env.CULQI_API_BASE || 'https://api.culqi.com/v2').replace(/\/+$/, '');
 }
 
-async function llamarCulqi(ruta, bodyObj, { secretKey, idempotencyKey }) {
+async function llamarCulqi(ruta, bodyObj, { secretKey, idempotencyKey, errorStatus4xx = 402 }) {
   const headers = {
     Authorization: `Bearer ${secretKey}`,
     'Content-Type': 'application/json'
@@ -44,7 +44,7 @@ async function llamarCulqi(ruta, bodyObj, { secretKey, idempotencyKey }) {
     const msg = (data && (data.user_message || data.merchant_message || data.message))
       || 'Error al procesar la operación en Culqi.';
     const err = new Error(msg);
-    err.statusCode = res.status >= 400 && res.status < 500 ? 402 : 502;
+    err.statusCode = res.status >= 400 && res.status < 500 ? errorStatus4xx : 502;
     throw err;
   }
 
@@ -87,6 +87,12 @@ async function reembolsar({
   idempotencyKey
 }) {
   const amount = Math.round(Number(montoSoles) * 100);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    const err = new Error('El monto a reembolsar en Culqi debe ser mayor a cero.');
+    err.statusCode = 400;
+    throw err;
+  }
+
   const data = await llamarCulqi(
     '/refunds',
     {
@@ -94,8 +100,14 @@ async function reembolsar({
       amount,
       reason
     },
-    { secretKey, idempotencyKey }
+    { secretKey, idempotencyKey, errorStatus4xx: 502 }
   );
+
+  if (!data || !data.id) {
+    const err = new Error('Culqi no devolvió un identificador de reembolso válido.');
+    err.statusCode = 502;
+    throw err;
+  }
 
   return {
     id: data.id,

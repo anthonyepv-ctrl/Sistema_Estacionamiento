@@ -226,7 +226,7 @@
             <div class="card reserva-card" data-id="${r.id}">
               <h4>
                 <span>Reserva #${r.id}</span>
-                <span class="mono" style="font-size:0.85rem;color:var(--text-muted);">${r.codigo}</span>
+                <span class="mono" style="font-size:0.85rem;color:var(--text2);">${r.codigo}</span>
               </h4>
               <p><strong>Placa:</strong> <span class="mono" style="font-weight:700;">${r.placa}</span></p>
               <p><strong>Tipo:</strong> ${r.tipo || 'Automóvil'}</p>
@@ -799,25 +799,62 @@
     btnsConfirmarAnular.forEach((btnConfirmar) => {
       btnConfirmar.addEventListener('click', async () => {
         if (!reservaParaAnular) return;
+        const reservaObjetivo = { ...reservaParaAnular };
         btnConfirmar.classList.add('loading');
         btnConfirmar.disabled = true;
+        btnsCerrarModal.forEach((b) => { b.disabled = true; });
+
+        const refrescarTrasAnulacion = async () => {
+          try {
+            await cargarMisReservas();
+          } catch (_) {}
+          if (window.disponibilidadModulo && typeof window.disponibilidadModulo.recargar === 'function') {
+            window.disponibilidadModulo.recargar();
+          }
+        };
 
         try {
-          // Invoca DELETE /api/reservas/:id según §4 y §7.2 de la especificación
-          const res = await window.pedirApi(`/api/reservas/${reservaParaAnular.id}`, {
-            method: 'DELETE'
-          });
-          cerrarModalAnularReserva();
-          window.mostrarToast(res.mensaje || 'Reserva anulada y reembolso procesado');
-          await cargarMisReservas();
-          if (window.disponibilidadModulo && typeof window.disponibilidadModulo.consultar === 'function') {
-            window.disponibilidadModulo.consultar();
+          let res = null;
+          try {
+            res = await window.pedirApi(`/api/reservas/${reservaObjetivo.id}`, {
+              method: 'DELETE',
+              timeoutMs: 25000
+            });
+          } catch (delErr) {
+            if (delErr && (delErr.esTimeout || delErr.esErrorRed)) {
+              const chequeo = await window.pedirApi('/api/reservas/mias', { timeoutMs: 12000 }).catch(() => null);
+              const encontrada = chequeo && Array.isArray(chequeo.reservas)
+                ? chequeo.reservas.find((r) => Number(r.id) === Number(reservaObjetivo.id))
+                : null;
+              if (encontrada && encontrada.estado === 'ANULADA') {
+                res = {
+                  reserva: encontrada,
+                  mensaje: encontrada.pasarelaReembolsoId
+                    ? 'Reserva anulada y reembolso procesado'
+                    : 'Reserva anulada correctamente'
+                };
+              } else if (encontrada && encontrada.estado !== 'VIGENTE') {
+                cerrarModalAnularReserva();
+                window.mostrarToast(`La reserva ya cambió a estado ${encontrada.estado}.`, true);
+                await refrescarTrasAnulacion();
+                return;
+              } else {
+                throw delErr;
+              }
+            } else {
+              throw delErr;
+            }
           }
+
+          cerrarModalAnularReserva();
+          window.mostrarToast((res && res.mensaje) || 'Reserva anulada y reembolso procesado');
+          await refrescarTrasAnulacion();
         } catch (err) {
           window.mostrarToast(err.message, true);
         } finally {
           btnConfirmar.classList.remove('loading');
           btnConfirmar.disabled = false;
+          btnsCerrarModal.forEach((b) => { b.disabled = false; });
         }
       });
     });

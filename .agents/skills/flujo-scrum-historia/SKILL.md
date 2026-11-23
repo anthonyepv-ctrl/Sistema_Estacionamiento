@@ -24,6 +24,8 @@ Estas reglas bloquean fallos recurrentes detectados en sprints previos. Si algun
 4. **Blue / Green estricto:** Integrar siempre mediante PR hacia `develop` (**Blue / Staging**). Nunca fusionar una rama `feature/*` directamente a `main` (**Green / Producción**).
 5. **Entorno y seguridad:** `.env` local y suites de prueba apuntan siempre a PostgreSQL Neon rama `staging` (nunca producción). Todo endpoint nuevo bajo `/api/*` debe ir detrás de `autenticar` + `autorizar(...)` en `server.js` (salvo `/api/auth/*` y `/api/publico/*`).
 6. **Sin commits/push/PR implícitos:** No ejecutar `git commit`, `git push` ni abrir PR sin confirmación explícita del usuario. Usar commits convencionales con clave Jira (`feat(modulo): ... (UPAO-XX)`) y sin atribución de IA.
+7. **Evidencias Jira en formato limpio y sin ruido:** Toda documentación `.md` que se adjunte a Jira va en **PDF blanco y negro estilo Markdown plano** (sin inventar temas, colores ni contenido ajeno al `.md`). Las capturas de pantalla (`.png`) corresponden **únicamente a la fase de Prototipado / UI**. Al corregir o migrar una Historia, auditar y reemplazar también los adjuntos viejos en Jira; **no agregar comentarios** en Jira salvo pedido explícito.
+8. **Staging intacto y verificación empírica obligatoria:** Ningún test contra Neon `staging` puede ejecutar `deleteMany` destructivo sobre tablas de configuración compartidas (`configuracion_pasarela`, etc.): siempre respaldar el registro previo y restaurarlo en `finally`. No dar por cerrado ningún límite o integración externa (ej. mínimo de Yape en Culqi Checkout v4) sin verificarlo en vivo.
 
 ---
 
@@ -43,7 +45,7 @@ Estas reglas bloquean fallos recurrentes detectados en sprints previos. Si algun
    git pull origin develop
    git checkout -b feature/<CLAVE-HU>-<descripcion-corta>
    ```
-4. **Auditar estado actual en `develop`:** Verificar qué archivos del módulo ya existen para no duplicar ni romper funcionalidad de HUs previas.
+4. **Auditar estado actual en `develop`:** Ejecutar `graphify update .` (ignorado en `.gitignore`) y verificar qué archivos, rutas y tests del módulo ya existen para no duplicar ni romper funcionalidad de HUs previas.
 
 ---
 
@@ -80,6 +82,7 @@ Estas reglas bloquean fallos recurrentes detectados en sprints previos. Si algun
 2. Criterios de calidad UI aprendidos:
    - La acción principal de la vista ocupa la columna protagonista; acciones secundarias a la derecha o en modal limpio.
    - **Cero jerga técnica** en textos orientados al cliente final o dueño (no exponer nombres internos como `Test Mode`, variables de Render, etc.).
+   - **Sin vistas duplicadas:** Nunca mostrar tarjeta y tabla con los mismos registros al mismo tiempo. En listados responsivos usar tabla compacta en una sola línea horizontal en escritorio (`>= 768px`) y tarjetas en móvil (`< 768px`).
    - Verificar vista en escritorio y móvil (sin desbordes ni encabezados que tapen controles).
 3. Documentar capturas y decisiones en `docs/modulos/<modulo>/ui-<CLAVE-HU>.md`.
 4. **Gate de salida Fase 2:**
@@ -97,7 +100,7 @@ Estas reglas bloquean fallos recurrentes detectados en sprints previos. Si algun
    - Proteger rutas con `autenticar` y `autorizar(...)` en `server.js`.
    - Aplicar transacciones/locks en operaciones críticas (aforo, reservas, cobros, reembolsos, anulaciones) para evitar condiciones de carrera o doble cobro.
    - Validar todos los inputs en el backend (nunca confiar solo en el frontend).
-3. Conectar la interfaz en `public/js/` manejando errores HTTP (`400`, `401`, `402`, `403`, `404`, `409`) con mensajes claros en español.
+3. Conectar la interfaz en `public/js/` manejando errores HTTP (`400`, `401`, `402`, `403`, `404`, `409`) con mensajes claros en español, aplicando timeout (`AbortController`) en llamadas críticas y recuperación automática de estado ante cortes de red/proxy (evitando spinners trabados).
 4. **Gate de salida Fase 3:**
    - [ ] Solo toca código requerido por esta HU.
    - [ ] Sin comentarios innecesarios en el código ni secretos hardcodeados.
@@ -137,7 +140,7 @@ Estas reglas bloquean fallos recurrentes detectados en sprints previos. Si algun
 3. Tras el merge a `develop`, verificar el despliegue automático en Render Blue (`cochera-sp-stating`) y comprobar en vivo:
    - Variables de entorno requeridas presentes en Render.
    - Endpoints y flujo principal respondiendo `HTTP 200` contra Neon `staging`.
-4. Documentar en `docs/modulos/<modulo>/evidencia-despliegue-<CLAVE-HU>.md` (o `evidencia-despliegue.md`) con URLs, enlace al PR mergeado, verificación en vivo y tabla de trazabilidad de las 5 subtareas.
+4. Documentar en `docs/modulos/<modulo>/evidencia-despliegue-<CLAVE-HU>.md` (o `evidencia-despliegue.md`) con URLs, enlace al PR mergeado, verificación en vivo y tabla de trazabilidad de las 5 subtareas, y regenerar los PDFs planos en blanco y negro adjuntos en Jira + el Excel de casos de prueba.
 5. **Gate de salida Fase 5:**
    - [ ] PR aprobado y mergeado a `develop`.
    - [ ] Verificación en vivo OK en Blue.

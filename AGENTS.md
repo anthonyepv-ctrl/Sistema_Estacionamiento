@@ -185,8 +185,8 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 | Clave | Historia | Estado | SP | Épica |
 | --- | --- | --- | --- | --- |
-| UPAO-21 | Realizar reserva | En curso | 5 | Manejo de Reserva Web |
-| UPAO-22 | Anular reserva | En curso | 3 | Manejo de Reserva Web |
+| UPAO-21 | Realizar reserva | Listo | 5 | Manejo de Reserva Web |
+| UPAO-22 | Anular reserva | Listo | 3 | Manejo de Reserva Web |
 | UPAO-8 | Buscar reservas | Por hacer | 2 | Manejo de Reserva Web |
 | UPAO-23 | Consultar historial de estados | Por hacer | 2 | Manejo de Reserva Web |
 

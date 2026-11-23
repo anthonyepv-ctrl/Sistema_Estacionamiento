@@ -1878,7 +1878,7 @@ select.input-control {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--text-main);
+  color: var(--text);
 }
 
 .modal-body {
@@ -1887,10 +1887,10 @@ select.input-control {
 
 /* ==========================================================================
    MÓDULO DE RESERVAS Y ANULACIÓN (UPAO-22) - ESTILOS ESPECÍFICOS
-   Basado estrictamente en ANULAR_RESERVA_ANALiSIS_DISEÑO.md (§7 y §12)
+   Basado en docs/modulos/reservas/analisis-UPAO-22.md y ui-UPAO-22.md
    ========================================================================== */
 
-/* Cuadrícula de Tarjetas de Reserva (§7.1) */
+/* Cuadrícula de Tarjetas de Reserva (Móvil < 768px) */
 .reservas-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
@@ -1929,11 +1929,11 @@ select.input-control {
 .card.reserva-card p {
   margin: 4px 0;
   font-size: 0.88rem;
-  color: var(--text-muted);
+  color: var(--text2);
 }
 
 .card.reserva-card p strong {
-  color: var(--text-main);
+  color: var(--text);
 }
 
 .card.reserva-card .reserva-monto-tag {
@@ -1941,7 +1941,7 @@ select.input-control {
   padding-top: 8px;
   border-top: 1px dashed var(--border);
   font-weight: 600;
-  color: var(--text-main);
+  color: var(--text);
   display: flex;
   justify-content: space-between;
   align-items: center;
