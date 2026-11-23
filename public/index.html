@@ -1696,16 +1696,14 @@
       </div>
 
       <div class="page-title-group">
-        <h1>Configuración de Pasarela de Pagos (Culqi Perú)</h1>
-        <p>Gestione las llaves API de su cuenta de Culqi (RUC 10 o RUC 20, tarjetas y Yape) directamente desde la aplicación y guardadas de forma cifrada en base de datos.</p>
+        <h1>Pasarela de Pagos (Culqi)</h1>
       </div>
 
       <div class="tarifas-layout" style="align-items: start;">
         <!-- Columna 1: Estado actual + Formulario -->
         <div class="card card-form">
           <div class="card-header">
-            <h2>1. Credenciales API de Culqi</h2>
-            <p class="caption">Ingrese el par de llaves generado en CulqiPanel (Integración o Producción)</p>
+            <h2>1. Credenciales API</h2>
           </div>
           <div class="accent-bar-sm"></div>
 
@@ -1745,47 +1743,34 @@
           </form>
         </div>
 
-        <!-- Columna 2: Guía paso a paso para el Product Owner / Dueño -->
+        <!-- Columna 2: Guía paso a paso para el Dueño -->
         <div class="card">
           <div class="card-header">
-            <h2>2. Guía Paso a Paso (Culqi Perú · RUC 10)</h2>
-            <p class="caption">Active sus credenciales de Culqi para cobrar con tarjetas peruanas y Yape</p>
+            <h2>2. Guía Paso a Paso</h2>
           </div>
           <div class="accent-bar-sm"></div>
 
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px;">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
               <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 6px;">1. Ingrese a CulqiPanel</div>
-              <p class="caption" style="margin: 0 0 8px 0; color: #334155;">Entre con su cuenta comercial (RUC 10 o RUC 20) y vaya a <strong>Desarrollo → API Keys</strong> (asegúrese de habilitar <strong>Yape</strong> en la configuración del Checkout):</p>
               <a href="https://panel.culqi.com" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #EFF6FF; color: #1E3A8A; border: 1px solid #BFDBFE; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
                 Abrir CulqiPanel ↗
               </a>
             </div>
 
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px;">
-              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 4px;">2. Copie sus dos llaves</div>
-              <p class="caption" style="margin: 0; color: #334155; line-height: 1.5;">
-                Copie la <strong>Llave Pública</strong> (<code class="mono">pk_...</code>) y la <strong>Llave Secreta</strong> (<code class="mono">sk_...</code>). Ambas deben pertenecer al mismo entorno.
-              </p>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 2px;">2. Copie sus llaves</div>
+              <p class="caption" style="margin: 0; color: #334155;">En <strong>Desarrollo → API Keys</strong>, copie la llave pública (<code class="mono">pk_...</code>) y secreta (<code class="mono">sk_...</code>).</p>
             </div>
 
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px;">
-              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 4px;">3. Pegue y guarde de forma persistente</div>
-              <p class="caption" style="margin: 0; color: #334155; line-height: 1.5;">
-                Pegue ambas llaves en el formulario de la izquierda y presione <strong>Guardar y Activar API Keys</strong>. La llave secreta se cifra en PostgreSQL y sobrevive reinicios del servidor.
-              </p>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 2px;">3. Pegue y guarde</div>
+              <p class="caption" style="margin: 0; color: #334155;">Pégue las dos llaves a la izquierda y presione <strong>Guardar y Activar API Keys</strong>.</p>
             </div>
 
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px;">
-              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 8px;">4. Elija el modo de operación</div>
-              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #334155;">
-                <div style="padding: 6px 10px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 6px;">
-                  <strong>Modo Integración (<code class="mono">pk_test_</code> / <code class="mono">sk_test_</code>):</strong> simula reservas y devoluciones en Soles sin cobrar dinero real.
-                </div>
-                <div style="padding: 6px 10px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px;">
-                  <strong>Modo Producción (<code class="mono">pk_live_</code> / <code class="mono">sk_live_</code>):</strong> procesa cobros reales con tarjetas peruanas y Yape hacia su cuenta bancaria.
-                </div>
-              </div>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 13px; font-weight: 700; color: #1E3A8A; margin-bottom: 4px;">4. Modo</div>
+              <p class="caption" style="margin: 0; color: #334155;"><code class="mono">pk_test_</code>: pruebas · <code class="mono">pk_live_</code>: cobros reales.</p>
             </div>
           </div>
         </div>
