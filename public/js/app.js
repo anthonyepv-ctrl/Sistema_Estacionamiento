@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function leerSesionGuardada() {
     try {
-      const crudo = sessionStorage.getItem(CLAVE_SESION);
+      const crudo = localStorage.getItem(CLAVE_SESION);
       if (!crudo) return null;
       const sesion = JSON.parse(crudo);
       return sesion && sesion.token ? sesion : null;
@@ -174,11 +174,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function guardarSesion(sesion) {
     if (!sesion || !sesion.token) return;
-    try { sessionStorage.setItem(CLAVE_SESION, JSON.stringify(sesion)); } catch (error) { /* modo privado */ }
+    try { localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion)); } catch (error) { /* modo privado */ }
   }
 
   function olvidarSesion() {
-    try { sessionStorage.removeItem(CLAVE_SESION); } catch (error) { /* modo privado */ }
+    try { localStorage.removeItem(CLAVE_SESION); } catch (error) { /* modo privado */ }
   }
 
   async function pedirApi(url, opciones = {}) {
