@@ -1363,7 +1363,7 @@
 
             <div style="display: flex; align-items: center; gap: 8px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 12px; color: #334155;">
               <span aria-hidden="true">🔒</span>
-              <span><strong>Pago seguro con Culqi</strong> · Tarjetas y Yape · Devolución el mismo día</span>
+              <span><strong>Pago seguro con Culqi</strong> · Tarjetas (desde S/ 3.00) y Yape (desde S/ 6.00)</span>
             </div>
 
             <button type="button" id="btn-preparar-pago" class="btn btn-primary btn-block">
@@ -1481,13 +1481,8 @@
         </div>
         <div class="accent-bar-sm"></div>
 
-        <!-- Vista de Tarjetas de Reserva (§7.1 Tarjeta de Reserva) -->
-        <div id="contenedor-tarjetas-reservas" class="reservas-cards-grid" style="padding: 16px;">
-          <!-- Inyectado dinámicamente con class="card reserva-card" -->
-        </div>
-
-        <!-- Vista Tabular de Mis Reservas -->
-        <div class="table-container">
+        <!-- Vista Tabular de Mis Reservas (Desktop >= 768px) -->
+        <div class="table-container reservas-vista-desktop">
           <table class="data-table">
             <thead>
               <tr>
@@ -1507,6 +1502,11 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Vista de Tarjetas de Reserva (Móvil < 768px, §7.1 Tarjeta de Reserva) -->
+        <div id="contenedor-tarjetas-reservas" class="reservas-cards-grid reservas-vista-movil" style="padding: 16px;">
+          <!-- Inyectado dinámicamente con class="card reserva-card" -->
         </div>
       </div>
 

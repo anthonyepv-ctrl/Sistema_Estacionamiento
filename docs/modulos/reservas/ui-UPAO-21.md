@@ -26,7 +26,7 @@
 
 ## 3. Modal Limpio de Pago con Culqi Perú (`#modal-pago-reserva`)
 - Se despliega sobre fondo semitransparente (`.modal-backdrop`) al confirmar el resumen del vehículo a reservar.
-- Presenta únicamente información comprensible para el cliente: placa y tipo seleccionado, **Total a pagar ahora (`S/ 0.00`)**, medios habilitados (tarjetas locales/internacionales y Yape desde `S/ 3.00`) y aviso transparente si aplica el mínimo en línea de `S/ 3.00`.
+- Presenta únicamente información comprensible para el cliente: placa y tipo seleccionado, **Total a pagar ahora (`S/ 0.00`)**, medios habilitados (tarjetas locales/internacionales desde `S/ 3.00` y Yape desde `S/ 6.00`) y aviso transparente si aplica el mínimo en línea de `S/ 3.00`.
 - Invoca **Culqi Checkout v4** mediante `public/js/pasarela-adapter.js` (`window.PasarelaPago.iniciarPago`) para tokenización PCI SAQ-A sin que el usuario pueda quedar bloqueado si cierra el modal de Culqi.
 
 ---

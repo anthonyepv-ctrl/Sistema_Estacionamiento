@@ -69,6 +69,7 @@ async function ejecutarPruebasUnitarias() {
       CULQI_API_BASE: mock.url,
       CULQI_PUBLIC_KEY: 'pk_test_mock12345678',
       CULQI_SECRET_KEY: 'sk_test_mock12345678',
+      CULQI_YAPE_MINIMO_SOLES: '',
       PASARELA_ENCRYPTION_KEY: 'test-aes256-secret-key-32-chars!!'
     },
     stdio: 'pipe'
@@ -202,10 +203,10 @@ async function ejecutarPruebasUnitarias() {
       body: JSON.stringify({ idVehiculo: dataVeh.id })
     });
     const prepData = await resPrep.json();
-    if (!resPrep.ok || prepData.montoCentimos !== 300 || prepData.yapeHabilitado !== true) {
+    if (!resPrep.ok || prepData.montoCentimos !== 300 || prepData.yapeHabilitado !== false || Number(prepData.yapeMinimoSoles) !== 6) {
       throw new Error(`Respuesta inesperada en preparar-pago para moto: ${JSON.stringify(prepData)}`);
     }
-    console.log('✅ [UNIT-03] Piso mínimo S/ 3.00 (300 céntimos) aplicado a Motocicleta correctamente.');
+    console.log('✅ [UNIT-03] Piso mínimo S/ 3.00 (300 céntimos) y mínimo real Yape S/ 6.00 verificados.');
 
     // 4. Crear reserva -> verificar mock /v2/charges con Idempotency-Key
     const resCrear = await fetch(`${BASE_URL}/api/reservas`, {

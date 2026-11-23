@@ -41,3 +41,6 @@ docs/modulos/**/evidencias/**/*.webm
 
 # Credenciales Stripe ingresadas por el dueño desde la UI (nunca versionar)
 src/config/stripe-keys.json
+
+# Grafo local generado por graphify
+graphify-out/

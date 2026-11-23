@@ -11,8 +11,8 @@ const {
 const MONTO_MINIMO_RESERVA_SOLES = 3.00;
 
 function obtenerMinimoYapeSoles() {
-  const valor = Number(process.env.CULQI_YAPE_MINIMO_SOLES || 3.00);
-  return Number.isFinite(valor) && valor > 0 ? valor : 3.00;
+  const valor = Number(process.env.CULQI_YAPE_MINIMO_SOLES || 6.00);
+  return Number.isFinite(valor) && valor > 0 ? valor : 6.00;
 }
 
 function calcularMontoAdelanto(precioHora) {

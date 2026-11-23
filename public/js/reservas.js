@@ -671,7 +671,7 @@
           if (modalPagoMetodos) {
             modalPagoMetodos.textContent = preparacionActual.yapeHabilitado
               ? 'Tarjetas de crédito o débito (Visa, Mastercard, Amex, Diners) y Yape.'
-              : `Tarjetas de crédito o débito (Visa, Mastercard, Amex, Diners). Yape habilitado desde ${formatearSoles(preparacionActual.yapeMinimoSoles || 3)}.`;
+              : `Tarjetas de crédito o débito (Visa, Mastercard, Amex, Diners). Yape habilitado desde ${formatearSoles(preparacionActual.yapeMinimoSoles || 6)}.`;
           }
           if (avisoMin) {
             avisoMin.classList.toggle('hidden', !preparacionActual.montoMinimoAplicado);
@@ -707,8 +707,11 @@
         }
 
         const btnConfirmar = document.getElementById('btn-confirmar-pago-reserva');
+        const btnCancelar = document.getElementById('btn-cancelar-checkout');
         const errDiv = document.getElementById('pasarela-pago-errors');
         if (errDiv) errDiv.textContent = '';
+
+        const placaSolicitada = preparacionActual.placa;
 
         try {
           const tokenRes = await window.PasarelaPago.iniciarPago({
@@ -721,6 +724,7 @@
 
           btnConfirmar.classList.add('loading');
           btnConfirmar.disabled = true;
+          if (btnCancelar) btnCancelar.disabled = true;
 
           const selectVehiculo = document.getElementById('reserva-vehiculo-select');
           const idVehiculo = Number(selectVehiculo.value);
@@ -728,19 +732,42 @@
             ? window.crypto.randomUUID()
             : `res-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-          const respuestaReserva = await window.pedirApi('/api/reservas', {
-            method: 'POST',
-            body: JSON.stringify({
-              idVehiculo,
-              sourceToken: tokenRes.sourceToken,
-              email: tokenRes.email || '',
-              idempotencyKey
-            })
-          });
+          let respuestaReserva = null;
+          try {
+            respuestaReserva = await window.pedirApi('/api/reservas', {
+              method: 'POST',
+              timeoutMs: 25000,
+              body: JSON.stringify({
+                idVehiculo,
+                sourceToken: tokenRes.sourceToken,
+                email: tokenRes.email || '',
+                idempotencyKey
+              })
+            });
+          } catch (postErr) {
+            if (postErr && (postErr.esTimeout || postErr.esErrorRed)) {
+              const chequeo = await window.pedirApi('/api/reservas/mias', { timeoutMs: 12000 }).catch(() => null);
+              const yaCreada = chequeo && Array.isArray(chequeo.reservas)
+                ? chequeo.reservas.find((r) => r.estado === 'VIGENTE' && r.placa === placaSolicitada)
+                : null;
+              if (yaCreada) {
+                respuestaReserva = {
+                  reserva: yaCreada,
+                  mensaje: `Reserva ${yaCreada.codigo} confirmada para ${yaCreada.placa}.`
+                };
+              } else {
+                throw postErr;
+              }
+            } else {
+              throw postErr;
+            }
+          }
 
-          window.mostrarToast(respuestaReserva.mensaje || 'Reserva creada exitosamente.');
+          window.mostrarToast((respuestaReserva && respuestaReserva.mensaje) || 'Reserva creada exitosamente.');
           ocultarCheckoutPasarela();
-          await cargarMisReservas();
+          try {
+            await cargarMisReservas();
+          } catch (_) {}
         } catch (err) {
           if (err && err.cancelado) return;
           if (errDiv) errDiv.textContent = err.message;
@@ -748,6 +775,7 @@
         } finally {
           btnConfirmar.classList.remove('loading');
           btnConfirmar.disabled = false;
+          if (btnCancelar) btnCancelar.disabled = false;
         }
       });
     }

@@ -187,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function pedirApi(url, opciones = {}) {
     let respuesta;
+    const { timeoutMs = 25000, ...opcionesFetch } = opciones;
 
     const sesion = leerSesionGuardada();
     const cabeceras = {
@@ -194,13 +195,28 @@ document.addEventListener('DOMContentLoaded', () => {
       ...(sesion && sesion.token ? { Authorization: `Bearer ${sesion.token}` } : {})
     };
 
+    const controlador = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const temporizador = controlador && timeoutMs > 0
+      ? setTimeout(() => controlador.abort(), timeoutMs)
+      : null;
+
     try {
       respuesta = await fetch(url, {
-        ...opciones,
-        headers: { ...cabeceras, ...(opciones.headers || {}) }
+        ...opcionesFetch,
+        headers: { ...cabeceras, ...(opcionesFetch.headers || {}) },
+        ...(controlador && !opcionesFetch.signal ? { signal: controlador.signal } : {})
       });
     } catch (error) {
-      throw new Error('No se pudo conectar con el servidor. Verifica que esté corriendo (npm run dev).');
+      if (error && error.name === 'AbortError') {
+        const timeoutErr = new Error('El servidor tardó demasiado en responder. Verificando el estado de la operación...');
+        timeoutErr.esTimeout = true;
+        throw timeoutErr;
+      }
+      const redErr = new Error('No se pudo conectar con el servidor. Verifica tu conexión o recarga la página.');
+      redErr.esErrorRed = true;
+      throw redErr;
+    } finally {
+      if (temporizador) clearTimeout(temporizador);
     }
 
     // Sesión vencida o token inválido: se limpia y se vuelve al login.

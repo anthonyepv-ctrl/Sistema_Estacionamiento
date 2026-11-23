@@ -11,11 +11,27 @@ async function llamarCulqi(ruta, bodyObj, { secretKey, idempotencyKey }) {
     headers['Idempotency-Key'] = idempotencyKey;
   }
 
-  const res = await fetch(`${obtenerBaseUrl()}${ruta}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(bodyObj)
-  });
+  const controlador = new AbortController();
+  const temporizador = setTimeout(() => controlador.abort(), 20000);
+  let res;
+  try {
+    res = await fetch(`${obtenerBaseUrl()}${ruta}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(bodyObj),
+      signal: controlador.signal
+    });
+  } catch (error) {
+    const err = new Error(
+      error && error.name === 'AbortError'
+        ? 'Tiempo de espera agotado al comunicarse con Culqi. Intente nuevamente.'
+        : 'No se pudo conectar con la pasarela de pagos Culqi.'
+    );
+    err.statusCode = 504;
+    throw err;
+  } finally {
+    clearTimeout(temporizador);
+  }
 
   let data = null;
   try {

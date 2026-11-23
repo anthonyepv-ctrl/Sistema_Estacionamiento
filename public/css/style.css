@@ -1947,13 +1947,37 @@ select.input-control {
   align-items: center;
 }
 
+/* Vista adaptativa de Mis Reservas: tabla en escritorio, tarjetas en móvil (sin duplicar) */
+.reservas-vista-desktop {
+  display: block;
+}
+
+.reservas-vista-movil {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .reservas-vista-desktop {
+    display: none;
+  }
+
+  .reservas-vista-movil {
+    display: grid;
+  }
+}
+
 /* Botón Anular con acción destructiva (§7.1) */
-.btn-anular,
-.btn-anular.btn-danger {
+.reserva-card .btn-anular,
+.reserva-card .btn-anular.btn-danger {
   margin-top: 14px;
   width: 100%;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.data-table .btn-anular {
+  white-space: nowrap;
+  font-weight: 600;
 }
 
 /* Badges de estado de Reserva según diseño (§7.1) */
