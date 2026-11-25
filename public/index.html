@@ -1191,23 +1191,35 @@
       </div>
 
       <div class="page-title-group">
-        <h1>Disponibilidad de Espacios</h1>
+        <h1>Cochera SP — Reservas y Disponibilidad</h1>
+        <p>Reserva tu espacio de estacionamiento en línea y paga tu adelanto de 1 hora de forma segura con tarjeta o Yape.</p>
       </div>
 
       <div class="disponibilidad-grid">
         <!-- Panel 1: Automóviles -->
         <div class="card disponibilidad-card" id="card-disponibilidad-autos">
+          <div class="catalogo-img-wrap">
+            <img src="/img/servicio-auto.svg" alt="Reserva de espacio para automóvil en Cochera SP" class="catalogo-img">
+          </div>
           <div class="card-header">
             <div class="vehiculo-tipo-header">
-              <span class="vehiculo-icono" aria-hidden="true">🚗</span>
               <div>
-                <h2>Automóviles</h2>
-                <p class="caption">Autos y camionetas</p>
+                <h2>Reserva de Espacio — Automóvil</h2>
+                <p class="caption">Autos, SUV y camionetas · Cochera techada y vigilada</p>
               </div>
             </div>
             <span class="badge badge-success mono" id="badge-estado-autos">DISPONIBLE</span>
           </div>
           <div class="accent-bar-sm"></div>
+
+          <div class="catalogo-precio-row">
+            <div>
+              <span class="catalogo-precio mono" id="disp-precio-autos">S/ 6.00</span>
+              <span class="caption">/ hora (adelanto de reserva)</span>
+            </div>
+            <span class="caption mono" id="disp-fraccion-autos">Fracción adicional: S/ 3.00</span>
+          </div>
+          <p class="catalogo-desc">Incluye 30 minutos de vigencia para tu llegada en recepción. El adelanto pagado se descuenta automáticamente al registrar tu salida.</p>
 
           <div class="disponibilidad-info-list">
             <div class="info-row">
@@ -1232,7 +1244,7 @@
 
           <div style="margin-top: 16px;">
             <button type="button" class="btn btn-primary btn-block" id="btn-reservar-auto">
-              Reservar espacio para Auto →
+              Reservar y Pagar Espacio (Auto) →
             </button>
           </div>
 
@@ -1243,17 +1255,28 @@
 
         <!-- Panel 2: Motocicletas -->
         <div class="card disponibilidad-card" id="card-disponibilidad-motos">
+          <div class="catalogo-img-wrap">
+            <img src="/img/servicio-moto.svg" alt="Reserva de espacio para motocicleta en Cochera SP" class="catalogo-img">
+          </div>
           <div class="card-header">
             <div class="vehiculo-tipo-header">
-              <span class="vehiculo-icono" aria-hidden="true">🏍</span>
               <div>
-                <h2>Motocicletas</h2>
-                <p class="caption">Motos lineales y afines</p>
+                <h2>Reserva de Espacio — Motocicleta</h2>
+                <p class="caption">Motos lineales y afines · Zona exclusiva vigilada</p>
               </div>
             </div>
             <span class="badge badge-success mono" id="badge-estado-motos">DISPONIBLE</span>
           </div>
           <div class="accent-bar-sm"></div>
+
+          <div class="catalogo-precio-row">
+            <div>
+              <span class="catalogo-precio mono" id="disp-precio-motos">S/ 3.00</span>
+              <span class="caption">/ hora (adelanto de reserva)</span>
+            </div>
+            <span class="caption mono" id="disp-fraccion-motos">Fracción adicional: S/ 1.50</span>
+          </div>
+          <p class="catalogo-desc">Incluye 30 minutos de vigencia para tu llegada en recepción. El adelanto pagado se descuenta automáticamente al registrar tu salida.</p>
 
           <div class="disponibilidad-info-list">
             <div class="info-row">
@@ -1278,7 +1301,7 @@
 
           <div style="margin-top: 16px;">
             <button type="button" class="btn btn-primary btn-block" id="btn-reservar-moto">
-              Reservar espacio para Moto →
+              Reservar y Pagar Espacio (Moto) →
             </button>
           </div>
 
@@ -1288,9 +1311,60 @@
         </div>
       </div>
 
-      <div class="disponibilidad-aviso-reserva">
-        <span class="aviso-icono" aria-hidden="true">ⓘ</span>
-        <span>Para reservar un espacio en línea debe iniciar sesión como Conductor. La reserva abona 1 hora por adelantado y se mantiene vigente durante 30 minutos para su ingreso en recepción.</span>
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-header">
+          <h2>Flujo de Reserva y Pago en Línea</h2>
+        </div>
+        <div class="accent-bar-sm"></div>
+        <div class="flujo-compra-grid">
+          <div class="flujo-paso">
+            <strong class="mono">1. Selección de espacio</strong>
+            <p class="caption">Elige Auto o Moto según los cupos en tiempo real y haz clic en Reservar y Pagar.</p>
+          </div>
+          <div class="flujo-paso">
+            <strong class="mono">2. Orden y pago con Culqi</strong>
+            <p class="caption">Inicia sesión como conductor, selecciona tu placa y paga el adelanto de 1 hora con Visa, Mastercard o Yape.</p>
+          </div>
+          <div class="flujo-paso">
+            <strong class="mono">3. Ingreso y descuento</strong>
+            <p class="caption">Presenta tu placa o código en recepción dentro de los 30 minutos; el adelanto se descuenta al salir.</p>
+          </div>
+        </div>
+      </div>
+
+      <footer class="public-footer" id="footer-comercio-culqi">
+        <div class="public-footer-grid">
+          <div>
+            <h3>Cochera SP</h3>
+            <p class="caption">Estacionamiento privado y reserva web de espacios.</p>
+            <p class="caption"><strong>RUC:</strong> <span class="mono">10607991664</span></p>
+            <p class="caption"><strong>Dirección:</strong> Av. América Sur 3145, Urb. Monserrate, Trujillo, La Libertad</p>
+          </div>
+          <div>
+            <h4>Contacto y Atención</h4>
+            <p class="caption"><strong>Teléfono / WhatsApp:</strong> <span class="mono">+51 988 940 558</span></p>
+            <p class="caption"><strong>Correo:</strong> alberthflores47@gmail.com</p>
+            <p class="caption"><strong>Medios de pago:</strong> Visa, Mastercard y Yape (procesados por Culqi)</p>
+          </div>
+          <div>
+            <h4>Información Legal</h4>
+            <ul class="footer-legal-links">
+              <li><button type="button" class="link-legal-btn" data-legal="terminos">Términos y Condiciones</button></li>
+              <li><button type="button" class="link-legal-btn" data-legal="privacidad">Política de Privacidad</button></li>
+              <li><button type="button" class="link-legal-btn" data-legal="reembolsos">Política de Anulaciones y Reembolsos</button></li>
+            </ul>
+          </div>
+        </div>
+      </footer>
+
+      <div id="modal-legal-publico" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-legal-titulo">
+        <div class="modal-card" style="max-width: 640px;">
+          <div class="modal-header">
+            <h3 id="modal-legal-titulo">Información Legal</h3>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cerrar-modal-legal">Cerrar</button>
+          </div>
+          <div id="modal-legal-contenido" class="modal-body-legal"></div>
+        </div>
       </div>
     </section>
 

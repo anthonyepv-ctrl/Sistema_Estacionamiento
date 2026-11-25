@@ -12,7 +12,7 @@ const router = express.Router();
 async function obtenerEstadiasActivasPorTipo() {
   await expirarReservasVencidas();
 
-  const [tipos, agrupado, reservasAgrupadas] = await Promise.all([
+  const [tipos, agrupado, reservasAgrupadas, tarifas] = await Promise.all([
     prisma.tipoVehiculo.findMany({ select: { id: true, nombre: true } }),
     prisma.estadia.groupBy({
       by: ['idTipoVehiculo'],
@@ -23,12 +23,20 @@ async function obtenerEstadiasActivasPorTipo() {
       by: ['idTipoVehiculo'],
       where: { estado: 'VIGENTE' },
       _count: { _all: true }
+    }),
+    prisma.tarifa.findMany({
+      where: { estado: true },
+      select: { idTipoVehiculo: true, precioHora: true, precioFraccion: true }
     })
   ]);
 
   const idPorNombre = new Map(tipos.map((tipo) => [tipo.nombre, tipo.id]));
   const conteoPorId = new Map(agrupado.map((fila) => [fila.idTipoVehiculo, fila._count._all]));
   const reservasPorId = new Map(reservasAgrupadas.map((fila) => [fila.idTipoVehiculo, fila._count._all]));
+  const tarifaPorId = new Map(tarifas.map((t) => [t.idTipoVehiculo, {
+    precioHora: Number(t.precioHora),
+    precioFraccion: Number(t.precioFraccion)
+  }]));
 
   const idAutos = idPorNombre.get('Automóvil / Camioneta');
   const idMotos = idPorNombre.get('Motocicleta');
@@ -45,7 +53,9 @@ async function obtenerEstadiasActivasPorTipo() {
     ocupadosMotos,
     otrosEnCochera,
     reservasVigentesAutos,
-    reservasVigentesMotos
+    reservasVigentesMotos,
+    tarifaAutos: tarifaPorId.get(idAutos) || { precioHora: 6, precioFraccion: 3 },
+    tarifaMotos: tarifaPorId.get(idMotos) || { precioHora: 3, precioFraccion: 1.5 }
   };
 }
 
@@ -69,7 +79,9 @@ router.get('/disponibilidad', async (req, res) => {
       ocupadosMotos,
       otrosEnCochera,
       reservasVigentesAutos,
-      reservasVigentesMotos
+      reservasVigentesMotos,
+      tarifaAutos,
+      tarifaMotos
     } = await obtenerEstadiasActivasPorTipo();
 
     const disponiblesAutos = calcularDisponibles(capacidad.capacidadAutos, ocupadosAutos, reservasVigentesAutos);
@@ -95,13 +107,17 @@ router.get('/disponibilidad', async (req, res) => {
         capacidad: capacidad.capacidadAutos,
         enCochera: ocupadosAutos,
         reservasVigentes: reservasVigentesAutos,
-        disponibles: disponiblesAutos
+        disponibles: disponiblesAutos,
+        precioHora: tarifaAutos.precioHora,
+        precioFraccion: tarifaAutos.precioFraccion
       },
       motos: {
         capacidad: capacidad.capacidadMotos,
         enCochera: ocupadosMotos,
         reservasVigentes: reservasVigentesMotos,
-        disponibles: disponiblesMotos
+        disponibles: disponiblesMotos,
+        precioHora: tarifaMotos.precioHora,
+        precioFraccion: tarifaMotos.precioFraccion
       },
       total: {
         capacidad: totalCapacidad,
