@@ -4,7 +4,8 @@ const path = require('path');
 const SUITES = [
   { nombre: 'Culqi Unitaria & Cifrado AES-256-GCM', archivo: 'tests/test-pasarela-culqi-unit.js', env: {} },
   { nombre: 'UPAO-22 Anulación, Concurrencia y Reembolso', archivo: 'tests/test-upao22-anulacion.js', env: {} },
-  { nombre: 'UPAO-8 Búsqueda en Garita, Confirmación y Descuento', archivo: 'tests/test-upao8-garita.js', env: {} },
+  { nombre: 'UPAO-8 Búsqueda en Recepción, Confirmación y Descuento', archivo: 'tests/test-upao8-garita.js', env: {} },
+  { nombre: 'UPAO-23 Historial de Estadías del Conductor', archivo: 'tests/test-upao23-historial.js', env: {} },
   { nombre: 'Sprint 3 Integral (Mock Pasarela)', archivo: 'tests/test-reservas-sprint3.js', env: { CULQI_MOCK: '1' } },
   { nombre: 'Seguridad / Ataque Bot (Rate Limit, 413, XSS/SQLi, IDOR)', archivo: 'tests/test-ataque-bot.js', env: {} },
   { nombre: 'Seguridad de API (RBAC / Sesiones)', archivo: 'tests/test-seguridad-api.js', env: {} },
@@ -12,7 +13,7 @@ const SUITES = [
 ];
 
 console.log('========================================================================');
-console.log(' EJECUCIÓN AUTOMATIZADA EN 1 CLIC — SISTEMA DE GESTIÓN DE COCHERA (UPAO)');
+console.log(' EJECUCIÓN AUTOMATIZADA DE PRUEBAS — SISTEMA DE GESTIÓN DE COCHERA');
 console.log('========================================================================\n');
 
 const resultados = [];

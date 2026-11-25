@@ -20,6 +20,7 @@
     "test:culqi": "node tests/test-pasarela-culqi-unit.js",
     "test:upao22": "node tests/test-upao22-anulacion.js",
     "test:upao8": "node tests/test-upao8-garita.js",
+    "test:upao23": "node tests/test-upao23-historial.js",
     "test:ataque": "node tests/test-ataque-bot.js",
     "test:e2e": "node tests/e2e-ingreso.js",
     "test:graficos": "node tests/e2e-graficos-estadisticos.js",

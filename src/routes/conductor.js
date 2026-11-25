@@ -133,6 +133,7 @@ router.delete('/vehiculos/:id', async (req, res) => {
 router.get('/historial', async (req, res) => {
   try {
     const placaFiltro = req.query.placa ? String(req.query.placa).trim().toUpperCase() : null;
+    const estadoFiltro = req.query.estado ? String(req.query.estado).trim().toUpperCase() : null;
 
     const vehiculos = await prisma.vehiculoConductor.findMany({
       where: { idUsuario: req.sesion.sub },
@@ -152,8 +153,15 @@ router.get('/historial', async (req, res) => {
       return res.json({ estadias: [] });
     }
 
+    const where = { placa: { in: placasBuscadas } };
+    if (estadoFiltro === 'EN_COCHERA' || estadoFiltro === 'ACTIVA') {
+      where.horaSalida = null;
+    } else if (estadoFiltro === 'FINALIZADA') {
+      where.horaSalida = { not: null };
+    }
+
     const estadias = await prisma.estadia.findMany({
-      where: { placa: { in: placasBuscadas } },
+      where,
       include: {
         tipoVehiculo: { select: { nombre: true } },
         pago: { include: { metodoPago: { select: { nombre: true } } } },

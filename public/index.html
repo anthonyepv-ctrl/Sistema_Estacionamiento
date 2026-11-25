@@ -1614,18 +1614,23 @@
 
       <div class="page-title-group">
         <h1>Mi Historial de Estadías</h1>
-        <p>Consulte las fechas y horas de ingreso y salida de sus vehículos, el estado actual y los montos pagados.</p>
       </div>
 
       <div class="card card-table">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
             <h2>Estadías Registradas</h2>
-            <p class="caption">Ordenadas desde la más reciente hasta la más antigua</p>
           </div>
-          <button type="button" id="btn-refrescar-historial-conductor" class="btn btn-secondary btn-sm">
-            ↻ Actualizar
-          </button>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <select id="select-estado-historial-conductor" class="input-control" style="width: auto; min-width: 150px; padding: 7px 12px;" aria-label="Filtrar historial por estado">
+              <option value="TODOS">Todos los estados</option>
+              <option value="EN_COCHERA">En cochera</option>
+              <option value="FINALIZADA">Finalizadas</option>
+            </select>
+            <button type="button" id="btn-refrescar-historial-conductor" class="btn btn-secondary btn-sm">
+              ↻ Actualizar
+            </button>
+          </div>
         </div>
         <div class="accent-bar-sm"></div>
 

@@ -1,39 +1,32 @@
-# Plan de Pruebas y Depuración — Historial de Estadías del Conductor (`UPAO-23` / Subtarea `UPAO-97`)
+# Plan de Pruebas y Depuración — Historial de Estadías del Conductor
 
-> **Historia de Usuario:** `UPAO-23` — Consultar historial de estados (2 Story Points)  
-> **Subtarea Jira:** `UPAO-97` — Probar y depurar historial de estadías y aislamiento entre conductores  
-> **Matriz complementaria:** [`docs/modulos/reservas/Casos_de_Prueba_Sprint3.xlsx`](Casos_de_Prueba_Sprint3.xlsx)
+## 1. Alineación y Evaluación de Casos de Prueba
 
----
-
-## 1. Evaluación de Casos de Prueba Diseñados en Análisis (`UPAO-23`)
-
-| ID | Caso de Prueba | Resultado Obtenido | Estado |
+| Código | Caso de Prueba | Resultado Obtenido | Estado |
 | --- | --- | --- | --- |
-| **CP-23-01** | 1- Válido: Historial cronológico de reservas y estadías del conductor | `SP3-10` y UI (`capturar_ui.js`) verificados: `GET /api/conductor/historial` devuelve las estadías de las placas del conductor con estado `Finalizada` / `En cochera` ordenadas descendentemente. | ✅ Aprobado |
-| **CP-23-02** | 2- Válido: Conductor recién registrado sin movimientos | `SP3-15` verificado: un segundo conductor recién registrado recibe `estadias: []` y `reservas: []` sin filtraciones ni errores. | ✅ Aprobado |
-| **CP-23-03** | 3- Inválido: Consulta sin sesión o intento de ver historial ajeno | `SP3-11` y `SP3-15` verificados: sin token retorna HTTP `401 Unauthorized` y el conductor B no visualiza movimientos del conductor A. | ✅ Aprobado |
+| CP-23-01 | Historial cronológico de estadías activas y finalizadas | El servicio devolvió ambas estadías ordenadas descendentemente, mostrando el estado En cochera con su código de reserva y adelanto, y la estadía Finalizada con su pago en salida. | Aprobado |
+| CP-23-02 | Conductor recién registrado sin movimientos | El servicio devolvió una lista vacía sin errores y la tabla mostró el mensaje de estado vacío sin filtraciones. | Aprobado |
+| CP-23-03 | Filtro por estado en historial del conductor | Al seleccionar En cochera o Finalizadas, la vista y el endpoint filtraron correctamente las filas mostradas. | Aprobado |
+| CP-23-04 | Rechazo sin sesión o acceso de rol no autorizado | Las solicitudes sin sesión fueron rechazadas con estado 401 y los intentos con rol Recepcionista o Dueño recibieron rechazo 403. | Aprobado |
+| CP-23-05 | Aislamiento estricto entre conductores | Al consultar el historial del Conductor B, no se incluyó ningún vehículo ni estadía perteneciente al Conductor A. | Aprobado |
 
----
+## 2. Suites Automatizadas Ejecutadas
 
-## 2. Comandos de Ejecución
+| Suite | Cobertura | Resultado |
+| --- | --- | --- |
+| Suite de historial del conductor | Historial cronológico, estado vacío, filtros, aislamiento y RBAC | 5/5 aprobado |
+| Pruebas visuales E2E de historial | Tabla en una sola línea sin desborde y filtros de estado | 3/3 aprobado |
+| Batería completa del sistema | Culqi unitaria, UPAO-22, UPAO-8, UPAO-23, Sprint 3, Bot/Atacante, RBAC y No Regresión | 8/8 aprobado |
 
-```bash
-node tests/test-reservas-sprint3.js
-```
+## 3. Registro de Defectos
 
----
-
-## 3. Defect Log (`UPAO-23`)
-
-| ID Defecto | Descripción | Causa Raíz | Solución Aplicada | Estado |
+| Código | Defecto Detectado | Causa Raíz | Solución Aplicada | Estado |
 | --- | --- | --- | --- | --- |
-| *(Sin defectos abiertos)* | No se registraron defectos; el aislamiento estricto por `req.sesion.sub` y rechazo `401` pasaron todas las verificaciones. | — | — | Cerrado |
+| DEF-23-01 | Falta de filtro de estado y escape HTML en filas del historial del conductor | La tabla renderizaba campos directos en HTML y no contaba con selector por estado | Se agregó filtro por estado en backend y frontend, formato compacto en una línea y saneamiento HTML | Cerrado |
 
----
+## 4. Respaldo en GitHub
 
-## 4. Trazabilidad en GitHub (Rama `feature/UPAO-21-realizar-reserva`)
-
-- **Backend Historial Seguro (`UPAO-96`):** [`src/routes/conductor.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/src/routes/conductor.js)
-- **UI Portal Historial y Sidebar (`UPAO-95`):** [`public/js/reservas.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/public/js/reservas.js) · [`public/js/app.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/public/js/app.js)
-- **Casos automatizados `SP3-10/11/15` (`UPAO-97`):** [`tests/test-reservas-sprint3.js`](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/feature/UPAO-21-realizar-reserva/tests/test-reservas-sprint3.js)
+- Suite de pruebas del historial: [tests/test-upao23-historial.js](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/tests/test-upao23-historial.js)
+- Pruebas visuales E2E del historial: [tests/test-upao23-historial-e2e.js](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/tests/test-upao23-historial-e2e.js)
+- Orquestador de pruebas automatizadas: [scripts/run-all-tests.js](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/blob/develop/scripts/run-all-tests.js)
+- Historial de ejecuciones automáticas (CI): [GitHub Actions](https://github.com/anthonyepv-ctrl/Sistema_Estacionamiento/actions)

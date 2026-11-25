@@ -1967,12 +1967,15 @@ select.input-control {
   font-size: 12px;
 }
 
-#view-garita-reservas .data-table {
+#view-garita-reservas .data-table,
+#view-conductor-historial .data-table {
   font-size: 12px;
 }
 
 #view-garita-reservas .data-table th,
-#view-garita-reservas .data-table td {
+#view-garita-reservas .data-table td,
+#view-conductor-historial .data-table th,
+#view-conductor-historial .data-table td {
   padding: 9px 7px;
   white-space: nowrap;
 }

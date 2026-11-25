@@ -193,7 +193,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | UPAO-21 | Realizar reserva | Listo | 5 | Manejo de Reserva Web |
 | UPAO-22 | Anular reserva | Listo | 3 | Manejo de Reserva Web |
 | UPAO-8 | Buscar reservas | Listo | 2 | Manejo de Reserva Web |
-| UPAO-23 | Consultar historial de estados | Por hacer | 2 | Manejo de Reserva Web |
+| UPAO-23 | Consultar historial de estados | Listo | 2 | Manejo de Reserva Web |
 
 > **Estrategia Blue / Green:** La rama `develop` despliega en el ambiente **Blue (Staging)** para pruebas continuas; la rama `main` despliega en el ambiente **Green (Producción)** solo al validar cada historia (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
 

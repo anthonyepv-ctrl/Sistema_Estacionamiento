@@ -368,29 +368,51 @@
 
   async function cargarHistorialConductor() {
     const tbody = document.getElementById('tbody-historial-conductor');
+    const selectEstado = document.getElementById('select-estado-historial-conductor');
     if (!tbody) return;
 
+    const estado = selectEstado ? selectEstado.value : 'TODOS';
+    const params = new URLSearchParams();
+    if (estado && estado !== 'TODOS') params.set('estado', estado);
+    const qs = params.toString();
+
     try {
-      const data = await window.pedirApi('/api/conductor/historial');
+      const data = await window.pedirApi(`/api/conductor/historial${qs ? `?${qs}` : ''}`);
       const estadias = data.estadias || [];
 
       if (estadias.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="caption" style="text-align:center;">Aún no registra estadías con sus vehículos.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="caption" style="text-align:center;">Aún no registra estadías con ese criterio.</td></tr>';
         return;
       }
+
+      const formatearCorta = (iso) => {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        return `${dd}/${mm} ${hh}:${mi}`;
+      };
 
       tbody.innerHTML = estadias.map((e) => {
         const badge = e.estado === 'En cochera'
           ? '<span class="badge badge-success mono">EN COCHERA</span>'
           : '<span class="badge mono" style="background:#E2E8F0;color:#334155;">FINALIZADA</span>';
+        const placaEsc = escaparHtml(e.placa);
+        const tipoTexto = e.tipo && e.tipo.toLowerCase().includes('moto')
+          ? 'Moto'
+          : (e.tipo && e.tipo.toLowerCase().includes('auto') ? 'Auto' : (e.tipo || '—'));
+        const tipoEsc = escaparHtml(tipoTexto);
+        const codigoEsc = e.codigoReserva ? escaparHtml(e.codigoReserva) : '—';
 
         return `
           <tr>
-            <td class="mono" style="font-weight:700;">${e.placa}</td>
-            <td>${e.tipo}</td>
-            <td class="mono">${formatearFechaHora(e.horaIngreso)}</td>
-            <td class="mono">${e.horaSalida ? formatearFechaHora(e.horaSalida) : 'En cochera'}</td>
-            <td class="mono">${e.codigoReserva || '—'}</td>
+            <td class="mono" style="font-weight:700;">${placaEsc}</td>
+            <td>${tipoEsc}</td>
+            <td class="mono">${formatearCorta(e.horaIngreso)}</td>
+            <td class="mono">${e.horaSalida ? formatearCorta(e.horaSalida) : 'En cochera'}</td>
+            <td class="mono">${codigoEsc}</td>
             <td class="text-right mono">${e.montoAdelanto > 0 ? formatearSoles(e.montoAdelanto) : 'S/ 0.00'}</td>
             <td class="text-right mono">${e.montoPagado !== null ? formatearSoles(e.montoPagado) : 'Pendiente'}</td>
             <td>${badge}</td>
@@ -398,7 +420,7 @@
         `;
       }).join('');
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="8" class="caption" style="text-align:center;color:#EF4444;">${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="caption" style="text-align:center;color:#EF4444;">${escaparHtml(err.message)}</td></tr>`;
     }
   }
 
@@ -979,6 +1001,11 @@
     const btnRefrescarHistorial = document.getElementById('btn-refrescar-historial-conductor');
     if (btnRefrescarHistorial) {
       btnRefrescarHistorial.addEventListener('click', cargarHistorialConductor);
+    }
+
+    const selectEstadoHistorial = document.getElementById('select-estado-historial-conductor');
+    if (selectEstadoHistorial) {
+      selectEstadoHistorial.addEventListener('change', cargarHistorialConductor);
     }
 
     const formBuscarGarita = document.getElementById('form-buscar-reservas-garita');
