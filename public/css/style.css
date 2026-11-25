@@ -1968,13 +1968,19 @@ select.input-control {
 }
 
 #view-garita-reservas .data-table {
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 #view-garita-reservas .data-table th,
 #view-garita-reservas .data-table td {
-  padding: 10px 8px;
+  padding: 9px 7px;
   white-space: nowrap;
+}
+
+#view-garita-reservas .data-table .celda-conductor {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .reservas-vista-movil {

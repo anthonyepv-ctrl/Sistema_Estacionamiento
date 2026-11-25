@@ -576,7 +576,6 @@
 
       <div class="page-title-group">
         <h1>Registrar Ingreso</h1>
-        <p>Registro rápido de vehículos por placa y tipo</p>
       </div>
 
       <div class="ingreso-layout">
@@ -585,7 +584,6 @@
         <div class="card card-form">
           <div class="card-header">
             <h2>Nuevo Ingreso</h2>
-            <p class="caption">Ingrese la placa; el sistema infiere el tipo de vehículo</p>
           </div>
           <div class="accent-bar-sm"></div>
 
@@ -599,22 +597,18 @@
                 type="text"
                 id="input-placa"
                 class="input-control mono input-placa"
-                placeholder="ABC-123"
+                placeholder="ABC-123 / 1234-AB"
                 autocomplete="off"
                 maxlength="8"
                 required
               >
               <div class="input-feedback"></div>
-              <span class="caption">Formato peruano: ABC-123 (auto) o 1234-AB (moto)</span>
-              <div id="aviso-reserva-ingreso" class="hidden" style="margin-top: 10px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 12px 14px;">
+              <div id="aviso-reserva-ingreso" class="hidden" style="margin-top: 10px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 10px 14px;">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                   <span class="badge mono" style="background:#F59E0B;color:#fff;">RESERVADO</span>
                   <strong class="mono" id="aviso-reserva-codigo">RES-000000</strong>
                 </div>
-                <p class="caption" style="margin-top: 6px; color: #92400E;" id="aviso-reserva-detalle"></p>
-                <button type="button" id="btn-confirmar-reserva-ingreso" class="btn btn-primary btn-sm" style="margin-top: 8px;">
-                  Confirmar ingreso con reserva
-                </button>
+                <p class="caption" style="margin-top: 4px; color: #92400E;" id="aviso-reserva-detalle"></p>
               </div>
             </div>
 
@@ -627,13 +621,12 @@
                 <option value="auto">Automóvil</option>
                 <option value="moto">Motocicleta</option>
               </select>
-              <span class="caption">Se preselecciona automáticamente según la placa (editable)</span>
             </div>
 
             <!-- Notas / Observaciones del Vehículo (UPAO-9) -->
             <div class="form-group">
               <label for="input-nota-ingreso" class="form-label">
-                <span>Notas / Observaciones del vehículo</span>
+                <span>Notas / Observaciones</span>
                 <span class="caption-opcional">(Opcional)</span>
               </label>
               <textarea
@@ -641,10 +634,9 @@
                 class="input-control textarea-nota"
                 rows="2"
                 maxlength="250"
-                placeholder="Ej. Rayón en puerta derecha, abolladuras, estado físico (opcional)..."
+                placeholder="Rayón, abolladura, estado físico..."
               ></textarea>
-              <div class="nota-footer">
-                <span class="caption">Observaciones físicas del estado del vehículo</span>
+              <div class="nota-footer" style="justify-content: flex-end;">
                 <span id="contador-nota" class="contador-nota mono">0/250</span>
               </div>
             </div>
@@ -1298,7 +1290,7 @@
 
       <div class="disponibilidad-aviso-reserva">
         <span class="aviso-icono" aria-hidden="true">ⓘ</span>
-        <span>Para reservar un espacio en línea debe iniciar sesión como Conductor. La reserva abona 1 hora por adelantado y se mantiene vigente durante 30 minutos para su ingreso en garita.</span>
+        <span>Para reservar un espacio en línea debe iniciar sesión como Conductor. La reserva abona 1 hora por adelantado y se mantiene vigente durante 30 minutos para su ingreso en recepción.</span>
       </div>
     </section>
 
@@ -1598,17 +1590,16 @@
       </div>
 
       <div class="page-title-group">
-        <h1>Buscar Reservas en Garita</h1>
-        <p>Consulte reservas por código (ej. RES-0001), placa (ej. ABC-123), DNI o nombre del conductor y confirme el ingreso dentro de la vigencia de 30 minutos.</p>
+        <h1>Buscar Reservas</h1>
       </div>
 
       <div class="card" style="margin-bottom: 24px;">
         <form id="form-buscar-reservas-garita" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;" novalidate>
           <div class="form-group" style="flex: 2; min-width: 240px; margin-bottom: 0;">
             <label for="input-buscar-reserva-garita" class="form-label">
-              <span>Código, Placa, DNI o Nombre del Conductor</span>
+              <span>Código, Placa, DNI o Nombre</span>
             </label>
-            <input type="text" id="input-buscar-reserva-garita" class="input-control mono" placeholder="Ej. RES-0001, ABC-123, 71234567 o Juan">
+            <input type="text" id="input-buscar-reserva-garita" class="input-control mono" placeholder="RES-0001, ABC-123, DNI o nombre">
           </div>
 
           <div class="form-group" style="flex: 1; min-width: 160px; margin-bottom: 0;">
@@ -1616,9 +1607,9 @@
               <span>Estado</span>
             </label>
             <select id="select-estado-reserva-garita" class="input-control">
-              <option value="TODOS">Todos los estados</option>
+              <option value="TODOS">Todos</option>
               <option value="VIGENTE">Vigentes</option>
-              <option value="UTILIZADA">Utilizadas (En cochera)</option>
+              <option value="UTILIZADA">Utilizadas</option>
               <option value="VENCIDA">Vencidas</option>
               <option value="ANULADA">Anuladas</option>
             </select>
@@ -1626,7 +1617,7 @@
 
           <div style="display: flex; gap: 8px;">
             <button type="submit" id="btn-buscar-reservas-garita" class="btn btn-primary">
-              Buscar Reserva
+              Buscar
             </button>
             <button type="button" id="btn-limpiar-busqueda-garita" class="btn btn-secondary">
               Limpiar
@@ -1637,8 +1628,8 @@
 
       <div class="card card-table">
         <div class="card-header">
-          <h2>Resultados de Búsqueda</h2>
-          <p class="caption" id="caption-resultados-garita">Mostrando las reservas registradas</p>
+          <h2>Resultados</h2>
+          <p class="caption" id="caption-resultados-garita"></p>
         </div>
         <div class="accent-bar-sm"></div>
 
@@ -1654,12 +1645,12 @@
                 <th>Vence</th>
                 <th class="text-right">Adelanto</th>
                 <th>Estado</th>
-                <th class="text-right">Acción en Garita</th>
+                <th class="text-right">Acción</th>
               </tr>
             </thead>
             <tbody id="tbody-garita-reservas">
               <tr>
-                <td colspan="9" class="caption" style="text-align: center;">Realice una búsqueda para ver las reservas.</td>
+                <td colspan="9" class="caption" style="text-align: center;">Cargando reservas...</td>
               </tr>
             </tbody>
           </table>

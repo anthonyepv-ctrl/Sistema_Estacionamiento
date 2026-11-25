@@ -422,14 +422,24 @@
 
       if (caption) {
         caption.textContent = reservas.length === 0
-          ? 'No se encontraron reservas con el criterio ingresado.'
-          : `Mostrando ${reservas.length} reserva(s) encontrada(s)`;
+          ? 'Sin resultados'
+          : `${reservas.length} reserva(s)`;
       }
 
       if (reservas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="caption" style="text-align:center;">No se encontraron reservas para el criterio ingresado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="caption" style="text-align:center;">No se encontraron reservas.</td></tr>';
         return;
       }
+
+      const formatearCorta = (iso) => {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        return `${dd}/${mm} ${hh}:${mi}`;
+      };
 
       tbody.innerHTML = reservas.map((r) => {
         const puedeConfirmar = r.estado === 'VIGENTE';
@@ -437,15 +447,18 @@
         const dniCond = escaparHtml(r.conductor && r.conductor.dni ? r.conductor.dni : '—');
         const codigoEsc = escaparHtml(r.codigo);
         const placaEsc = escaparHtml(r.placa);
-        const tipoEsc = escaparHtml(r.tipo);
+        const tipoTexto = r.tipo && r.tipo.toLowerCase().includes('moto')
+          ? 'Moto'
+          : (r.tipo && r.tipo.toLowerCase().includes('auto') ? 'Auto' : (r.tipo || '—'));
+        const tipoEsc = escaparHtml(tipoTexto);
         return `
           <tr>
             <td class="mono" style="font-weight:700;">${codigoEsc}</td>
             <td class="mono" style="font-weight:700;">${placaEsc}</td>
             <td>${tipoEsc}</td>
-            <td>${nombreCond} <span class="caption mono">(${dniCond})</span></td>
-            <td class="mono">${formatearFechaHora(r.fechaReserva)}</td>
-            <td class="mono">${formatearFechaHora(r.fechaLimite)}</td>
+            <td class="celda-conductor" title="${nombreCond} (${dniCond})">${nombreCond} <span class="caption mono">(${dniCond})</span></td>
+            <td class="mono">${formatearCorta(r.fechaReserva)}</td>
+            <td class="mono">${formatearCorta(r.fechaLimite)}</td>
             <td class="text-right mono">${formatearSoles(r.montoAdelanto)}</td>
             <td>${badgeEstadoReserva(r.estado)}</td>
             <td class="text-right">
@@ -454,7 +467,7 @@
                   data-id="${Number(r.id)}"
                   data-codigo="${codigoEsc}"
                   data-placa="${placaEsc}">
-                  Confirmar Ingreso
+                  Confirmar
                 </button>
               ` : '<span class="caption">—</span>'}
             </td>
@@ -871,20 +884,35 @@
       });
     });
 
-    // 9. Aviso "RESERVADO" en el flujo normal de ingreso (UPAO-8)
+    // 9. Aviso "RESERVADO" y botón unificado en el flujo normal de ingreso (UPAO-8)
     const inputPlacaIngreso = document.getElementById('input-placa');
     const avisoReserva = document.getElementById('aviso-reserva-ingreso');
-    const btnConfirmarReservaIngreso = document.getElementById('btn-confirmar-reserva-ingreso');
-    const btnSubmitIngresoNormal = document.querySelector('#form-registrar-ingreso button[type="submit"]');
+    const btnSubmitIngresoNormal = document.getElementById('btn-registrar-ingreso')
+      || document.querySelector('#form-registrar-ingreso button[type="submit"]');
     let reservaDetectada = null;
     let temporizadorAviso = null;
     let ultimaPlacaConsultada = '';
+
+    function aplicarModoBotonIngreso(conReserva) {
+      if (!btnSubmitIngresoNormal) return;
+      if (conReserva) {
+        btnSubmitIngresoNormal.classList.remove('btn-success');
+        btnSubmitIngresoNormal.classList.add('btn-primary');
+        btnSubmitIngresoNormal.textContent = 'Confirmar ingreso con reserva';
+        btnSubmitIngresoNormal.disabled = false;
+      } else {
+        btnSubmitIngresoNormal.classList.remove('btn-primary');
+        btnSubmitIngresoNormal.classList.add('btn-success');
+        btnSubmitIngresoNormal.textContent = 'Registrar Ingreso';
+        btnSubmitIngresoNormal.disabled = false;
+      }
+    }
 
     function ocultarAvisoReserva() {
       reservaDetectada = null;
       ultimaPlacaConsultada = '';
       if (avisoReserva) avisoReserva.classList.add('hidden');
-      if (btnSubmitIngresoNormal) btnSubmitIngresoNormal.disabled = false;
+      aplicarModoBotonIngreso(false);
     }
 
     async function consultarReservaPorPlaca() {
@@ -904,26 +932,32 @@
         if (!data.reserva) {
           reservaDetectada = null;
           avisoReserva.classList.add('hidden');
-          if (btnSubmitIngresoNormal) btnSubmitIngresoNormal.disabled = false;
+          aplicarModoBotonIngreso(false);
           return;
         }
         reservaDetectada = data.reserva;
         document.getElementById('aviso-reserva-codigo').textContent = data.reserva.codigo;
         const conductor = data.reserva.conductor ? data.reserva.conductor.nombre : '—';
         document.getElementById('aviso-reserva-detalle').textContent =
-          `Conductor: ${conductor} · Adelanto pagado: ${formatearSoles(data.reserva.montoAdelanto)} · Vence: ${formatearFechaHora(data.reserva.fechaLimite)}`;
+          `${conductor} · Adelanto: ${formatearSoles(data.reserva.montoAdelanto)} · Vence: ${formatearFechaHora(data.reserva.fechaLimite)}`;
         avisoReserva.classList.remove('hidden');
-        if (btnSubmitIngresoNormal) btnSubmitIngresoNormal.disabled = true;
+        aplicarModoBotonIngreso(true);
       } catch (err) {
+        reservaDetectada = null;
         avisoReserva.classList.add('hidden');
-        if (btnSubmitIngresoNormal) btnSubmitIngresoNormal.disabled = false;
+        aplicarModoBotonIngreso(false);
       }
     }
 
     if (inputPlacaIngreso) {
       inputPlacaIngreso.addEventListener('input', () => {
+        if (reservaDetectada && inputPlacaIngreso.value.trim() !== ultimaPlacaConsultada) {
+          reservaDetectada = null;
+          if (avisoReserva) avisoReserva.classList.add('hidden');
+          aplicarModoBotonIngreso(false);
+        }
         clearTimeout(temporizadorAviso);
-        temporizadorAviso = setTimeout(consultarReservaPorPlaca, 350);
+        temporizadorAviso = setTimeout(consultarReservaPorPlaca, 300);
       });
       inputPlacaIngreso.addEventListener('blur', consultarReservaPorPlaca);
     }
@@ -933,27 +967,8 @@
       btnLimpiarIngresoForm.addEventListener('click', ocultarAvisoReserva);
     }
 
-    if (btnConfirmarReservaIngreso) {
-      btnConfirmarReservaIngreso.addEventListener('click', async () => {
-        if (!reservaDetectada) return;
-        btnConfirmarReservaIngreso.classList.add('loading');
-        btnConfirmarReservaIngreso.disabled = true;
-        try {
-          const res = await window.pedirApi(`/api/reservas/${reservaDetectada.id}/confirmar`, {
-            method: 'POST',
-            body: JSON.stringify({})
-          });
-          window.mostrarToast(res.mensaje || 'Reserva confirmada e ingreso registrado.');
-          if (inputPlacaIngreso) inputPlacaIngreso.value = '';
-          ocultarAvisoReserva();
-        } catch (err) {
-          window.mostrarToast(err.message, true);
-        } finally {
-          btnConfirmarReservaIngreso.classList.remove('loading');
-          btnConfirmarReservaIngreso.disabled = false;
-        }
-      });
-    }
+    window.reservasModulo.obtenerReservaDetectadaIngreso = () => reservaDetectada;
+    window.reservasModulo.limpiarReservaDetectadaIngreso = ocultarAvisoReserva;
 
     // 8. Botones de refresco y búsqueda en garita (UPAO-8 y UPAO-23)
     const btnRefrescarMisReservas = document.getElementById('btn-refrescar-mis-reservas');

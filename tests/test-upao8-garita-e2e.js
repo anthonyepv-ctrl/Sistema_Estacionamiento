@@ -52,7 +52,7 @@ async function runE2EGarita() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        nombre: 'Luis Mendoza Garita',
+        nombre: 'Luis Mendoza Paredes',
         dni: dniCond,
         celular: '987654321',
         usuario: usuarioCond,
@@ -147,16 +147,30 @@ async function runE2EGarita() {
     await page.click('#btn-login-submit');
     await page.waitForSelector('#view-dashboard.active');
 
-    // 1. Alerta RESERVADO en #view-ingreso al digitar la placa reservada
+    // 1. Alerta RESERVADO en #view-ingreso al digitar la placa reservada (botón único cambia a azul)
     await page.click('#card-modulo-ingreso');
     await page.waitForSelector('#view-ingreso.active');
     await page.fill('#input-placa', placaVig);
     await page.waitForSelector('#aviso-reserva-ingreso:not(.hidden)', { timeout: 8000 });
     await page.waitForTimeout(300);
+    const estadoBtnUnificado = await page.evaluate(() => {
+      const btn = document.getElementById('btn-registrar-ingreso');
+      const dup = document.getElementById('btn-confirmar-reserva-ingreso');
+      return {
+        existeDuplicado: Boolean(dup),
+        esAzul: Boolean(btn && btn.classList.contains('btn-primary')),
+        texto: btn ? btn.textContent.trim() : '',
+        habilitado: Boolean(btn && !btn.disabled)
+      };
+    });
+    if (estadoBtnUnificado.existeDuplicado || !estadoBtnUnificado.esAzul || !estadoBtnUnificado.habilitado) {
+      throw new Error(`Botón unificado inválido en #view-ingreso: ${JSON.stringify(estadoBtnUnificado)}`);
+    }
+    console.log('✓ Botón unificado verificado:', JSON.stringify(estadoBtnUnificado));
     await page.screenshot({ path: path.join(EVIDENCIAS_DIR, '01_alerta_reservado_en_ingreso.png'), fullPage: false });
     console.log('✓ Captura 1: 01_alerta_reservado_en_ingreso.png');
 
-    // 2. Navegar por sidebar a Buscar Reservas en Garita y filtrar por el conductor de prueba (4 estados)
+    // 2. Navegar por sidebar a Buscar Reservas y filtrar por el conductor de prueba (4 estados)
     await page.click('.sidebar-link[data-view="garita-reservas"]');
     await page.waitForSelector('#view-garita-reservas.active');
     await page.fill('#input-buscar-reserva-garita', dniCond);
@@ -166,6 +180,19 @@ async function runE2EGarita() {
       return tb && tb.innerText.includes(cod);
     }, codigoVig, { timeout: 8000 });
     await page.waitForTimeout(400);
+    const tablaFit = await page.evaluate(() => {
+      const cont = document.querySelector('#view-garita-reservas .table-container');
+      const tbl = document.querySelector('#view-garita-reservas .data-table');
+      return {
+        containerWidth: cont ? cont.clientWidth : 0,
+        tableWidth: tbl ? tbl.scrollWidth : 0,
+        overflow: Boolean(cont && tbl && tbl.scrollWidth > cont.clientWidth + 1)
+      };
+    });
+    if (tablaFit.overflow) {
+      throw new Error(`Tabla Buscar Reservas desborda horizontalmente en 1280px: ${JSON.stringify(tablaFit)}`);
+    }
+    console.log('✓ Tabla Buscar Reservas 1 línea sin desborde:', JSON.stringify(tablaFit));
     await page.screenshot({ path: path.join(EVIDENCIAS_DIR, '02_garita_buscar_reservas_estados.png'), fullPage: true });
     console.log('✓ Captura 2: 02_garita_buscar_reservas_estados.png');
 
@@ -175,13 +202,17 @@ async function runE2EGarita() {
     await page.screenshot({ path: path.join(EVIDENCIAS_DIR, '03_garita_filtro_vigente.png'), fullPage: false });
     console.log('✓ Captura 3: 03_garita_filtro_vigente.png');
 
-    // 4. Confirmar ingreso desde la tabla de garita
+    // 4. Confirmar ingreso desde la tabla de recepción
     await page.click('.btn-confirmar-reserva-garita');
     await page.waitForSelector('.toast', { timeout: 10000 });
     const toastTxt = await page.$eval('.toast', (el) => el.textContent);
-    console.log('✓ Toast confirmación garita:', toastTxt);
+    console.log('✓ Toast confirmación:', toastTxt);
     await page.selectOption('#select-estado-reserva-garita', 'TODOS');
-    await page.waitForTimeout(600);
+    await page.waitForFunction((cod) => {
+      const tb = document.getElementById('tbody-garita-reservas');
+      return tb && tb.innerText.includes(cod) && tb.innerText.includes('UTILIZADA');
+    }, codigoVig, { timeout: 8000 });
+    await page.waitForTimeout(250);
     await page.screenshot({ path: path.join(EVIDENCIAS_DIR, '04_garita_confirmacion_exitosa.png'), fullPage: true });
     console.log('✓ Captura 4: 04_garita_confirmacion_exitosa.png');
 

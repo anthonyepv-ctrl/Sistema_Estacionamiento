@@ -612,6 +612,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (inputNotaIngreso) inputNotaIngreso.value = '';
     actualizarContadorNota();
     limpiarErrores(inputPlaca);
+    if (window.reservasModulo && typeof window.reservasModulo.limpiarReservaDetectadaIngreso === 'function') {
+      window.reservasModulo.limpiarReservaDetectadaIngreso();
+    }
     actualizarVistaPrevia();
     inputPlaca.focus();
   }
@@ -695,16 +698,29 @@ document.addEventListener('DOMContentLoaded', () => {
         nota: notaValor.length > 0 ? notaValor : null
       };
 
+      const reservaActiva = window.reservasModulo
+        && typeof window.reservasModulo.obtenerReservaDetectadaIngreso === 'function'
+        ? window.reservasModulo.obtenerReservaDetectadaIngreso()
+        : null;
+
       if (btnRegistrarIngreso) {
         btnRegistrarIngreso.classList.add('loading');
         btnRegistrarIngreso.disabled = true;
       }
 
       try {
-        const ingreso = await pedirApi('/api/ingresos', {
-          method: 'POST',
-          body: JSON.stringify(datosIngreso)
-        });
+        let ingreso;
+        if (reservaActiva) {
+          ingreso = await pedirApi(`/api/reservas/${reservaActiva.id}/confirmar`, {
+            method: 'POST',
+            body: JSON.stringify({ nota: notaValor.length > 0 ? notaValor : null })
+          });
+        } else {
+          ingreso = await pedirApi('/api/ingresos', {
+            method: 'POST',
+            body: JSON.stringify(datosIngreso)
+          });
+        }
 
         if (notaValor.length > 0) {
           guardarNotaLocal(placa, notaValor);
@@ -712,7 +728,9 @@ document.addEventListener('DOMContentLoaded', () => {
           eliminarNotaLocal(placa);
         }
 
-        mostrarToast(ingreso.mensaje || `Ingreso registrado: Placa [${placa}]`);
+        mostrarToast(
+          ingreso.mensaje || (reservaActiva ? 'Reserva confirmada e ingreso registrado.' : `Ingreso registrado: Placa [${placa}]`)
+        );
         limpiarFormularioIngreso();
       } catch (error) {
         mostrarToast(error.message, true);
