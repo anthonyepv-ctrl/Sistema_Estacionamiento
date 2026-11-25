@@ -5,7 +5,7 @@
     "originX": 0,
     "originY": 0,
     "zoomLevel": 1,
-    "show": 431,
+    "show": 429,
     "database": 4,
     "databaseName": "cochera-adev",
     "canvasType": "ERD",
@@ -33,14 +33,22 @@
       "BVDUEFXzMvXVzC4apqnLk",
       "O2fnjhGxO_d-EChnWHXkt",
       "E2HL52WHblUUO7HI70Y7m",
-      "eYJ7FxkPofyiGAwV3yOLs"
+      "eYJ7FxkPofyiGAwV3yOLs",
+      "tbl_vehiculo_conductor",
+      "tbl_reserva"
     ],
     "relationshipIds": [
       "gT7xETt_NC_8N1j6T_rta",
       "vtNDOLx9kb9lujpL4h6UU",
       "4OHF9vS2PuxB-yUWmqr6o",
       "tU3SliZsu6P8TfLWx01Da",
-      "280PGq_XHc8hZnMcO0_8H"
+      "280PGq_XHc8hZnMcO0_8H",
+      "rel_usu_vc",
+      "rel_tip_vc",
+      "rel_usu_res",
+      "rel_vc_res",
+      "rel_tip_res",
+      "rel_res_est"
     ]
   },
   "collections": {
@@ -57,11 +65,12 @@
           "UHZBcUk4pp6MydfX0KI2T",
           "8VrDC04p8TvpkyfqJcxu1",
           "USSga0KtX0ShXt3i3XVpX",
-          "nota_col_estadia_u900"
+          "nota_col_estadia_u900",
+          "col_estadia_res"
         ],
         "ui": {
-          "x": 204.6298,
-          "y": -391.4849
+          "x": -493.271,
+          "y": -247.8037
         }
       },
       "Cg_o1zqVokIwkCW8Jz6hk": {
@@ -74,8 +83,8 @@
           "SosSVcTMPSnEhhqiRS0hi"
         ],
         "ui": {
-          "x": -355.4227,
-          "y": -358.8925
+          "x": -132.566,
+          "y": -496.0352
         }
       },
       "E2HL52WHblUUO7HI70Y7m": {
@@ -86,8 +95,8 @@
           "qV5eXPt2XjfQGl5yfmoJv"
         ],
         "ui": {
-          "x": 233.3239,
-          "y": -77.4787
+          "x": -450.7591,
+          "y": 411.5121
         }
       },
       "O2fnjhGxO_d-EChnWHXkt": {
@@ -102,8 +111,8 @@
           "-pQ-EzbEH8i2tRSHwJzo1"
         ],
         "ui": {
-          "x": -383.1963,
-          "y": -185.2061
+          "x": -484.3021,
+          "y": 121.7338
         }
       },
       "eYJ7FxkPofyiGAwV3yOLs": {
@@ -114,11 +123,13 @@
           "siEnkBdAQKR4u-U1KBOyF",
           "r4NdOm-nOmBrE-uS1a2B3C",
           "WjGLh7lubDP5Zi7Ilwz_z",
-          "3k6ctVzZ-Gf65s7B-L6ws"
+          "3k6ctVzZ-Gf65s7B-L6ws",
+          "col_usuario_dni",
+          "col_usuario_cel"
         ],
         "ui": {
-          "x": 169.784,
-          "y": -673.1912
+          "x": 354.4209,
+          "y": -283.0249
         }
       },
       "nJ8VwavTJgrpGpvAVjEKP": {
@@ -130,8 +141,47 @@
           "e9tgOChRgTzWyO2JnRsnc"
         ],
         "ui": {
-          "x": -358.0596,
-          "y": -550.617
+          "x": -531.9403,
+          "y": -484.928
+        }
+      },
+      "tbl_reserva": {
+        "id": "tbl_reserva",
+        "name": "RESERVA",
+        "comment": "reservas web con adelanto Stripe",
+        "columnIds": [
+          "col_res_id",
+          "col_res_cod",
+          "col_res_usu",
+          "col_res_veh",
+          "col_res_tip",
+          "col_res_fec",
+          "col_res_lim",
+          "col_res_est",
+          "col_res_mon",
+          "col_res_str",
+          "col_res_pag",
+          "col_res_anu"
+        ],
+        "ui": {
+          "x": 338.2959,
+          "y": 77.8105
+        }
+      },
+      "tbl_vehiculo_conductor": {
+        "id": "tbl_vehiculo_conductor",
+        "name": "VEHICULO_CONDUCTOR",
+        "comment": "vehiculos del conductor",
+        "columnIds": [
+          "col_vc_id",
+          "col_vc_usu",
+          "col_vc_pla",
+          "col_vc_tip",
+          "col_vc_cre"
+        ],
+        "ui": {
+          "x": 451.049,
+          "y": -555.5918
         }
       }
     },
@@ -172,6 +222,13 @@
         "name": "id_estadía",
         "dataType": "INT",
         "options": 10
+      },
+      "col_estadia_res": {
+        "id": "col_estadia_res",
+        "tableId": "BVDUEFXzMvXVzC4apqnLk",
+        "name": "id_reserva",
+        "dataType": "INTEGER",
+        "options": 4
       },
       "mW8mp6p8z0OLMzM9Ki3sT": {
         "id": "mW8mp6p8z0OLMzM9Ki3sT",
@@ -300,9 +357,25 @@
         "id": "WjGLh7lubDP5Zi7Ilwz_z",
         "tableId": "eYJ7FxkPofyiGAwV3yOLs",
         "name": "rol",
-        "dataType": "ENUM('RECEPCIONISTA','DUEÑO')",
+        "dataType": "ENUM('RECEPCIONISTA','DUEÑO','CONDUCTOR')",
         "default": "RECEPCIONISTA",
         "options": 8
+      },
+      "col_usuario_cel": {
+        "id": "col_usuario_cel",
+        "tableId": "eYJ7FxkPofyiGAwV3yOLs",
+        "name": "celular",
+        "comment": "Celular 9 digitos",
+        "dataType": "VARCHAR(9)",
+        "options": 0
+      },
+      "col_usuario_dni": {
+        "id": "col_usuario_dni",
+        "tableId": "eYJ7FxkPofyiGAwV3yOLs",
+        "name": "dni",
+        "comment": "DNI conductor",
+        "dataType": "VARCHAR(8)",
+        "options": 4
       },
       "r4NdOm-nOmBrE-uS1a2B3C": {
         "id": "r4NdOm-nOmBrE-uS1a2B3C",
@@ -338,6 +411,129 @@
         "name": "id_tipo_vehiculo",
         "dataType": "INT",
         "options": 10
+      },
+      "col_res_anu": {
+        "id": "col_res_anu",
+        "tableId": "tbl_reserva",
+        "name": "fecha_anulacion",
+        "dataType": "TIMESTAMP",
+        "options": 0
+      },
+      "col_res_cod": {
+        "id": "col_res_cod",
+        "tableId": "tbl_reserva",
+        "name": "codigo",
+        "dataType": "VARCHAR(16)",
+        "options": 12
+      },
+      "col_res_est": {
+        "id": "col_res_est",
+        "tableId": "tbl_reserva",
+        "name": "estado",
+        "dataType": "estado_reserva",
+        "default": "VIGENTE",
+        "options": 8
+      },
+      "col_res_fec": {
+        "id": "col_res_fec",
+        "tableId": "tbl_reserva",
+        "name": "fecha_reserva",
+        "dataType": "TIMESTAMP",
+        "default": "CURRENT_TIMESTAMP",
+        "options": 8
+      },
+      "col_res_id": {
+        "id": "col_res_id",
+        "tableId": "tbl_reserva",
+        "name": "id_reserva",
+        "dataType": "SERIAL",
+        "options": 10
+      },
+      "col_res_lim": {
+        "id": "col_res_lim",
+        "tableId": "tbl_reserva",
+        "name": "fecha_limite",
+        "dataType": "TIMESTAMP",
+        "options": 8
+      },
+      "col_res_mon": {
+        "id": "col_res_mon",
+        "tableId": "tbl_reserva",
+        "name": "monto_adelanto",
+        "dataType": "DECIMAL(10,2)",
+        "options": 8
+      },
+      "col_res_pag": {
+        "id": "col_res_pag",
+        "tableId": "tbl_reserva",
+        "name": "estado_pago",
+        "dataType": "estado_pago_reserva",
+        "default": "PAGADO",
+        "options": 8
+      },
+      "col_res_str": {
+        "id": "col_res_str",
+        "tableId": "tbl_reserva",
+        "name": "stripe_payment_intent_id",
+        "dataType": "VARCHAR(100)",
+        "options": 0
+      },
+      "col_res_tip": {
+        "id": "col_res_tip",
+        "tableId": "tbl_reserva",
+        "name": "id_tipo_vehiculo",
+        "dataType": "INTEGER",
+        "options": 8
+      },
+      "col_res_usu": {
+        "id": "col_res_usu",
+        "tableId": "tbl_reserva",
+        "name": "id_usuario",
+        "dataType": "INTEGER",
+        "options": 8
+      },
+      "col_res_veh": {
+        "id": "col_res_veh",
+        "tableId": "tbl_reserva",
+        "name": "id_vehiculo",
+        "dataType": "INTEGER",
+        "options": 8
+      },
+      "col_vc_cre": {
+        "id": "col_vc_cre",
+        "tableId": "tbl_vehiculo_conductor",
+        "name": "creado_en",
+        "dataType": "TIMESTAMP",
+        "default": "CURRENT_TIMESTAMP",
+        "options": 8
+      },
+      "col_vc_id": {
+        "id": "col_vc_id",
+        "tableId": "tbl_vehiculo_conductor",
+        "name": "id_vehiculo",
+        "dataType": "SERIAL",
+        "options": 10
+      },
+      "col_vc_pla": {
+        "id": "col_vc_pla",
+        "tableId": "tbl_vehiculo_conductor",
+        "name": "placa",
+        "dataType": "VARCHAR(10)",
+        "options": 8
+      },
+      "col_vc_tip": {
+        "id": "col_vc_tip",
+        "tableId": "tbl_vehiculo_conductor",
+        "name": "id_tipo_vehiculo",
+        "dataType": "INTEGER",
+        "options": 8
+      },
+      "col_vc_usu": {
+        "id": "col_vc_usu",
+        "tableId": "tbl_vehiculo_conductor",
+        "name": "id_usuario",
+        "dataType": "INTEGER",
+        "options": 8
       }
     },
     "relationshipEntities": {
@@ -392,6 +588,114 @@
           "tableId": "BVDUEFXzMvXVzC4apqnLk",
           "columnIds": [
             "BH9LvmMVQnobL4CMe4VBV"
+          ]
+        }
+      },
+      "rel_res_est": {
+        "id": "rel_res_est",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "tbl_reserva",
+          "columnIds": [
+            "col_res_id"
+          ]
+        },
+        "end": {
+          "tableId": "BVDUEFXzMvXVzC4apqnLk",
+          "columnIds": [
+            "col_estadia_res"
+          ]
+        }
+      },
+      "rel_tip_res": {
+        "id": "rel_tip_res",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "Cg_o1zqVokIwkCW8Jz6hk",
+          "columnIds": [
+            "T5W5r0ylEjskVTgftabl-"
+          ]
+        },
+        "end": {
+          "tableId": "tbl_reserva",
+          "columnIds": [
+            "col_res_tip"
+          ]
+        }
+      },
+      "rel_tip_vc": {
+        "id": "rel_tip_vc",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "Cg_o1zqVokIwkCW8Jz6hk",
+          "columnIds": [
+            "T5W5r0ylEjskVTgftabl-"
+          ]
+        },
+        "end": {
+          "tableId": "tbl_vehiculo_conductor",
+          "columnIds": [
+            "col_vc_tip"
+          ]
+        }
+      },
+      "rel_usu_res": {
+        "id": "rel_usu_res",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "eYJ7FxkPofyiGAwV3yOLs",
+          "columnIds": [
+            "EkuPDOpgehGfIfUag5s7I"
+          ]
+        },
+        "end": {
+          "tableId": "tbl_reserva",
+          "columnIds": [
+            "col_res_usu"
+          ]
+        }
+      },
+      "rel_usu_vc": {
+        "id": "rel_usu_vc",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "eYJ7FxkPofyiGAwV3yOLs",
+          "columnIds": [
+            "EkuPDOpgehGfIfUag5s7I"
+          ]
+        },
+        "end": {
+          "tableId": "tbl_vehiculo_conductor",
+          "columnIds": [
+            "col_vc_usu"
+          ]
+        }
+      },
+      "rel_vc_res": {
+        "id": "rel_vc_res",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "tbl_vehiculo_conductor",
+          "columnIds": [
+            "col_vc_id"
+          ]
+        },
+        "end": {
+          "tableId": "tbl_reserva",
+          "columnIds": [
+            "col_res_veh"
           ]
         }
       },

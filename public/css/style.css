@@ -192,13 +192,145 @@ p {
   color: var(--err);
 }
 
-/* Contenedor Principal */
+/* Contenedor Principal con Barra Lateral Izquierda */
+.app-layout {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  min-height: 0;
+}
+
+.app-sidebar {
+  width: 268px;
+  flex-shrink: 0;
+  background: #F8FAFC;
+  border-right: 1px solid var(--border);
+  padding: 24px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app-sidebar.hidden {
+  display: none;
+}
+
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  padding: 0 4px 4px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sidebar-link-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #EFF6FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.sidebar-link-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+  transition: color 0.15s ease;
+}
+
+.sidebar-link-text {
+  flex: 1;
+}
+
+.sidebar-link:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.08);
+  color: var(--primary);
+}
+
+.sidebar-link.active {
+  background: #EFF6FF;
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.08);
+  color: var(--primary);
+}
+
+.sidebar-link.active .sidebar-link-icon {
+  background: var(--primary);
+}
+
+.sidebar-link.active .sidebar-link-icon svg {
+  color: #FFFFFF;
+}
+
 .app-container {
   flex: 1;
   max-width: 1100px;
   width: 100%;
   margin: 0 auto;
   padding: 32px 20px;
+}
+
+@media (max-width: 900px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+  }
+
+  .sidebar-title {
+    display: none;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+  }
+
+  .sidebar-link {
+    width: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 8px 12px;
+  }
 }
 
 /* Control de Vistas */
@@ -1625,24 +1757,79 @@ select.input-control {
 @media (max-width: 640px) {
   .app-header {
     padding: 0 12px;
+    gap: 8px;
   }
 
-  .header-user-section {
-    gap: 8px;
+  .brand-logo {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .brand-info h1 {
+    font-size: 14px;
+    white-space: nowrap;
   }
 
   .brand-info p {
     display: none;
   }
 
+  .header-user-section {
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .user-profile-badge {
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .user-avatar,
+  #session-user-badge,
   .user-meta .user-role {
     display: none;
   }
 
-  .btn-logout {
-    padding: 4px 8px;
-    font-size: 11px;
+  .user-meta .user-name {
+    max-width: 112px;
+    font-size: 12.5px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+
+  .btn-logout {
+    padding: 6px 10px;
+    font-size: 11.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .app-sidebar {
+    padding: 8px 10px;
+  }
+
+  .sidebar-link {
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .view-top-bar {
+    margin-bottom: 12px;
+  }
+
+  #btn-ir-historial-desde-reservas,
+  #btn-ir-reservas-desde-historial {
+    display: none;
+  }
+
+  .page-title-group h1 {
+    font-size: 1.45rem;
+    line-height: 1.2;
   }
 
   .disponibilidad-grid {
@@ -1656,4 +1843,338 @@ select.input-control {
   .cupos-numero {
     font-size: 36px;
   }
+
+  #form-vehiculo-conductor > div {
+    grid-template-columns: 1fr !important;
+  }
 }
+
+.hidden {
+  display: none !important;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.modal-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  padding: 24px;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.22);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.modal-body {
+  margin-top: 14px;
+}
+
+/* ==========================================================================
+   MÓDULO DE RESERVAS Y ANULACIÓN (UPAO-22) - ESTILOS ESPECÍFICOS
+   Basado en docs/modulos/reservas/analisis-UPAO-22.md y ui-UPAO-22.md
+   ========================================================================== */
+
+/* Cuadrícula de Tarjetas de Reserva (Móvil < 768px) */
+.reservas-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.card.reserva-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card.reserva-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.1);
+  border-color: #CBD5E1;
+}
+
+.card.reserva-card h4 {
+  margin: 0 0 10px 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card.reserva-card p {
+  margin: 4px 0;
+  font-size: 0.88rem;
+  color: var(--text2);
+}
+
+.card.reserva-card p strong {
+  color: var(--text);
+}
+
+.card.reserva-card .reserva-monto-tag {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Vista adaptativa de Mis Reservas: tabla en escritorio, tarjetas en móvil (sin duplicar) */
+.reservas-vista-desktop {
+  display: block;
+}
+
+.reservas-vista-desktop .data-table {
+  font-size: 12.5px;
+}
+
+.reservas-vista-desktop .data-table th,
+.reservas-vista-desktop .data-table td {
+  padding: 10px 8px;
+  white-space: nowrap;
+}
+
+.reservas-vista-desktop .data-table .btn-anular {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+#view-garita-reservas .data-table,
+#view-conductor-historial .data-table {
+  font-size: 12px;
+}
+
+#view-garita-reservas .data-table th,
+#view-garita-reservas .data-table td,
+#view-conductor-historial .data-table th,
+#view-conductor-historial .data-table td {
+  padding: 9px 7px;
+  white-space: nowrap;
+}
+
+#view-garita-reservas .data-table .celda-conductor {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reservas-vista-movil {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .reservas-vista-desktop {
+    display: none;
+  }
+
+  .reservas-vista-movil {
+    display: grid;
+  }
+}
+
+/* Botón Anular con acción destructiva (§7.1) */
+.reserva-card .btn-anular,
+.reserva-card .btn-anular.btn-danger {
+  margin-top: 14px;
+  width: 100%;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.data-table .btn-anular {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* Badges de estado de Reserva según diseño (§7.1) */
+.badge.vigente {
+  background: #DEF7EC !important;
+  color: #03543F !important;
+  border: 1px solid #BCF0DA !important;
+}
+
+.badge.anulada {
+  background: #FDE8E8 !important;
+  color: #9B1C1C !important;
+  border: 1px solid #FBD5D5 !important;
+}
+
+.badge.utilizada {
+  background: #E1EFFE !important;
+  color: #1E429F !important;
+  border: 1px solid #C3DDFD !important;
+}
+
+.badge.vencida {
+  background: #FEF08A !important;
+  color: #713F12 !important;
+  border: 1px solid #FDE047 !important;
+}
+
+/* Modal de Anulación (§7.2) */
+#modal-anular .modal-content,
+.modal#modal-anular .modal-card {
+  max-width: 480px;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Catálogo público, flujo de pago y footer comercial/legal (Culqi) */
+.catalogo-img-wrap {
+  margin-bottom: 14px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #E5E7EB;
+  background: #F9FAFB;
+}
+
+.catalogo-img {
+  display: block;
+  width: 100%;
+  height: 132px;
+  object-fit: contain;
+}
+
+.catalogo-precio-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.catalogo-precio {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1E3A8A;
+}
+
+.catalogo-desc {
+  font-size: 13px;
+  color: #4B5563;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.flujo-compra-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.flujo-paso {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.flujo-paso strong {
+  display: block;
+  color: #1E3A8A;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.public-footer {
+  margin-top: 24px;
+  padding: 20px 24px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.public-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.public-footer h3,
+.public-footer h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #111827;
+}
+
+.public-footer .caption {
+  display: block;
+  margin: 4px 0;
+}
+
+.footer-legal-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-legal-links li {
+  margin-bottom: 6px;
+}
+
+.link-legal-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #1E3A8A;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+}
+
+.link-legal-btn:hover {
+  color: #1D4ED8;
+}
+
+.modal-body-legal {
+  margin-top: 12px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.modal-body-legal p {
+  margin: 0 0 10px 0;
+}
+
+

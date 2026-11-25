@@ -16,13 +16,20 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "node prisma/seed.js",
+    "test": "node scripts/run-all-tests.js",
+    "test:culqi": "node tests/test-pasarela-culqi-unit.js",
+    "test:upao22": "node tests/test-upao22-anulacion.js",
+    "test:upao8": "node tests/test-upao8-garita.js",
+    "test:upao23": "node tests/test-upao23-historial.js",
+    "test:ataque": "node tests/test-ataque-bot.js",
     "test:e2e": "node tests/e2e-ingreso.js",
     "test:graficos": "node tests/e2e-graficos-estadisticos.js",
     "test:disponibilidad": "node tests/e2e-disponibilidad.js",
     "test:integridad": "node tests/test-integridad-cobro.js",
     "test:concurrencia": "node tests/test-concurrencia-aforo.js",
     "test:seguridad": "node tests/test-seguridad-api.js",
-    "test:regresion": "node tests/test-no-regresion.js"
+    "test:regresion": "node tests/test-no-regresion.js",
+    "test:reservas": "node tests/test-reservas-sprint3.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

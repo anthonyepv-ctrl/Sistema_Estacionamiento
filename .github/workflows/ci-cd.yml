@@ -1,0 +1,145 @@
+name: CI/CD DevOps — Pruebas Automáticas y Despliegue Blue/Green
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Ambiente a verificar/desplegar manualmente'
+        required: true
+        default: 'solo-pruebas'
+        type: choice
+        options:
+          - solo-pruebas
+          - blue-staging
+          - green-produccion
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  ci_tests:
+    name: 1. Pruebas Automatizadas (Seguridad, Bot, Sprint 3 y No Regresión)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cochera_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar cliente Prisma
+        run: npx prisma generate
+
+      - name: Aplicar migraciones y seed en PostgreSQL CI
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cochera_ci?schema=public
+        run: npx prisma migrate deploy && npm run db:seed
+
+      - name: Ejecutar suites automatizadas (npm test)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cochera_ci?schema=public
+          AUTH_SECRET: ci-ephemeral-auth-secret-cochera-upao-2026
+          PASARELA_ENCRYPTION_KEY: ci-ephemeral-encryption-key-cochera-32c
+          PAYMENT_GATEWAY: culqi
+        run: npm test
+
+  deploy_blue:
+    name: 2. Despliegue Automático a Blue (Pre-producción / develop)
+    needs: ci_tests
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
+      (github.event_name == 'workflow_dispatch' && inputs.target_env == 'blue-staging')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar Deploy Hook de Render Blue (Staging)
+        env:
+          HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_BLUE }}
+        run: |
+          if [ -n "$HOOK_URL" ]; then
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$HOOK_URL")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            echo "Respuesta Render Blue: HTTP $HTTP_CODE"
+            echo "$BODY"
+            if [ "$HTTP_CODE" -ne 200 ] && [ "$HTTP_CODE" -ne 201 ]; then
+              exit 1
+            fi
+          else
+            echo "AVISO: RENDER_DEPLOY_HOOK_BLUE no configurado; Render desplegará por integración Git automática en develop."
+          fi
+
+      - name: Healthcheck post-despliegue en Render Blue
+        run: |
+          for i in 1 2 3 4 5; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" https://sistema-estacionamiento-yk2d.onrender.com/api/publico/disponibilidad)
+            echo "Intento $i — Blue HTTP $CODE"
+            if [ "$CODE" -eq 200 ]; then
+              echo "Blue (Staging) operativo."
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+  deploy_green:
+    name: 3. Despliegue Automático a Green (Producción / main)
+    needs: ci_tests
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && inputs.target_env == 'green-produccion')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar Deploy Hook de Render Green (Producción)
+        env:
+          HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_GREEN }}
+        run: |
+          if [ -n "$HOOK_URL" ]; then
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$HOOK_URL")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            echo "Respuesta Render Green: HTTP $HTTP_CODE"
+            echo "$BODY"
+            if [ "$HTTP_CODE" -ne 200 ] && [ "$HTTP_CODE" -ne 201 ]; then
+              exit 1
+            fi
+          else
+            echo "AVISO: RENDER_DEPLOY_HOOK_GREEN no configurado; Render desplegará por integración Git automática en main."
+          fi
+
+      - name: Healthcheck post-despliegue en Render Green
+        run: |
+          for i in 1 2 3 4 5; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" https://cochera-sp.onrender.com/api/publico/disponibilidad)
+            echo "Intento $i — Green HTTP $CODE"
+            if [ "$CODE" -eq 200 ]; then
+              echo "Green (Producción) operativo."
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1

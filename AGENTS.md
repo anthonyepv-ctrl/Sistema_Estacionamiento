@@ -78,6 +78,11 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run db:migrate` | Crear/aplicar migraciones en desarrollo. |
 | `npm run db:generate` | Generar el cliente Prisma. |
 | `npm run db:studio` | Explorar la base de datos. |
+| `npm test` | Runner único en 1 clic de las 7 suites automatizadas (Culqi, UPAO-22, UPAO-8, Sprint 3, Ataque/Bot, RBAC y No Regresión). |
+| `npm run test:upao8` | Suite dedicada de búsqueda en garita, protección de cupo, confirmación y descuento en salida (`UPAO-8`). |
+| `npm run test:upao22` | Suite dedicada de anulación atómica, exclusión mutua y reembolso Culqi (`UPAO-22`). |
+| `npm run test:ataque` | Simulación tipo atacante/bot: fuerza bruta (`429`), bombas JSON (`413`), SQLi/XSS e IDOR. |
+| `npm run test:culqi` | Suite unitaria/contrato del adaptador Culqi Perú y cifrado AES-256-GCM. |
 | `npm run test:regresion` | Suite de no regresión (levanta su propio servidor en el puerto 3555). |
 | `npm run test:e2e` | E2E del módulo de ingreso (requiere servidor y Playwright). |
 | `npm run test:graficos` | E2E de gráficos estadísticos. |
@@ -85,6 +90,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run test:seguridad` | Verifica que la API exige sesión y respeta los roles. |
 | `npm run test:integridad` | Verifica que un doble clic en la salida no duplique el cobro. |
 | `npm run test:concurrencia` | Verifica que dos ingresos simultáneos no superen el aforo. |
+| `npm run test:reservas` | Suite integral del Sprint 3 (registro conductor, vehículos, pagos y reembolsos Culqi, búsqueda en garita e historial). |
 
 > Las suites `test:seguridad`, `test:integridad`, `test:concurrencia` y `test:disponibilidad` esperan el servidor en `http://localhost:3555` (`BASE_URL` para cambiarlo). `test:graficos-mes` se ejecuta con `node tests/test-graficos-mes.js`.
 
@@ -146,7 +152,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 
 - **Proyecto / clave:** `UPAO`.
 - **URL del tablero:** _TODO (pendiente de confirmar)_.
-- **Metodología:** trabajo por **sprints** (actual: **Sprint 2**).
+- **Metodología:** trabajo por **sprints** (actual: **Sprint 3**).
 - **Tipos de incidencia:** `Epic`, `Historia`, `Subtask`.
 - **Estados del flujo:** `Por hacer` → `En curso` → `Listo`.
 - **Prioridad por defecto:** `Medium`.
@@ -178,9 +184,16 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | UPAO-9 | Adjuntar notas | Listo | 2 | Operación y Control de la cochera |
 | UPAO-18 | Gráficos de ingresos | Listo | 5 | Administración y Supervisión del Negocio |
 | UPAO-19 | Consultar nivel de ocupación | Listo | 2 | Administración y Supervisión del Negocio |
-| UPAO-20 | Ver espacios disponibles | En curso | 1 | Manejo de Reserva Web |
+| UPAO-20 | Ver espacios disponibles | Listo | 1 | Manejo de Reserva Web |
 
-> Backlog futuro (sin sprint asignado): UPAO-8 Buscar reservas, UPAO-21 Realizar reserva, UPAO-22 Anular reserva, UPAO-23 Consultar historial de estados.
+### Historias del Sprint 3 (15 nov – 1 dic)
+
+| Clave | Historia | Estado | SP | Épica |
+| --- | --- | --- | --- | --- |
+| UPAO-21 | Realizar reserva | Listo | 5 | Manejo de Reserva Web |
+| UPAO-22 | Anular reserva | Listo | 3 | Manejo de Reserva Web |
+| UPAO-8 | Buscar reservas | Listo | 2 | Manejo de Reserva Web |
+| UPAO-23 | Consultar historial de estados | Listo | 2 | Manejo de Reserva Web |
 
 > **Estrategia Blue / Green:** La rama `develop` despliega en el ambiente **Blue (Staging)** para pruebas continuas; la rama `main` despliega en el ambiente **Green (Producción)** solo al validar cada historia (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
 
@@ -189,6 +202,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 - **Redacción de historias:** `Como <rol> quiero <acción> para <beneficio>` (roles: recepcionista, dueño).
 - **Criterios de aceptación:** van en el campo *Criterios de Aceptación* como lista de viñetas (`* ...`), verificables y sin ambigüedad.
 - **Subtareas por historia (patrón):** Análisis y Diseño → Prototipado → Codificación → Test → Configuración (integración/subida a GitHub).
+- **Casos de prueba en Análisis, Depuración y Excel (no excluyente, por Historia):** no se agrega una sexta subtarea en Jira. Al cierre de **Análisis y Diseño** de cada Historia, se diseñan sus **Casos de Prueba (válidos, inválidos y límites)** estrictamente para **esa Historia** (sin adelantar historias futuras) en una sección dedicada dentro de su documento de análisis (`estado inicial: Pendiente`) y, de forma complementaria (no excluyente), en `docs/modulos/<modulo>/Casos_de_Prueba_<Scope>.xlsx` usando el formato oficial (`CODIGO | HISTORIA DE USUARIO | SPRINT | CASO DE PRUEBA | DATOS DE PRUEBA | RESULTADO ESPERADO | ESTADO`, filas inválidas en `#FEE2E2`). En la subtarea **Test** de esa Historia se evalúa si cada caso diseñado se cumple o no (`Aprobado` / `Fallido`) dentro de su `plan-pruebas` acotado a esa Historia y se actualiza el `ESTADO` en el Excel.
 - **Nomenclatura de ramas:** `feature/<CLAVE-JIRA>-descripcion` (ej. `feature/UPAO-16-configurar-tarifas`).
 - **Referencia en commits/PR:** incluir la clave del ticket (ej. `feat: ... (UPAO-16)`).
 - **Definition of Done (DoD):** subtareas de Análisis, Prototipado, Codificación, Test y Configuración completadas; criterios de aceptación cumplidos; documentación actualizada (§11); PR aprobado por 1 revisor e integrado a `develop`; historia en estado `Listo`.
@@ -286,6 +300,7 @@ npx skills add usestrix/strix@api-security-testing -g -y
 | Modelo de datos (tablas, campos, relaciones) | `docs/datos/Modelo_de_Datos.md` y `diagrama-er.erd` |
 | UI, colores, tipografía o componentes | Guía de estilos y `UI_Kit_Estilos_Cochera.svg` / `.html` |
 | Comportamiento o reglas de un módulo | `docs/modulos/<modulo>/` |
+| Criterios de aceptación / Casos de prueba | Sección *Casos de Prueba* en el análisis de la Historia + `Casos_de_Prueba_*.xlsx` (en *Análisis y Diseño*) y evaluación + Defect Log en `plan-pruebas` de la Historia + Excel (en *Test*) |
 | Comandos, scripts o dependencias | `package.json` y §4 de este archivo |
 | Decisiones de metodología o flujo | Este archivo (`AGENTS.md`) |
 
@@ -305,6 +320,7 @@ npx skills add usestrix/strix@api-security-testing -g -y
 | Guía de estilos UI/UX | [`docs/diseño/Guía de Estilos y Lineamientos de Interfaz.md`](docs/diseño/Guía%20de%20Estilos%20y%20Lineamientos%20de%20Interfaz.md) |
 | UI Kit (referencia visual) | `docs/diseño/UI_Kit_Estilos_Cochera.svg` / `.html` |
 | Módulos | `docs/modulos/<modulo>/` |
+| Matriz de Casos de Prueba (Sprint 3) | [`docs/modulos/reservas/Casos_de_Prueba_Sprint3.xlsx`](docs/modulos/reservas/Casos_de_Prueba_Sprint3.xlsx) |
 | Flujo Git / commits / PR | [`README.md`](README.md) |
 
 ---
@@ -320,7 +336,10 @@ npx skills add usestrix/strix@api-security-testing -g -y
 - **No** hacer `commit`, `push` ni abrir PR si no se solicita explícitamente.
 - No inventar reglas de negocio: si falta información, preguntar o dejar `TODO`.
 - **Estrategia Blue / Green (§7):** El desarrollo e integración continua se realiza exclusivamente en **Blue (Staging / rama `develop`)**. Prohibido fusionar o desplegar directamente a **Green (Producción / rama `main`)** hasta que la historia de usuario esté 100% completada, depurada y validada en Blue (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
-- **Pruebas y Defect Log:** Toda subtarea de test debe generar su archivo `plan-pruebas.md` en `docs/modulos/<modulo>/` siguiendo la plantilla oficial (matriz de casos, Defect Log y enlaces a GitHub y video MP4).
+- **Pruebas, Casos de Prueba (Análisis + Excel no excluyente) y Defect Log (siempre por Historia):**
+  - **Sin desfase temporal ni mezcla de historias:** nunca incluir pruebas, endpoints o evidencia de historias futuras dentro del análisis o plan de pruebas de una Historia previa. Cada evidencia de *Análisis y Diseño* y *Test* en Jira pertenece exclusivamente a su Historia.
+  - Al finalizar **Análisis y Diseño** de una Historia, incluir la sección de **Casos de Prueba (Diseño)** (válidos, inválidos y límites, en `Pendiente`) dentro de su análisis y registrarlos también en `docs/modulos/<modulo>/Casos_de_Prueba_*.xlsx` (sin adelantar resultados de ejecución ni enlaces de commits futuros).
+  - En la subtarea **Test** de esa Historia, ejecutar los casos previamente diseñados, completar si se cumplieron o no en su `plan-pruebas` (junto al Defect Log y enlaces a GitHub/evidencias de esa Historia) y actualizar su `ESTADO` (`Aprobado` / `Fallido`) en el Excel.
 - **Entorno de datos:** El `.env` local y los tests deben apuntar a la base de datos de **Staging** (Neon `staging`), nunca alterar la base de datos de producción.
 - **Autenticación de la API (§2):** toda ruta bajo `/api` exige `Authorization: Bearer <token>` salvo `/api/auth/*` y `/api/publico/*`. Al crear un endpoint nuevo, decidir explícitamente qué roles lo usan y montarlo detrás de `autenticar` + `autorizar(...)` en `server.js`. Nunca confiar en que el frontend oculte una pantalla: el control de acceso vive en el backend.
 - Mantener la estructura de carpetas simple; no agregar dependencias sin justificarlo.

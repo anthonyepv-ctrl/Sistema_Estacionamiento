@@ -61,12 +61,65 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.disponibilidadModulo && typeof window.disponibilidadModulo.iniciar === 'function') {
         window.disponibilidadModulo.iniciar();
       }
+    } else if (nombre === 'conductor-reservas') {
+      const viewConductorReservas = document.getElementById('view-conductor-reservas');
+      if (viewConductorReservas) viewConductorReservas.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      if (window.reservasModulo && typeof window.reservasModulo.cargarVistaConductor === 'function') {
+        window.reservasModulo.cargarVistaConductor();
+      }
+    } else if (nombre === 'conductor-historial') {
+      const viewConductorHistorial = document.getElementById('view-conductor-historial');
+      if (viewConductorHistorial) viewConductorHistorial.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      if (window.reservasModulo && typeof window.reservasModulo.cargarHistorialConductor === 'function') {
+        window.reservasModulo.cargarHistorialConductor();
+      }
+    } else if (nombre === 'garita-reservas') {
+      const viewGaritaReservas = document.getElementById('view-garita-reservas');
+      if (viewGaritaReservas) viewGaritaReservas.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      if (window.reservasModulo && typeof window.reservasModulo.cargarGaritaReservas === 'function') {
+        window.reservasModulo.cargarGaritaReservas();
+      }
+    } else if (nombre === 'pasarela-pagos') {
+      const viewPasarela = document.getElementById('view-pasarela-pagos');
+      if (viewPasarela) viewPasarela.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      if (window.reservasModulo && typeof window.reservasModulo.cargarVistaPasarelaDueno === 'function') {
+        window.reservasModulo.cargarVistaPasarelaDueno();
+      }
     }
+
+    actualizarSidebar(nombre, rolActual);
+
+    if (nombre && nombre !== 'login') {
+      try { localStorage.setItem('cochera_vista_activa', nombre); } catch (_) {}
+    }
+  }
+
+  function actualizarSidebar(vistaActiva, rol) {
+    const sidebar = document.getElementById('app-sidebar');
+    if (!sidebar) return;
+
+    const rolNormalizado = rol === 'DUEÑO' ? 'DUENO' : rol;
+    if (!rolNormalizado || vistaActiva === 'login' || vistaActiva === 'dashboard') {
+      sidebar.classList.add('hidden');
+      return;
+    }
+
+    sidebar.classList.remove('hidden');
+    sidebar.querySelectorAll('.sidebar-link').forEach((link) => {
+      const roles = (link.getAttribute('data-roles') || '').split(',');
+      link.style.display = roles.includes(rolNormalizado) ? '' : 'none';
+      link.classList.toggle('active', link.getAttribute('data-view') === vistaActiva);
+    });
   }
 
   function aplicarMenuPorRol(rol) {
     const esDueno = rol === 'DUENO' || rol === 'DUEÑO';
     const esRecepcionista = rol === 'RECEPCIONISTA';
+    const esConductor = rol === 'CONDUCTOR';
 
     const cardTarifas = document.getElementById('card-modulo-tarifas');
     const cardIngreso = document.getElementById('card-modulo-ingreso');
@@ -75,14 +128,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardReportes = document.getElementById('card-modulo-reportes');
     const cardEstadisticas = document.getElementById('card-modulo-estadisticas');
     const cardOcupacion = document.getElementById('card-modulo-ocupacion');
+    const cardGaritaReservas = document.getElementById('card-modulo-garita-reservas');
+    const cardConductorReservas = document.getElementById('card-modulo-conductor-reservas');
+    const cardConductorHistorial = document.getElementById('card-modulo-conductor-historial');
+    const cardPasarela = document.getElementById('card-modulo-pasarela');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
+    if (cardPasarela) cardPasarela.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
     if (cardSalida) cardSalida.style.display = esRecepcionista ? '' : 'none';
     if (cardAforo) cardAforo.style.display = (esDueno || esRecepcionista) ? '' : 'none';
     if (cardReportes) cardReportes.style.display = esDueno ? '' : 'none';
     if (cardEstadisticas) cardEstadisticas.style.display = esDueno ? '' : 'none';
     if (cardOcupacion) cardOcupacion.style.display = esDueno ? '' : 'none';
+    if (cardGaritaReservas) cardGaritaReservas.style.display = (esDueno || esRecepcionista) ? '' : 'none';
+    if (cardConductorReservas) cardConductorReservas.style.display = esConductor ? '' : 'none';
+    if (cardConductorHistorial) cardConductorHistorial.style.display = esConductor ? '' : 'none';
     const cardDisponibilidad = document.getElementById('card-modulo-disponibilidad');
     if (cardDisponibilidad) cardDisponibilidad.style.display = '';
   }
@@ -106,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function leerSesionGuardada() {
     try {
-      const crudo = sessionStorage.getItem(CLAVE_SESION);
+      const crudo = localStorage.getItem(CLAVE_SESION);
       if (!crudo) return null;
       const sesion = JSON.parse(crudo);
       return sesion && sesion.token ? sesion : null;
@@ -117,15 +178,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function guardarSesion(sesion) {
     if (!sesion || !sesion.token) return;
-    try { sessionStorage.setItem(CLAVE_SESION, JSON.stringify(sesion)); } catch (error) { /* modo privado */ }
+    try { localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion)); } catch (error) { /* modo privado */ }
   }
 
   function olvidarSesion() {
-    try { sessionStorage.removeItem(CLAVE_SESION); } catch (error) { /* modo privado */ }
+    try { localStorage.removeItem(CLAVE_SESION); } catch (error) { /* modo privado */ }
   }
 
   async function pedirApi(url, opciones = {}) {
     let respuesta;
+    const { timeoutMs = 25000, ...opcionesFetch } = opciones;
 
     const sesion = leerSesionGuardada();
     const cabeceras = {
@@ -133,13 +195,28 @@ document.addEventListener('DOMContentLoaded', () => {
       ...(sesion && sesion.token ? { Authorization: `Bearer ${sesion.token}` } : {})
     };
 
+    const controlador = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const temporizador = controlador && timeoutMs > 0
+      ? setTimeout(() => controlador.abort(), timeoutMs)
+      : null;
+
     try {
       respuesta = await fetch(url, {
-        ...opciones,
-        headers: { ...cabeceras, ...(opciones.headers || {}) }
+        ...opcionesFetch,
+        headers: { ...cabeceras, ...(opcionesFetch.headers || {}) },
+        ...(controlador && !opcionesFetch.signal ? { signal: controlador.signal } : {})
       });
     } catch (error) {
-      throw new Error('No se pudo conectar con el servidor. Verifica que esté corriendo (npm run dev).');
+      if (error && error.name === 'AbortError') {
+        const timeoutErr = new Error('El servidor tardó demasiado en responder. Verificando el estado de la operación...');
+        timeoutErr.esTimeout = true;
+        throw timeoutErr;
+      }
+      const redErr = new Error('No se pudo conectar con el servidor. Verifica tu conexión o recarga la página.');
+      redErr.esErrorRed = true;
+      throw redErr;
+    } finally {
+      if (temporizador) clearTimeout(temporizador);
     }
 
     // Sesión vencida o token inválido: se limpia y se vuelve al login.
@@ -216,7 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
         if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
 
-        mostrarPantalla('dashboard');
+        const destinoPendiente = window.redirigirTrasLogin;
+        window.redirigirTrasLogin = null;
+        if (sesion.rol === 'CONDUCTOR' && destinoPendiente === 'conductor-reservas') {
+          mostrarPantalla('conductor-reservas');
+        } else {
+          mostrarPantalla('dashboard');
+        }
       } catch (error) {
         mostrarToast(error.message, true);
       } finally {
@@ -232,6 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rolActual = '';
       window.sesionActual = null;
       olvidarSesion();
+      try { localStorage.removeItem('cochera_vista_activa'); } catch (_) {}
       if (sessionUserName) sessionUserName.textContent = '';
       if (sessionUserRole) sessionUserRole.textContent = '';
       if (sessionUserBadge) sessionUserBadge.textContent = '';
@@ -528,6 +612,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (inputNotaIngreso) inputNotaIngreso.value = '';
     actualizarContadorNota();
     limpiarErrores(inputPlaca);
+    if (window.reservasModulo && typeof window.reservasModulo.limpiarReservaDetectadaIngreso === 'function') {
+      window.reservasModulo.limpiarReservaDetectadaIngreso();
+    }
     actualizarVistaPrevia();
     inputPlaca.focus();
   }
@@ -611,16 +698,29 @@ document.addEventListener('DOMContentLoaded', () => {
         nota: notaValor.length > 0 ? notaValor : null
       };
 
+      const reservaActiva = window.reservasModulo
+        && typeof window.reservasModulo.obtenerReservaDetectadaIngreso === 'function'
+        ? window.reservasModulo.obtenerReservaDetectadaIngreso()
+        : null;
+
       if (btnRegistrarIngreso) {
         btnRegistrarIngreso.classList.add('loading');
         btnRegistrarIngreso.disabled = true;
       }
 
       try {
-        const ingreso = await pedirApi('/api/ingresos', {
-          method: 'POST',
-          body: JSON.stringify(datosIngreso)
-        });
+        let ingreso;
+        if (reservaActiva) {
+          ingreso = await pedirApi(`/api/reservas/${reservaActiva.id}/confirmar`, {
+            method: 'POST',
+            body: JSON.stringify({ nota: notaValor.length > 0 ? notaValor : null })
+          });
+        } else {
+          ingreso = await pedirApi('/api/ingresos', {
+            method: 'POST',
+            body: JSON.stringify(datosIngreso)
+          });
+        }
 
         if (notaValor.length > 0) {
           guardarNotaLocal(placa, notaValor);
@@ -628,7 +728,9 @@ document.addEventListener('DOMContentLoaded', () => {
           eliminarNotaLocal(placa);
         }
 
-        mostrarToast(ingreso.mensaje || `Ingreso registrado: Placa [${placa}]`);
+        mostrarToast(
+          ingreso.mensaje || (reservaActiva ? 'Reserva confirmada e ingreso registrado.' : `Ingreso registrado: Placa [${placa}]`)
+        );
         limpiarFormularioIngreso();
       } catch (error) {
         mostrarToast(error.message, true);
@@ -975,8 +1077,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function activarSesion(sesion) {
+    rolActual = sesion.rol;
+    window.sesionActual = { usuario: sesion.usuario, nombre: sesion.nombre, rol: sesion.rol };
+    guardarSesion({
+      token: sesion.token,
+      usuario: sesion.usuario,
+      nombre: sesion.nombre,
+      rol: sesion.rol
+    });
+    if (sessionUserName) sessionUserName.textContent = sesion.nombre;
+    if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
+    if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
+  }
+
+  document.querySelectorAll('#app-sidebar .sidebar-link').forEach((link) => {
+    link.addEventListener('click', () => {
+      const triggerId = link.getAttribute('data-trigger');
+      const vista = link.getAttribute('data-view');
+      document.querySelectorAll('#app-sidebar .sidebar-link').forEach((b) => b.classList.remove('active'));
+      link.classList.add('active');
+      if (triggerId) {
+        const targetCard = document.getElementById(triggerId);
+        if (targetCard) {
+          targetCard.click();
+          return;
+        }
+      }
+      if (vista) {
+        mostrarPantalla(vista);
+      }
+    });
+  });
+
   window.mostrarPantalla = mostrarPantalla;
   window.mostrarToast = mostrarToast;
+  window.pedirApi = pedirApi;
+  window.activarSesion = activarSesion;
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && viewTarifas.classList.contains('active')) {
@@ -1004,10 +1141,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionUserBadge) sessionUserBadge.textContent = sesionRestaurada.rol || '';
   }
 
-  if (window.location.hash === '#login') {
+  if (sesionRestaurada) {
+    let vistaGuardada = null;
+    try { vistaGuardada = localStorage.getItem('cochera_vista_activa'); } catch (_) {}
+    const rolNorm = rolActual === 'DUEÑO' ? 'DUENO' : rolActual;
+    const linkGuardado = vistaGuardada && vistaGuardada !== 'dashboard' && vistaGuardada !== 'login'
+      ? document.querySelector(`#app-sidebar .sidebar-link[data-view="${vistaGuardada}"]`)
+      : null;
+    const permitido = linkGuardado && (linkGuardado.getAttribute('data-roles') || '').split(',').includes(rolNorm);
+
+    if (permitido) {
+      mostrarPantalla(vistaGuardada);
+      setTimeout(() => linkGuardado.click(), 0);
+    } else {
+      mostrarPantalla('dashboard');
+    }
+  } else if (window.location.hash === '#login') {
     mostrarPantalla('login');
-  } else if (sesionRestaurada) {
-    mostrarPantalla('dashboard');
   } else {
     // Por defecto para todo el público conductor: Vista de Disponibilidad (UPAO-20)
     mostrarPantalla('disponibilidad');

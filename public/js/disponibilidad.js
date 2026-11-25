@@ -19,7 +19,7 @@
   const dispCuposAutos = document.getElementById('disp-cupos-autos');
   const dispTextoAutos = document.getElementById('disp-texto-autos');
   const cuposBoxAutos = document.getElementById('cupos-box-autos');
-  const btnReservarAutos = document.getElementById('btn-reservar-autos');
+  const btnReservarAutos = document.getElementById('btn-reservar-auto') || document.getElementById('btn-reservar-autos');
   const dispActualizadoAutos = document.getElementById('disp-actualizado-autos');
 
   const dispCapacidadMotos = document.getElementById('disp-capacidad-motos');
@@ -28,7 +28,7 @@
   const dispCuposMotos = document.getElementById('disp-cupos-motos');
   const dispTextoMotos = document.getElementById('disp-texto-motos');
   const cuposBoxMotos = document.getElementById('cupos-box-motos');
-  const btnReservarMotos = document.getElementById('btn-reservar-motos');
+  const btnReservarMotos = document.getElementById('btn-reservar-moto') || document.getElementById('btn-reservar-motos');
   const dispActualizadoMotos = document.getElementById('disp-actualizado-motos');
 
   const btnVolverDisponibilidad = document.getElementById('btn-volver-disponibilidad');
@@ -67,6 +67,8 @@
     const box = esAuto ? cuposBoxAutos : cuposBoxMotos;
     const btn = esAuto ? btnReservarAutos : btnReservarMotos;
     const elActualizado = esAuto ? dispActualizadoAutos : dispActualizadoMotos;
+    const elPrecio = document.getElementById(esAuto ? 'disp-precio-autos' : 'disp-precio-motos');
+    const elFraccion = document.getElementById(esAuto ? 'disp-fraccion-autos' : 'disp-fraccion-motos');
 
     if (!card) return;
 
@@ -74,6 +76,13 @@
     const enCochera = Number(data.enCochera) || 0;
     const reservas = Number(data.reservasVigentes) || 0;
     const disponibles = Math.max(0, Number(data.disponibles) || 0);
+
+    if (elPrecio && data.precioHora !== undefined) {
+      elPrecio.textContent = `S/ ${Number(data.precioHora).toFixed(2)}`;
+    }
+    if (elFraccion && data.precioFraccion !== undefined) {
+      elFraccion.textContent = `Fracción adicional: S/ ${Number(data.precioFraccion).toFixed(2)}`;
+    }
 
     if (elCapacidad) elCapacidad.textContent = capacidad;
     if (elEnCochera) elEnCochera.textContent = enCochera;
@@ -162,26 +171,33 @@
   function manejarAccionReservar(tipo) {
     const data = datosDisponibilidad ? datosDisponibilidad[tipo] : null;
 
-    if (!data) return;
+    if (data) {
+      const disponibles = Math.max(0, Number(data.disponibles) || 0);
+      if (disponibles === 0) return;
+    }
 
-    const disponibles = Math.max(0, Number(data.disponibles) || 0);
-
-    // Guard de seguridad: Si no hay cupos disponibles, no se permite ninguna acción
-    if (disponibles === 0) return;
-
-    // Regla CA-06: sin sesión, "Reservar espacio" lleva a la pantalla de Login
+    // Regla CA-06: sin sesión, "Reservar espacio" lleva a Login y retorna directo a reservas tras autenticar
     if (!haySesionActiva()) {
       limpiarHashDisponibilidad();
+      window.tipoReservaPreseleccionado = tipo === 'motos' ? 'moto' : 'auto';
+      window.redirigirTrasLogin = 'conductor-reservas';
       if (typeof window.mostrarPantalla === 'function') {
         window.mostrarPantalla('login');
       }
       return;
     }
 
-    // Con sesión iniciada la reserva en línea todavía no existe (Historia UPAO-21),
-    // así que el botón informa en lugar de quedarse mudo.
+    if (window.sesionActual && window.sesionActual.rol === 'CONDUCTOR') {
+      limpiarHashDisponibilidad();
+      window.tipoReservaPreseleccionado = tipo === 'motos' ? 'moto' : 'auto';
+      if (typeof window.mostrarPantalla === 'function') {
+        window.mostrarPantalla('conductor-reservas');
+      }
+      return;
+    }
+
     if (typeof window.mostrarToast === 'function') {
-      window.mostrarToast('La reserva en línea aún no está habilitada. Por ahora la disponibilidad es solo informativa.', true);
+      window.mostrarToast('Las reservas web están destinadas a cuentas de Conductor.', true);
     }
   }
 
@@ -224,6 +240,57 @@
         }
       });
     }
+
+    const TEXTOS_LEGALES = {
+      terminos: {
+        titulo: 'Términos y Condiciones — Cochera SP',
+        html: `
+          <p><strong>1. Titular del servicio:</strong> Cochera SP (RUC 10607991664), ubicado en Av. América Sur 3145, Urb. Monserrate, Trujillo, La Libertad.</p>
+          <p><strong>2. Servicio de reserva:</strong> El conductor puede reservar un espacio de estacionamiento (Automóvil o Motocicleta) abonando por adelantado el equivalente a 1 hora de tarifa vigente.</p>
+          <p><strong>3. Vigencia de la reserva:</strong> La reserva tiene una vigencia máxima de 30 minutos desde su confirmación de pago. Transcurrido ese plazo sin ingreso en recepción, la reserva expira automáticamente.</p>
+          <p><strong>4. Descuento en salida:</strong> Al ingresar dentro del plazo vigente, el monto abonado por adelantado se descuenta íntegramente del total calculado al registrar la salida del vehículo.</p>
+        `
+      },
+      privacidad: {
+        titulo: 'Política de Privacidad',
+        html: `
+          <p><strong>1. Protección de datos personales:</strong> En cumplimiento de la Ley N.° 29733 (Ley de Protección de Datos Personales del Perú), Cochera SP recopila únicamente nombre, DNI, celular, usuario y placa vehicular para gestionar reservas e ingresos.</p>
+          <p><strong>2. Datos de pago:</strong> Cochera SP no almacena números de tarjeta, códigos CVV ni credenciales bancarias. Todos los pagos se procesan directamente mediante la pasarela certificada Culqi.</p>
+          <p><strong>3. Derechos ARCO:</strong> El titular puede solicitar acceso, rectificación o eliminación de sus datos escribiendo a alberthflores47@gmail.com o al +51 988 940 558.</p>
+        `
+      },
+      reembolsos: {
+        titulo: 'Política de Cambios, Anulaciones y Reembolsos',
+        html: `
+          <p><strong>1. Anulación con reembolso:</strong> El conductor puede anular su reserva sin penalidad desde la sección Mis Reservas siempre que se encuentre vigente (dentro de los 30 minutos) y antes de registrar el ingreso en recepción.</p>
+          <p><strong>2. Devolución del importe:</strong> La anulación elegible dispara el reembolso del 100% del adelanto pagado hacia el mismo medio de pago utilizado (tarjeta o Yape vía Culqi), sujeto a los plazos de acreditación de cada entidad emisora.</p>
+          <p><strong>3. Casos no reembolsables:</strong> No procede devolución cuando la reserva ya fue utilizada para el ingreso del vehículo o cuando expiró el plazo de 30 minutos sin presentación.</p>
+        `
+      }
+    };
+
+    const modalLegal = document.getElementById('modal-legal-publico');
+    const modalLegalTitulo = document.getElementById('modal-legal-titulo');
+    const modalLegalContenido = document.getElementById('modal-legal-contenido');
+    const btnCerrarLegal = document.getElementById('btn-cerrar-modal-legal');
+
+    document.querySelectorAll('.link-legal-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const clave = btn.getAttribute('data-legal');
+        const info = TEXTOS_LEGALES[clave];
+        if (!info || !modalLegal) return;
+        modalLegalTitulo.textContent = info.titulo;
+        modalLegalContenido.innerHTML = info.html;
+        modalLegal.classList.remove('hidden');
+      });
+    });
+
+    if (btnCerrarLegal && modalLegal) {
+      btnCerrarLegal.addEventListener('click', () => modalLegal.classList.add('hidden'));
+      modalLegal.addEventListener('click', (e) => {
+        if (e.target === modalLegal) modalLegal.classList.add('hidden');
+      });
+    }
   }
 
   // Exponer API del módulo para integración con el ciclo de vida de la aplicación
@@ -234,7 +301,7 @@
       if (btnVolverDisponibilidad) {
         btnVolverDisponibilidad.innerHTML = haySesionActiva()
           ? '← Volver al Menú Principal'
-          : '<span>👤 Acceso de Personal</span> <span class="mono" style="font-size: 0.75rem; opacity: 0.85;">(Iniciar Sesión)</span>';
+          : '<span>Iniciar Sesión</span>';
       }
     },
     detener: () => {
