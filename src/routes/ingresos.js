@@ -121,11 +121,20 @@ router.post('/', async (req, res) => {
       const capacidadConfig = obtenerCapacidad();
       const capacidadTipo = tipo === 'auto' ? capacidadConfig.capacidadAutos : capacidadConfig.capacidadMotos;
 
-      const ocupadosTipo = await tx.estadia.count({
-        where: { idTipoVehiculo: tipoVehiculo.id, horaSalida: null }
-      });
+      const [ocupadosTipo, reservasVigentesTipo] = await Promise.all([
+        tx.estadia.count({
+          where: { idTipoVehiculo: tipoVehiculo.id, horaSalida: null }
+        }),
+        tx.reserva.count({
+          where: {
+            idTipoVehiculo: tipoVehiculo.id,
+            estado: 'VIGENTE',
+            fechaLimite: { gte: new Date() }
+          }
+        })
+      ]);
 
-      if (ocupadosTipo >= capacidadTipo) {
+      if (ocupadosTipo + reservasVigentesTipo >= capacidadTipo) {
         const err = new Error(`No hay espacios disponibles para ${tipo === 'auto' ? 'automóviles' : 'motocicletas'}. Aforo completo.`);
         err.statusCode = 409;
         throw err;

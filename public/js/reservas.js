@@ -22,6 +22,15 @@
     return `S/ ${Number(monto || 0).toFixed(2)}`;
   }
 
+  function escaparHtml(valor) {
+    return String(valor ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function normalizarPlacaInput(valor) {
     const limpio = String(valor || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
     if (limpio.length > 3) {
@@ -424,13 +433,16 @@
 
       tbody.innerHTML = reservas.map((r) => {
         const puedeConfirmar = r.estado === 'VIGENTE';
-        const nombreCond = r.conductor ? r.conductor.nombre : '—';
-        const dniCond = r.conductor && r.conductor.dni ? r.conductor.dni : '—';
+        const nombreCond = escaparHtml(r.conductor ? r.conductor.nombre : '—');
+        const dniCond = escaparHtml(r.conductor && r.conductor.dni ? r.conductor.dni : '—');
+        const codigoEsc = escaparHtml(r.codigo);
+        const placaEsc = escaparHtml(r.placa);
+        const tipoEsc = escaparHtml(r.tipo);
         return `
           <tr>
-            <td class="mono" style="font-weight:700;">${r.codigo}</td>
-            <td class="mono" style="font-weight:700;">${r.placa}</td>
-            <td>${r.tipo}</td>
+            <td class="mono" style="font-weight:700;">${codigoEsc}</td>
+            <td class="mono" style="font-weight:700;">${placaEsc}</td>
+            <td>${tipoEsc}</td>
             <td>${nombreCond} <span class="caption mono">(${dniCond})</span></td>
             <td class="mono">${formatearFechaHora(r.fechaReserva)}</td>
             <td class="mono">${formatearFechaHora(r.fechaLimite)}</td>
@@ -439,9 +451,9 @@
             <td class="text-right">
               ${puedeConfirmar ? `
                 <button type="button" class="btn btn-primary btn-sm btn-confirmar-reserva-garita"
-                  data-id="${r.id}"
-                  data-codigo="${r.codigo}"
-                  data-placa="${r.placa}">
+                  data-id="${Number(r.id)}"
+                  data-codigo="${codigoEsc}"
+                  data-placa="${placaEsc}">
                   Confirmar Ingreso
                 </button>
               ` : '<span class="caption">—</span>'}
@@ -960,6 +972,11 @@
         e.preventDefault();
         cargarGaritaReservas();
       });
+    }
+
+    const selectEstadoGarita = document.getElementById('select-estado-reserva-garita');
+    if (selectEstadoGarita) {
+      selectEstadoGarita.addEventListener('change', cargarGaritaReservas);
     }
 
     const btnLimpiarGarita = document.getElementById('btn-limpiar-busqueda-garita');

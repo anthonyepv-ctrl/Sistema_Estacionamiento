@@ -1967,6 +1967,16 @@ select.input-control {
   font-size: 12px;
 }
 
+#view-garita-reservas .data-table {
+  font-size: 12.5px;
+}
+
+#view-garita-reservas .data-table th,
+#view-garita-reservas .data-table td {
+  padding: 10px 8px;
+  white-space: nowrap;
+}
+
 .reservas-vista-movil {
   display: none;
 }

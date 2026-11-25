@@ -78,6 +78,11 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run db:migrate` | Crear/aplicar migraciones en desarrollo. |
 | `npm run db:generate` | Generar el cliente Prisma. |
 | `npm run db:studio` | Explorar la base de datos. |
+| `npm test` | Runner único en 1 clic de las 7 suites automatizadas (Culqi, UPAO-22, UPAO-8, Sprint 3, Ataque/Bot, RBAC y No Regresión). |
+| `npm run test:upao8` | Suite dedicada de búsqueda en garita, protección de cupo, confirmación y descuento en salida (`UPAO-8`). |
+| `npm run test:upao22` | Suite dedicada de anulación atómica, exclusión mutua y reembolso Culqi (`UPAO-22`). |
+| `npm run test:ataque` | Simulación tipo atacante/bot: fuerza bruta (`429`), bombas JSON (`413`), SQLi/XSS e IDOR. |
+| `npm run test:culqi` | Suite unitaria/contrato del adaptador Culqi Perú y cifrado AES-256-GCM. |
 | `npm run test:regresion` | Suite de no regresión (levanta su propio servidor en el puerto 3555). |
 | `npm run test:e2e` | E2E del módulo de ingreso (requiere servidor y Playwright). |
 | `npm run test:graficos` | E2E de gráficos estadísticos. |
@@ -85,7 +90,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run test:seguridad` | Verifica que la API exige sesión y respeta los roles. |
 | `npm run test:integridad` | Verifica que un doble clic en la salida no duplique el cobro. |
 | `npm run test:concurrencia` | Verifica que dos ingresos simultáneos no superen el aforo. |
-| `npm run test:reservas` | Suite integral del Sprint 3 (registro conductor, vehículos, pagos y reembolsos Stripe, búsqueda en garita e historial). |
+| `npm run test:reservas` | Suite integral del Sprint 3 (registro conductor, vehículos, pagos y reembolsos Culqi, búsqueda en garita e historial). |
 
 > Las suites `test:seguridad`, `test:integridad`, `test:concurrencia` y `test:disponibilidad` esperan el servidor en `http://localhost:3555` (`BASE_URL` para cambiarlo). `test:graficos-mes` se ejecuta con `node tests/test-graficos-mes.js`.
 
@@ -187,7 +192,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | --- | --- | --- | --- | --- |
 | UPAO-21 | Realizar reserva | Listo | 5 | Manejo de Reserva Web |
 | UPAO-22 | Anular reserva | Listo | 3 | Manejo de Reserva Web |
-| UPAO-8 | Buscar reservas | Por hacer | 2 | Manejo de Reserva Web |
+| UPAO-8 | Buscar reservas | Listo | 2 | Manejo de Reserva Web |
 | UPAO-23 | Consultar historial de estados | Por hacer | 2 | Manejo de Reserva Web |
 
 > **Estrategia Blue / Green:** La rama `develop` despliega en el ambiente **Blue (Staging)** para pruebas continuas; la rama `main` despliega en el ambiente **Green (Producción)** solo al validar cada historia (ver [`docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md`](docs/arquitectura/Estrategia_Ambientes_Blue_Green_y_Pruebas.md)).
