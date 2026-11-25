@@ -60,7 +60,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cochera_ci?schema=public
         run: npx prisma migrate deploy && npm run db:seed
 
-      - name: Ejecutar suite completa en 1 clic (npm test)
+      - name: Ejecutar suites automatizadas (npm test)
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cochera_ci?schema=public
           AUTH_SECRET: ci-ephemeral-auth-secret-cochera-upao-2026

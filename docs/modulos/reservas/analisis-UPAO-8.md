@@ -1,65 +1,46 @@
 # Análisis y Diseño — Búsqueda y Confirmación de Reservas
 
 ## 1. Objetivo
-Permitir al Recepcionista y al Dueño consultar reservas por código (`RES-xxxxxxxx`), placa (con o sin guion), DNI o nombre del conductor, detectar automáticamente placas con reserva `VIGENTE` dentro del flujo normal de ingreso, proteger los cupos reservados ante ingresos presenciales (*walk-in*) y confirmar la llegada vinculando la estadía con el adelanto pagado para descontarlo al registrar la salida.
-
----
+Permitir al recepcionista y al dueño consultar reservas por código, placa, DNI o nombre del conductor, detectar automáticamente reservas vigentes al registrar un ingreso, proteger los cupos reservados frente a ingresos presenciales y descontar el adelanto al momento de la salida.
 
 ## 2. Flujos en Recepción
 
-### 2.1. Detección automática al digitar la placa en Registrar Ingreso
-```text
-[Recepcionista escribe placa en #view-ingreso]
-        │  GET /api/reservas/por-placa/:placa (normalizada, con o sin guion)
-        ├── Sin reserva VIGENTE ──► Botón principal verde "Registrar Ingreso"
-        │                           (POST /api/ingresos; valida aforo con reservas vigentes)
-        └── Con reserva VIGENTE ──► Muestra aviso informativo RESERVADO (código, conductor, adelanto, límite)
-                                    Botón principal cambia a azul "Confirmar ingreso con reserva"
-                                    (POST /api/reservas/:id/confirmar con nota opcional -> Estadía + UTILIZADA)
-```
+### Detección automática en Registrar Ingreso
+1. El recepcionista digita la placa del vehículo (con o sin guion).
+2. Si no existe una reserva vigente, el botón principal permanece en verde (Registrar Ingreso) y continúa el flujo habitual, validando que los vehículos en cochera más las reservas vigentes no superen el aforo.
+3. Si existe una reserva vigente, aparece un aviso amarillo informativo con el código, conductor, adelanto pagado y hora límite, y el botón principal cambia a azul (Confirmar ingreso con reserva) para confirmar la llegada junto con las observaciones opcionales del vehículo.
 
-### 2.2. Búsqueda manual por código, placa, DNI o nombre
-```text
-[Sidebar / Menú Principal -> "Buscar Reservas" (#view-garita-reservas)]
-        │  GET /api/reservas?q=...&estado=...
-        ▼
-[Listado en tabla de una línea (código, placa, conductor/DNI, vigencia, adelanto y estado)]
-        └── Si estado === VIGENTE ──► Botón "Confirmar" (POST /api/reservas/:id/confirmar)
-```
+### Búsqueda manual en Buscar Reservas
+1. Desde el menú principal o la barra lateral, el operador abre Buscar Reservas.
+2. Puede buscar por código de reserva, placa, DNI o nombre del conductor, y filtrar por estado (Todos, Vigentes, Utilizadas, Vencidas o Anuladas).
+3. En las reservas vigentes se habilita la acción Confirmar para registrar el ingreso directamente.
 
----
-
-## 3. Reglas de Negocio, Seguridad y Concurrencia
-
-1. **Búsqueda multicriterio (`RN-01`):** `GET /api/reservas` busca por código de reserva, placa normalizada (con o sin guion), DNI o nombre del conductor y filtra por estado (`VIGENTE`, `UTILIZADA`, `VENCIDA`, `ANULADA`), ejecutando vencimiento perezoso (`> 30 min`) antes de devolver resultados.
-2. **Control de acceso estricto (`RN-02`):** `GET /api/reservas`, `GET /api/reservas/por-placa/:placa` y `POST /api/reservas/:id/confirmar` están restringidos exclusivamente a roles `RECEPCIONISTA` y `DUENO`; un `CONDUCTOR` recibe HTTP `403` y peticiones sin token reciben `401`.
-3. **Transacción atómica y vínculo `estadia.id_reserva` (`RN-03`):** `POST /api/reservas/:id/confirmar` adquiere `pg_advisory_xact_lock` por `id_tipo_vehiculo` y por reserva `(780000, id)`, aplica vencimiento perezoso, exige estado `VIGENTE` y ausencia de estadía activa, marca la reserva `UTILIZADA` y crea la `estadia` vinculada mediante `id_reserva` (`INTEGER`, `UNIQUE`, `NULL`, FK → `reserva`).
-4. **Protección de cupo y bloqueo de ingreso duplicado (`RN-04`):** `POST /api/ingresos` rechaza con HTTP `409` tanto el ingreso normal de una placa con reserva `VIGENTE` como ingresos presenciales cuando `estadiasActivas + reservasVigentes >= capacidad`.
-5. **Descuento automático en Salida (`RN-05`):** `POST /api/salidas` lee `estadia.reserva.montoAdelanto`, lo descuenta del total calculado (`saldo = max(0, montoBruto - adelantoReserva)`) y retorna ambos importes.
-6. **Endurecimiento anti-bot e integridad (`RN-06`):** el servidor aplica cabeceras defensivas HTTP, límite de payload JSON (`100 KB`), limitación de tasa por IP (`HTTP 429` + `Retry-After`) y escape HTML en el renderizado de resultados.
-
----
+## 3. Reglas de Negocio y Seguridad
+- Búsqueda multicriterio: las consultas normalizan la placa (con o sin guion) y actualizan antes las reservas cuyo plazo de 30 minutos ya venció.
+- Control de acceso: la consulta y confirmación de reservas están restringidas a los roles Recepcionista y Dueño; el rol Conductor recibe rechazo de acceso (403) y las solicitudes sin sesión se rechazan (401).
+- Confirmación atómica: confirmar una llegada bloquea la operación de forma concurrente, valida que la reserva siga vigente y sin estadía activa, la marca como Utilizada y crea la estadía vinculada al adelanto.
+- Protección de cupo: el ingreso presencial rechaza cualquier placa que ya tenga reserva vigente (409) e impide ocupar espacios reservados por conductores web.
+- Descuento en salida: al cobrar la salida de una estadía originada en reserva, el sistema descuenta automáticamente el adelanto pagado del total calculado.
+- Defensa contra abuso: el servidor aplica cabeceras de seguridad HTTP, límite de tamaño en solicitudes (100 KB), control de frecuencia por IP (429) y saneamiento de texto en pantalla contra XSS.
 
 ## 4. Endpoints Planificados
 
-| Método | Ruta | Rol | Descripción |
+| Método | Ruta | Roles permitidos | Función |
 | --- | --- | --- | --- |
-| `GET` | `/api/reservas/por-placa/:placa` | `RECEPCIONISTA` / `DUENO` | Detecta si una placa (con o sin guion) tiene reserva `VIGENTE`. |
-| `GET` | `/api/reservas` | `RECEPCIONISTA` / `DUENO` | Busca reservas por código, placa normalizada, DNI o nombre y filtra por estado. |
-| `POST` | `/api/reservas/:id/confirmar` | `RECEPCIONISTA` / `DUENO` | Confirma llegada bajo lock, marca `UTILIZADA` y crea la estadía activa vinculada. |
-
----
+| GET | /api/reservas/por-placa/:placa | Recepcionista, Dueño | Verifica si una placa tiene reserva vigente. |
+| GET | /api/reservas | Recepcionista, Dueño | Busca reservas por código, placa, DNI o nombre y filtra por estado. |
+| POST | /api/reservas/:id/confirmar | Recepcionista, Dueño | Confirma la llegada, marca la reserva como utilizada y abre la estadía. |
 
 ## 5. Casos de Prueba (Diseño)
 
-| ID | Caso de Prueba | Datos de Prueba | Resultado Esperado | Estado |
+| Código | Caso de Prueba | Datos de Prueba | Resultado Esperado | Estado |
 | --- | --- | --- | --- | --- |
-| **CP-08-01** | 1- Válido: Búsqueda por código, placa, DNI o nombre | Recepcionista consulta `GET /api/reservas?q=<criterio>` (con o sin guion) | Retorna la reserva coincidente con placa, tipo, conductor, vigencia y estado actual. | Pendiente |
-| **CP-08-02** | 2- Válido: Detección `RESERVADO` y botón unificado en Ingreso | Recepcionista digita placa con reserva `VIGENTE` en `#view-ingreso` (`GET /api/reservas/por-placa/:placa`) | Muestra aviso amarillo `RESERVADO` y cambia el botón principal a azul `Confirmar ingreso con reserva`. | Pendiente |
-| **CP-08-03** | 3- Válido: Confirmar llegada en recepción y abrir estadía vinculada | `POST /api/reservas/:id/confirmar` sobre reserva `VIGENTE` | Cambia reserva a `UTILIZADA` e inicia estadía activa vinculada (`id_reserva`). | Pendiente |
-| **CP-08-04** | 4- Válido: Descuento automático del adelanto en salida | Estadía originada en reserva confirmada + `POST /api/salidas` | Devuelve `montoBruto`, `adelantoReserva` (1h) y cobra solo `max(0, montoBruto - adelantoReserva)`. | Pendiente |
-| **CP-08-05** | 5- Inválido: Registrar ingreso normal cuando existe reserva vigente | `POST /api/ingresos` con placa que tiene reserva `VIGENTE` sin confirmar llegada | Backend rechaza con HTTP `409 Conflict` para evitar perder el adelanto. | Pendiente |
-| **CP-08-06** | 6- Inválido: Confirmar reserva vencida, anulada o ya utilizada | `POST /api/reservas/:id/confirmar` cuando el estado es `VENCIDA`, `ANULADA` o `UTILIZADA` | Rechaza confirmación (HTTP `409`) y no crea estadía vinculada. | Pendiente |
-| **CP-08-07** | 7- Inválido: Búsqueda por código o placa inexistente | `GET /api/reservas?q=ZZZ-999` desde Buscar Reservas | Retorna lista vacía (`[]`) con HTTP `200 OK` sin errores. | Pendiente |
-| **CP-08-08** | 8- Inválido (Seguridad/Bot): Fuerza bruta en login y saturación pública | Ráfaga repetida a `POST /api/auth/login` o `GET /api/publico/disponibilidad` desde misma IP | Middleware anti-bot responde `HTTP 429` con cabecera `Retry-After` y bloquea abuso. | Pendiente |
-| **CP-08-09** | 9- Inválido (Seguridad/Atacante): Payload >100 KB, SQLi/XSS y acceso de rol `CONDUCTOR` | Body >100 KB, payloads SQLi/XSS o token `CONDUCTOR` hacia rutas operativas | Rechaza con `413` / `400` / `401` / `403`, sin ejecutar SQL ni XSS ni escalar privilegios. | Pendiente |
+| CP-08-01 | Búsqueda por código, placa, DNI o nombre | Consulta con código, placa (con o sin guion), DNI o nombre | Devuelve las reservas coincidentes con vehículo, conductor, vigencia y estado actual. | Pendiente |
+| CP-08-02 | Detección de reserva y botón unificado en Ingreso | Ingreso de placa con reserva vigente en el formulario de recepción | Muestra el aviso amarillo de reserva y cambia el botón principal a azul (Confirmar ingreso con reserva). | Pendiente |
+| CP-08-03 | Confirmación de llegada y apertura de estadía | Confirmación de una reserva vigente desde recepción | Cambia la reserva a Utilizada e inicia una estadía activa vinculada al adelanto. | Pendiente |
+| CP-08-04 | Descuento automático del adelanto en salida | Registro de salida sobre una estadía originada en reserva | Calcula el monto bruto, descuenta el adelanto pagado y cobra solo el saldo restante. | Pendiente |
+| CP-08-05 | Ingreso normal bloqueado cuando existe reserva vigente | Intento de ingreso presencial con placa reservada o sin cupo libre | El servidor rechaza la solicitud (409) para no duplicar el registro ni perder el cupo reservado. | Pendiente |
+| CP-08-06 | Confirmación rechazada en reserva no vigente | Intento de confirmar una reserva vencida, anulada o ya utilizada | El servidor rechaza la operación (409) sin crear estadía. | Pendiente |
+| CP-08-07 | Búsqueda sin coincidencias | Consulta por un código o placa inexistente | Devuelve una lista vacía sin errores (200). | Pendiente |
+| CP-08-08 | Bloqueo de fuerza bruta y saturación por bot | Ráfaga repetida de solicitudes en login o disponibilidad pública | El servidor bloquea el abuso con respuesta 429 y tiempo de espera. | Pendiente |
+| CP-08-09 | Defensa ante cargas excesivas, inyección y acceso indebido | Solicitud mayor a 100 KB, intentos de SQLi/XSS o acceso con rol Conductor | El servidor rechaza cada intento (413, 400, 401 o 403) sin afectar datos ni sesiones. | Pendiente |
