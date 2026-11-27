@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "npx prisma migrate deploy && node server.js",
     "dev": "node --watch server.js",
     "setup:skills": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/setup-skills.ps1",
     "db:migrate": "prisma migrate dev",
@@ -38,10 +38,10 @@
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "dotenv": "^18.0.7",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "prisma": "^6.19.3"
   },
   "devDependencies": {
-    "playwright": "^1.64.0",
-    "prisma": "^6.19.3"
+    "playwright": "^1.64.0"
   }
 }
