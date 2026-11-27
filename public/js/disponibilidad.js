@@ -155,6 +155,12 @@
       if (data.motos) {
         renderizarPanel('motos', data.motos, horaStr);
       }
+
+      const heroCuposTotales = document.getElementById('hero-cupos-totales');
+      if (heroCuposTotales && data.total) {
+        const libres = Math.max(0, Number(data.total.disponibles) || 0);
+        heroCuposTotales.textContent = `${libres} ${libres === 1 ? 'espacio libre ahora' : 'espacios libres ahora'}`;
+      }
     } catch (error) {
       console.error('Error al actualizar disponibilidad pública:', error);
       if (typeof window.mostrarToast === 'function') {

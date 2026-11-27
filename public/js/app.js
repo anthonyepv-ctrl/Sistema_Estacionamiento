@@ -158,6 +158,16 @@ document.addEventListener('DOMContentLoaded', () => {
       section.classList.remove('active');
     });
 
+    const headerLandingNav = document.getElementById('header-landing-nav');
+    if (headerLandingNav) {
+      headerLandingNav.classList.toggle('hidden', nombre !== 'disponibilidad');
+    }
+
+    const btnHeaderPortal = document.getElementById('btn-header-portal');
+    if (btnHeaderPortal) {
+      btnHeaderPortal.textContent = nombre === 'disponibilidad' ? 'Mi Panel' : 'Portal Público';
+    }
+
     if (nombre === 'login') {
       viewLogin.classList.add('active');
       headerUserSection.style.display = 'none';
@@ -1259,6 +1269,35 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cardModuloDisponibilidad) {
     cardModuloDisponibilidad.addEventListener('click', () => {
       mostrarPantalla('disponibilidad');
+    });
+  }
+
+  function irAPortadaPublica() {
+    mostrarPantalla('disponibilidad');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  const btnBrandInicio = document.getElementById('btn-brand-inicio');
+  if (btnBrandInicio) {
+    btnBrandInicio.addEventListener('click', irAPortadaPublica);
+    btnBrandInicio.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        irAPortadaPublica();
+      }
+    });
+  }
+
+  const btnHeaderPortal = document.getElementById('btn-header-portal');
+  if (btnHeaderPortal) {
+    btnHeaderPortal.addEventListener('click', () => {
+      const viewDisp = document.getElementById('view-disponibilidad');
+      if (viewDisp && viewDisp.classList.contains('active') && window.sesionActual && window.sesionActual.rol) {
+        mostrarPantalla('dashboard');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        irAPortadaPublica();
+      }
     });
   }
 

@@ -14,20 +14,29 @@
        BARRA SUPERIOR (HEADER ORIENTADO AL USUARIO)
        ======================================================================== -->
   <header class="app-header">
-    <div class="brand-section">
+    <div class="brand-section" id="btn-brand-inicio" role="button" tabindex="0" title="Ir a la portada pública de Cochera SP">
       <div class="brand-logo">SP</div>
       <div class="brand-info">
         <h1>COCHERA SP</h1>
-        <p>Sistema de Gestión de Cochera</p>
+        <p>Estacionamiento y Reserva Online</p>
       </div>
     </div>
 
+    <nav class="header-landing-nav" id="header-landing-nav" aria-label="Secciones de portada">
+      <a href="#seccion-aforo-publico" class="header-nav-link">Servicios y Aforo</a>
+      <a href="#seccion-como-funciona" class="header-nav-link">Cómo Reservar</a>
+      <a href="#footer-comercio-culqi" class="header-nav-link">Contacto y Legal</a>
+    </nav>
+
     <!-- Información del usuario en sesión y cerrar sesión (oculto en pantalla de Login) -->
-    <div style="display: flex; align-items: center; gap: 12px;">
+    <div class="header-actions-wrap">
       <button type="button" class="btn btn-primary btn-sm hidden" id="btn-header-login">
         Iniciar Sesión
       </button>
       <div class="header-user-section" id="header-user-section" style="display: none;">
+        <button type="button" class="btn btn-secondary btn-sm btn-header-portal" id="btn-header-portal">
+          Portal Público
+        </button>
         <div class="user-profile-badge">
           <div class="user-avatar">DA</div>
           <div class="user-meta">
@@ -1253,146 +1262,232 @@
         </button>
       </div>
 
-      <div class="page-title-group">
-        <h1>Cochera SP — Reservas y Disponibilidad</h1>
-        <p class="subtitle">Reserva tu espacio de estacionamiento en línea y paga tu adelanto de 1 hora de forma segura con tarjeta o Yape.</p>
-      </div>
-
-      <div class="disponibilidad-grid">
-        <!-- Panel 1: Automóviles -->
-        <div class="card disponibilidad-card" id="card-disponibilidad-autos">
-          <img src="/img/servicio-auto.jpg" alt="Servicio de estacionamiento para automóvil en cochera techada" class="servicio-foto">
-          <div class="card-header">
-            <div class="vehiculo-tipo-header">
-              <div>
-                <h2>Reserva de Espacio — Automóvil</h2>
-                <p class="caption">Autos, SUV y camionetas · Cochera techada y vigilada</p>
-              </div>
-            </div>
-            <span class="badge badge-success mono" id="badge-estado-autos">DISPONIBLE</span>
+      <div class="landing-hero">
+        <div class="landing-hero-copy">
+          <div class="hero-eyebrow">
+            <span class="hero-live-dot" aria-hidden="true"></span>
+            <span>Trujillo · Estacionamiento techado y reserva en línea</span>
           </div>
-          <div class="accent-bar-sm"></div>
-
-          <div class="catalogo-precio-row">
-            <div>
-              <span class="catalogo-precio mono" id="disp-precio-autos">S/ 4.70</span>
-              <span class="caption">/ hora (adelanto de reserva)</span>
-            </div>
-            <span class="caption mono" id="disp-fraccion-autos">Fracción adicional: S/ 2.50</span>
-          </div>
-
-          <p class="servicio-descripcion">
-            Estacionamiento techado con vigilancia permanente y control de acceso por placa. Incluye 30 minutos de vigencia para tu llegada; el adelanto pagado se descuenta automáticamente al registrar tu salida.
+          <h1>Reserva tu estacionamiento en segundos y asegura tu espacio</h1>
+          <p class="hero-subtitle">
+            Cochera SP en Av. América Sur 3145. Consulta el aforo en vivo, aparta tu lugar con 30 minutos de tolerancia y paga el adelanto de forma segura con tarjeta o Yape.
           </p>
-
-          <div class="disponibilidad-info-list">
-            <div class="info-row">
-              <span class="caption">Capacidad total:</span>
-              <span class="info-val mono" id="disp-capacidad-autos">--</span>
-            </div>
-            <div class="info-row">
-              <span class="caption">En cochera:</span>
-              <span class="info-val mono" id="disp-encochera-autos">--</span>
-            </div>
-            <div class="info-row">
-              <span class="caption">Reservas vigentes:</span>
-              <span class="info-val mono" id="disp-reservas-autos">0</span>
-            </div>
+          <div class="hero-cta-group">
+            <a href="#seccion-aforo-publico" class="btn btn-primary">Ver Aforo y Reservar</a>
+            <a href="#seccion-como-funciona" class="btn btn-secondary">Cómo Funciona</a>
           </div>
-
-          <!-- Caja destacada de cupos disponibles -->
-          <div class="cupos-destacados-box" id="cupos-box-autos">
-            <span class="cupos-numero mono" id="disp-cupos-autos">--</span>
-            <span class="cupos-texto" id="disp-texto-autos">espacios disponibles</span>
-          </div>
-
-          <div style="margin-top: 16px;">
-            <button type="button" class="btn btn-primary btn-block" id="btn-reservar-auto">
-              Reservar y Pagar Espacio (Auto) →
-            </button>
-          </div>
-
-          <div class="disponibilidad-card-footer">
-            <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-autos">--:--:--</span></span>
+          <div class="hero-trust-row">
+            <span class="hero-trust-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Vigilancia 24/7
+            </span>
+            <span class="hero-trust-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Reembolso 100% dentro de 30 min
+            </span>
+            <span class="hero-trust-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Boleta electrónica SUNAT
+            </span>
           </div>
         </div>
-
-        <!-- Panel 2: Motocicletas -->
-        <div class="card disponibilidad-card" id="card-disponibilidad-motos">
-          <img src="/img/servicio-moto.jpg" alt="Servicio de estacionamiento para motocicleta en zona vigilada" class="servicio-foto">
-          <div class="card-header">
-            <div class="vehiculo-tipo-header">
-              <div>
-                <h2>Reserva de Espacio — Motocicleta</h2>
-                <p class="caption">Motos lineales y afines · Zona exclusiva vigilada</p>
-              </div>
-            </div>
-            <span class="badge badge-success mono" id="badge-estado-motos">DISPONIBLE</span>
-          </div>
-          <div class="accent-bar-sm"></div>
-
-          <div class="catalogo-precio-row">
-            <div>
-              <span class="catalogo-precio mono" id="disp-precio-motos">S/ 2.90</span>
-              <span class="caption">/ hora (adelanto mín. S/ 3.00)</span>
-            </div>
-            <span class="caption mono" id="disp-fraccion-motos">Fracción adicional: S/ 1.50</span>
-          </div>
-
-          <p class="servicio-descripcion">
-            Zona techada exclusiva para motocicletas con monitoreo continuo y control de acceso. Incluye 30 minutos de vigencia para tu llegada; el adelanto mínimo en línea (S/ 3.00) se descuenta íntegramente al salir.
-          </p>
-
-          <div class="disponibilidad-info-list">
-            <div class="info-row">
-              <span class="caption">Capacidad total:</span>
-              <span class="info-val mono" id="disp-capacidad-motos">--</span>
-            </div>
-            <div class="info-row">
-              <span class="caption">En cochera:</span>
-              <span class="info-val mono" id="disp-encochera-motos">--</span>
-            </div>
-            <div class="info-row">
-              <span class="caption">Reservas vigentes:</span>
-              <span class="info-val mono" id="disp-reservas-motos">0</span>
-            </div>
-          </div>
-
-          <!-- Caja destacada de cupos disponibles -->
-          <div class="cupos-destacados-box" id="cupos-box-motos">
-            <span class="cupos-numero mono" id="disp-cupos-motos">--</span>
-            <span class="cupos-texto" id="disp-texto-motos">espacios disponibles</span>
-          </div>
-
-          <div style="margin-top: 16px;">
-            <button type="button" class="btn btn-primary btn-block" id="btn-reservar-moto">
-              Reservar y Pagar Espacio (Moto) →
-            </button>
-          </div>
-
-          <div class="disponibilidad-card-footer">
-            <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-motos">--:--:--</span></span>
+        <div class="hero-media-card">
+          <img src="/img/hero-cochera.jpg" alt="Instalaciones techadas y señalizadas de Cochera SP en Trujillo" class="hero-media-img">
+          <div class="hero-live-pill">
+            <span class="hero-live-pill-badge">
+              <span class="hero-live-dot" aria-hidden="true"></span>
+              Aforo en vivo
+            </span>
+            <span class="mono" id="hero-cupos-totales">Actualizando cupos...</span>
           </div>
         </div>
       </div>
 
-      <div class="card flujo-compra-card">
-        <h3>Flujo de Reserva y Pago en Línea</h3>
+      <section id="seccion-aforo-publico" class="landing-section" aria-labelledby="titulo-servicios-aforo">
+        <div class="landing-section-head">
+          <div>
+            <h2 id="titulo-servicios-aforo">Servicios, Tarifas y Aforo en Tiempo Real</h2>
+            <p class="caption">Precios expresados en soles peruanos (PEN). Actualización automática cada 30 segundos.</p>
+          </div>
+        </div>
+
+        <div class="disponibilidad-grid">
+          <!-- Panel 1: Automóviles -->
+          <div class="card disponibilidad-card" id="card-disponibilidad-autos">
+            <img src="/img/servicio-auto.jpg" alt="Servicio de estacionamiento para automóvil en cochera techada" class="servicio-foto">
+            <div class="card-header">
+              <div class="vehiculo-tipo-header">
+                <div>
+                  <h2>Reserva de Espacio — Automóvil</h2>
+                  <p class="caption">Autos, SUV y camionetas · Cochera techada y vigilada</p>
+                </div>
+              </div>
+              <span class="badge badge-success mono" id="badge-estado-autos">DISPONIBLE</span>
+            </div>
+            <div class="accent-bar-sm"></div>
+
+            <div class="catalogo-precio-row">
+              <div>
+                <span class="catalogo-precio mono" id="disp-precio-autos">S/ 4.70</span>
+                <span class="caption">/ hora (adelanto de reserva)</span>
+              </div>
+              <span class="caption mono" id="disp-fraccion-autos">Fracción adicional: S/ 2.50</span>
+            </div>
+
+            <p class="servicio-descripcion">
+              Estacionamiento techado con vigilancia permanente y control de acceso por placa. Incluye 30 minutos de vigencia para tu llegada; el adelanto pagado se descuenta automáticamente al registrar tu salida.
+            </p>
+
+            <div class="disponibilidad-info-list">
+              <div class="info-row">
+                <span class="caption">Capacidad total:</span>
+                <span class="info-val mono" id="disp-capacidad-autos">--</span>
+              </div>
+              <div class="info-row">
+                <span class="caption">En cochera:</span>
+                <span class="info-val mono" id="disp-encochera-autos">--</span>
+              </div>
+              <div class="info-row">
+                <span class="caption">Reservas vigentes:</span>
+                <span class="info-val mono" id="disp-reservas-autos">0</span>
+              </div>
+            </div>
+
+            <!-- Caja destacada de cupos disponibles -->
+            <div class="cupos-destacados-box" id="cupos-box-autos">
+              <span class="cupos-numero mono" id="disp-cupos-autos">--</span>
+              <span class="cupos-texto" id="disp-texto-autos">espacios disponibles</span>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <button type="button" class="btn btn-primary btn-block" id="btn-reservar-auto">
+                Reservar y Pagar Espacio (Auto)
+              </button>
+            </div>
+
+            <div class="disponibilidad-card-footer">
+              <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-autos">--:--:--</span></span>
+            </div>
+          </div>
+
+          <!-- Panel 2: Motocicletas -->
+          <div class="card disponibilidad-card" id="card-disponibilidad-motos">
+            <img src="/img/servicio-moto.jpg" alt="Servicio de estacionamiento para motocicleta en zona vigilada" class="servicio-foto">
+            <div class="card-header">
+              <div class="vehiculo-tipo-header">
+                <div>
+                  <h2>Reserva de Espacio — Motocicleta</h2>
+                  <p class="caption">Motos lineales y afines · Zona exclusiva vigilada</p>
+                </div>
+              </div>
+              <span class="badge badge-success mono" id="badge-estado-motos">DISPONIBLE</span>
+            </div>
+            <div class="accent-bar-sm"></div>
+
+            <div class="catalogo-precio-row">
+              <div>
+                <span class="catalogo-precio mono" id="disp-precio-motos">S/ 2.90</span>
+                <span class="caption">/ hora (adelanto mín. S/ 3.00)</span>
+              </div>
+              <span class="caption mono" id="disp-fraccion-motos">Fracción adicional: S/ 1.50</span>
+            </div>
+
+            <p class="servicio-descripcion">
+              Zona techada exclusiva para motocicletas con monitoreo continuo y control de acceso. Incluye 30 minutos de vigencia para tu llegada; el adelanto mínimo en línea (S/ 3.00) se descuenta íntegramente al salir.
+            </p>
+
+            <div class="disponibilidad-info-list">
+              <div class="info-row">
+                <span class="caption">Capacidad total:</span>
+                <span class="info-val mono" id="disp-capacidad-motos">--</span>
+              </div>
+              <div class="info-row">
+                <span class="caption">En cochera:</span>
+                <span class="info-val mono" id="disp-encochera-motos">--</span>
+              </div>
+              <div class="info-row">
+                <span class="caption">Reservas vigentes:</span>
+                <span class="info-val mono" id="disp-reservas-motos">0</span>
+              </div>
+            </div>
+
+            <!-- Caja destacada de cupos disponibles -->
+            <div class="cupos-destacados-box" id="cupos-box-motos">
+              <span class="cupos-numero mono" id="disp-cupos-motos">--</span>
+              <span class="cupos-texto" id="disp-texto-motos">espacios disponibles</span>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <button type="button" class="btn btn-primary btn-block" id="btn-reservar-moto">
+                Reservar y Pagar Espacio (Moto)
+              </button>
+            </div>
+
+            <div class="disponibilidad-card-footer">
+              <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-motos">--:--:--</span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="seccion-como-funciona" class="card flujo-compra-card landing-section" aria-labelledby="titulo-flujo-compra">
+        <h2 id="titulo-flujo-compra">Cómo Funciona el Pago Online y la Reserva</h2>
         <div class="flujo-compra-grid">
           <div class="flujo-paso">
             <strong>1. Elige tipo de vehículo y verifica cupo</strong>
-            <span class="caption">Consulta disponibilidad en tiempo real y presiona “Reservar y Pagar Espacio”.</span>
+            <span class="caption">Consulta la disponibilidad en tiempo real arriba y presiona Reservar y Pagar Espacio.</span>
           </div>
           <div class="flujo-paso">
-            <strong>2. Confirma tus datos y resumen</strong>
-            <span class="caption">Ingresa o registra tu cuenta de conductor, elige tu placa y revisa el monto exacto en soles (PEN).</span>
+            <strong>2. Confirma tu placa y resumen</strong>
+            <span class="caption">Inicia sesión o regístrate en segundos, elige tu placa y revisa el adelanto exacto en soles (PEN).</span>
           </div>
           <div class="flujo-paso">
-            <strong>3. Paga de forma segura con Culqi</strong>
-            <span class="caption">Abona con Visa, Mastercard, American Express, Diners o Yape. Si anulas dentro de los 30 min vigentes, el reembolso es automático.</span>
+            <strong>3. Paga seguro con Culqi</strong>
+            <span class="caption">Completa el pago con tarjeta o Yape. Si anulas dentro de los 30 minutos vigentes, el reembolso es automático.</span>
           </div>
         </div>
-      </div>
+        <div class="pago-marcas-strip">
+          <span class="caption">Pagos procesados de forma segura mediante pasarela Culqi Perú:</span>
+          <div class="pago-marcas-badges">
+            <span class="pago-chip">Visa</span>
+            <span class="pago-chip">Mastercard</span>
+            <span class="pago-chip">American Express</span>
+            <span class="pago-chip">Diners Club</span>
+            <span class="pago-chip pago-chip-yape">Yape</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-beneficios" aria-label="Respaldo y ventajas del servicio">
+        <div class="beneficio-card">
+          <div class="beneficio-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Cochera Techada y Vigilada</h3>
+          <p class="caption">Control estricto de ingreso y salida por placa vehicular con registro horario exacto.</p>
+        </div>
+        <div class="beneficio-card">
+          <div class="beneficio-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>30 Minutos de Tolerancia</h3>
+          <p class="caption">Tu cupo queda protegido desde que pagas hasta tu llegada en garita.</p>
+        </div>
+        <div class="beneficio-card">
+          <div class="beneficio-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          </div>
+          <h3>Descuento Directo al Salir</h3>
+          <p class="caption">El adelanto de reserva se descuenta íntegramente del cálculo final en recepción.</p>
+        </div>
+        <div class="beneficio-card">
+          <div class="beneficio-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <h3>Ubicación en Trujillo</h3>
+          <p class="caption">Av. América Sur 3145, atención continua de lunes a domingo de 06:00 a 23:00 h.</p>
+        </div>
+      </section>
 
       <footer class="public-footer" id="footer-comercio-culqi">
         <div class="public-footer-grid">
@@ -1418,8 +1513,9 @@
               <li><button type="button" class="link-legal-btn" data-legal="privacidad">Política de Privacidad (Ley 29733)</button></li>
               <li><button type="button" class="link-legal-btn" data-legal="reembolsos">Política de Anulaciones y Reembolsos</button></li>
             </ul>
-            <button type="button" id="btn-abrir-libro-reclamaciones" class="btn btn-secondary btn-sm" style="margin-top: 10px; border-color: #1E3A8A; color: #1E3A8A;">
-              📖 Libro de Reclamaciones Virtual
+            <button type="button" id="btn-abrir-libro-reclamaciones" class="btn btn-secondary btn-sm btn-reclamaciones-icon" style="margin-top: 10px; border-color: #1E3A8A; color: #1E3A8A;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <span>Libro de Reclamaciones Virtual</span>
             </button>
           </div>
         </div>
