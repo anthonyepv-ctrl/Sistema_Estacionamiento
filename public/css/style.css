@@ -2162,4 +2162,52 @@ select.input-control {
   margin: 0 0 10px 0;
 }
 
+.servicio-foto {
+  width: 100%;
+  height: 175px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  border: 1px solid #E5E7EB;
+  display: block;
+}
+
+.servicio-descripcion {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4B5563;
+  margin: 0 0 12px 0;
+}
+
+.flujo-compra-card {
+  margin-top: 20px;
+}
+
+.flujo-compra-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.flujo-paso {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.flujo-paso strong {
+  display: block;
+  font-size: 13px;
+  color: #1E3A8A;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+  .flujo-compra-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 

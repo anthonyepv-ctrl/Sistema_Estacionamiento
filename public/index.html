@@ -1254,17 +1254,19 @@
       </div>
 
       <div class="page-title-group">
-        <h1>Reservas y Disponibilidad</h1>
+        <h1>Cochera SP — Reservas y Disponibilidad</h1>
+        <p class="subtitle">Reserva tu espacio de estacionamiento en línea y paga tu adelanto de 1 hora de forma segura con tarjeta o Yape.</p>
       </div>
 
       <div class="disponibilidad-grid">
         <!-- Panel 1: Automóviles -->
         <div class="card disponibilidad-card" id="card-disponibilidad-autos">
+          <img src="/img/servicio-auto.jpg" alt="Servicio de estacionamiento para automóvil en cochera techada" class="servicio-foto">
           <div class="card-header">
             <div class="vehiculo-tipo-header">
               <div>
-                <h2>Automóvil</h2>
-                <p class="caption">Cochera techada · 30 min de tolerancia al llegar</p>
+                <h2>Reserva de Espacio — Automóvil</h2>
+                <p class="caption">Autos, SUV y camionetas · Cochera techada y vigilada</p>
               </div>
             </div>
             <span class="badge badge-success mono" id="badge-estado-autos">DISPONIBLE</span>
@@ -1273,11 +1275,15 @@
 
           <div class="catalogo-precio-row">
             <div>
-              <span class="catalogo-precio mono" id="disp-precio-autos">S/ 6.00</span>
-              <span class="caption">/ hora</span>
+              <span class="catalogo-precio mono" id="disp-precio-autos">S/ 4.70</span>
+              <span class="caption">/ hora (adelanto de reserva)</span>
             </div>
-            <span class="caption mono" id="disp-fraccion-autos">Fracción: S/ 3.00</span>
+            <span class="caption mono" id="disp-fraccion-autos">Fracción adicional: S/ 2.50</span>
           </div>
+
+          <p class="servicio-descripcion">
+            Estacionamiento techado con vigilancia permanente y control de acceso por placa. Incluye 30 minutos de vigencia para tu llegada; el adelanto pagado se descuenta automáticamente al registrar tu salida.
+          </p>
 
           <div class="disponibilidad-info-list">
             <div class="info-row">
@@ -1302,7 +1308,7 @@
 
           <div style="margin-top: 16px;">
             <button type="button" class="btn btn-primary btn-block" id="btn-reservar-auto">
-              Reservar Espacio (Auto) →
+              Reservar y Pagar Espacio (Auto) →
             </button>
           </div>
 
@@ -1313,11 +1319,12 @@
 
         <!-- Panel 2: Motocicletas -->
         <div class="card disponibilidad-card" id="card-disponibilidad-motos">
+          <img src="/img/servicio-moto.jpg" alt="Servicio de estacionamiento para motocicleta en zona vigilada" class="servicio-foto">
           <div class="card-header">
             <div class="vehiculo-tipo-header">
               <div>
-                <h2>Motocicleta</h2>
-                <p class="caption">Zona vigilada · 30 min de tolerancia al llegar</p>
+                <h2>Reserva de Espacio — Motocicleta</h2>
+                <p class="caption">Motos lineales y afines · Zona exclusiva vigilada</p>
               </div>
             </div>
             <span class="badge badge-success mono" id="badge-estado-motos">DISPONIBLE</span>
@@ -1326,11 +1333,15 @@
 
           <div class="catalogo-precio-row">
             <div>
-              <span class="catalogo-precio mono" id="disp-precio-motos">S/ 3.00</span>
-              <span class="caption">/ hora</span>
+              <span class="catalogo-precio mono" id="disp-precio-motos">S/ 2.90</span>
+              <span class="caption">/ hora (adelanto mín. S/ 3.00)</span>
             </div>
-            <span class="caption mono" id="disp-fraccion-motos">Fracción: S/ 1.50</span>
+            <span class="caption mono" id="disp-fraccion-motos">Fracción adicional: S/ 1.50</span>
           </div>
+
+          <p class="servicio-descripcion">
+            Zona techada exclusiva para motocicletas con monitoreo continuo y control de acceso. Incluye 30 minutos de vigencia para tu llegada; el adelanto mínimo en línea (S/ 3.00) se descuenta íntegramente al salir.
+          </p>
 
           <div class="disponibilidad-info-list">
             <div class="info-row">
@@ -1355,12 +1366,30 @@
 
           <div style="margin-top: 16px;">
             <button type="button" class="btn btn-primary btn-block" id="btn-reservar-moto">
-              Reservar Espacio (Moto) →
+              Reservar y Pagar Espacio (Moto) →
             </button>
           </div>
 
           <div class="disponibilidad-card-footer">
             <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-motos">--:--:--</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card flujo-compra-card">
+        <h3>Flujo de Reserva y Pago en Línea</h3>
+        <div class="flujo-compra-grid">
+          <div class="flujo-paso">
+            <strong>1. Elige tipo de vehículo y verifica cupo</strong>
+            <span class="caption">Consulta disponibilidad en tiempo real y presiona “Reservar y Pagar Espacio”.</span>
+          </div>
+          <div class="flujo-paso">
+            <strong>2. Confirma tus datos y resumen</strong>
+            <span class="caption">Ingresa o registra tu cuenta de conductor, elige tu placa y revisa el monto exacto en soles (PEN).</span>
+          </div>
+          <div class="flujo-paso">
+            <strong>3. Paga de forma segura con Culqi</strong>
+            <span class="caption">Abona con Visa, Mastercard, American Express, Diners o Yape. Si anulas dentro de los 30 min vigentes, el reembolso es automático.</span>
           </div>
         </div>
       </div>
@@ -1371,14 +1400,16 @@
             <h3>Cochera SP</h3>
             <p class="caption"><strong>Titular legal:</strong> FLORES LEONARDO ALBERTH JAIR</p>
             <p class="caption"><strong>RUC:</strong> <span class="mono">10607991664</span></p>
-            <p class="caption"><strong>Dirección:</strong> Av. América Sur 3145, Urb. Monserrate, Trujillo, La Libertad</p>
+            <p class="caption"><strong>Dirección:</strong> Av. América Sur 3145, Trujillo, La Libertad, Perú</p>
+            <p class="caption"><strong>Horario de atención:</strong> Lunes a Domingo, 06:00 a 23:00 h</p>
             <p class="caption">Precios expresados en soles (PEN). Emitimos Boleta de Venta electrónica.</p>
           </div>
           <div>
             <h4>Contacto y Medios de Pago</h4>
             <p class="caption"><strong>Teléfono / WhatsApp:</strong> <span class="mono">+51 988 940 558</span></p>
             <p class="caption"><strong>Correo:</strong> alberthflores47@gmail.com</p>
-            <p class="caption"><strong>Pagos en línea (Culqi):</strong> Tarjetas Visa, Mastercard, Amex y Diners (desde S/ 3.00); Yape (desde S/ 6.00).</p>
+            <p class="caption"><strong>Medios aceptados (Culqi):</strong> Visa, Mastercard, American Express, Diners Club (desde S/ 3.00) y Yape (desde S/ 6.00).</p>
+            <p class="caption"><strong>Cancelación y devoluciones:</strong> Anulación con reembolso automático 100% dentro de los 30 minutos de vigencia de la reserva.</p>
           </div>
           <div>
             <h4>Información Legal e Indecopi</h4>
