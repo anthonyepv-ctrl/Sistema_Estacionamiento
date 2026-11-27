@@ -23,17 +23,22 @@
     </div>
 
     <!-- Información del usuario en sesión y cerrar sesión (oculto en pantalla de Login) -->
-    <div class="header-user-section" id="header-user-section" style="display: none;">
-      <div class="user-profile-badge">
-        <div class="user-avatar">DA</div>
-        <div class="user-meta">
-          <span class="user-name" id="session-user-name">Leonardo Aliaga</span>
-        </div>
-        <span class="badge badge-primary mono" id="session-user-badge">DUEÑO</span>
-      </div>
-      <button type="button" class="btn-logout" id="btn-logout" title="Cerrar sesión">
-        Cerrar Sesión
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button type="button" class="btn btn-primary btn-sm hidden" id="btn-header-login">
+        Iniciar Sesión
       </button>
+      <div class="header-user-section" id="header-user-section" style="display: none;">
+        <div class="user-profile-badge">
+          <div class="user-avatar">DA</div>
+          <div class="user-meta">
+            <span class="user-name" id="session-user-name">Leonardo Aliaga</span>
+          </div>
+          <span class="badge badge-primary mono" id="session-user-badge">DUEÑO</span>
+        </div>
+        <button type="button" class="btn-logout" id="btn-logout" title="Cerrar sesión">
+          Cerrar Sesión
+        </button>
+      </div>
     </div>
   </header>
 
@@ -1184,15 +1189,14 @@
          10. PANTALLA PÚBLICA DE DISPONIBILIDAD DE ESPACIOS (UPAO-20)
          ---------------------------------------------------------------------- -->
     <section id="view-disponibilidad" class="view-section active">
-      <div class="view-top-bar" style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-disponibilidad" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500;">
-          <span>Iniciar Sesión</span>
+      <div class="view-top-bar hidden" id="disponibilidad-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-disponibilidad">
+          ← Volver al Menú Principal
         </button>
       </div>
 
       <div class="page-title-group">
-        <h1>Cochera SP — Reservas y Disponibilidad</h1>
-        <p>Reserva tu espacio de estacionamiento en línea y paga tu adelanto de 1 hora de forma segura con tarjeta o Yape.</p>
+        <h1>Reservas y Disponibilidad</h1>
       </div>
 
       <div class="disponibilidad-grid">
@@ -1201,8 +1205,8 @@
           <div class="card-header">
             <div class="vehiculo-tipo-header">
               <div>
-                <h2>Reserva de Espacio — Automóvil</h2>
-                <p class="caption">Autos, SUV y camionetas · Cochera techada y vigilada</p>
+                <h2>Automóvil</h2>
+                <p class="caption">Cochera techada · 30 min de tolerancia al llegar</p>
               </div>
             </div>
             <span class="badge badge-success mono" id="badge-estado-autos">DISPONIBLE</span>
@@ -1212,11 +1216,10 @@
           <div class="catalogo-precio-row">
             <div>
               <span class="catalogo-precio mono" id="disp-precio-autos">S/ 6.00</span>
-              <span class="caption">/ hora (adelanto de reserva)</span>
+              <span class="caption">/ hora</span>
             </div>
-            <span class="caption mono" id="disp-fraccion-autos">Fracción adicional: S/ 3.00</span>
+            <span class="caption mono" id="disp-fraccion-autos">Fracción: S/ 3.00</span>
           </div>
-          <p class="catalogo-desc">Incluye 30 minutos de vigencia para tu llegada en recepción. El adelanto pagado se descuenta automáticamente al registrar tu salida.</p>
 
           <div class="disponibilidad-info-list">
             <div class="info-row">
@@ -1241,7 +1244,7 @@
 
           <div style="margin-top: 16px;">
             <button type="button" class="btn btn-primary btn-block" id="btn-reservar-auto">
-              Reservar y Pagar Espacio (Auto) →
+              Reservar Espacio (Auto) →
             </button>
           </div>
 
@@ -1255,8 +1258,8 @@
           <div class="card-header">
             <div class="vehiculo-tipo-header">
               <div>
-                <h2>Reserva de Espacio — Motocicleta</h2>
-                <p class="caption">Motos lineales y afines · Zona exclusiva vigilada</p>
+                <h2>Motocicleta</h2>
+                <p class="caption">Zona vigilada · 30 min de tolerancia al llegar</p>
               </div>
             </div>
             <span class="badge badge-success mono" id="badge-estado-motos">DISPONIBLE</span>
@@ -1266,11 +1269,10 @@
           <div class="catalogo-precio-row">
             <div>
               <span class="catalogo-precio mono" id="disp-precio-motos">S/ 3.00</span>
-              <span class="caption">/ hora (adelanto de reserva)</span>
+              <span class="caption">/ hora</span>
             </div>
-            <span class="caption mono" id="disp-fraccion-motos">Fracción adicional: S/ 1.50</span>
+            <span class="caption mono" id="disp-fraccion-motos">Fracción: S/ 1.50</span>
           </div>
-          <p class="catalogo-desc">Incluye 30 minutos de vigencia para tu llegada en recepción. El adelanto pagado se descuenta automáticamente al registrar tu salida.</p>
 
           <div class="disponibilidad-info-list">
             <div class="info-row">
@@ -1295,33 +1297,12 @@
 
           <div style="margin-top: 16px;">
             <button type="button" class="btn btn-primary btn-block" id="btn-reservar-moto">
-              Reservar y Pagar Espacio (Moto) →
+              Reservar Espacio (Moto) →
             </button>
           </div>
 
           <div class="disponibilidad-card-footer">
             <span class="caption">Actualizado: <span class="mono" id="disp-actualizado-motos">--:--:--</span></span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top: 20px;">
-        <div class="card-header">
-          <h2>Flujo de Reserva y Pago en Línea</h2>
-        </div>
-        <div class="accent-bar-sm"></div>
-        <div class="flujo-compra-grid">
-          <div class="flujo-paso">
-            <strong class="mono">1. Selección de espacio</strong>
-            <p class="caption">Elige Auto o Moto según los cupos en tiempo real y haz clic en Reservar y Pagar.</p>
-          </div>
-          <div class="flujo-paso">
-            <strong class="mono">2. Orden y pago con Culqi</strong>
-            <p class="caption">Inicia sesión como conductor, selecciona tu placa y paga el adelanto de 1 hora con Visa, Mastercard o Yape.</p>
-          </div>
-          <div class="flujo-paso">
-            <strong class="mono">3. Ingreso y descuento</strong>
-            <p class="caption">Presenta tu placa o código en recepción dentro de los 30 minutos; el adelanto se descuenta al salir.</p>
           </div>
         </div>
       </div>
