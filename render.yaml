@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     branch: main
-    buildCommand: npm install --include=dev && npx prisma generate
+    buildCommand: npm install --include=dev && npx prisma generate && npx prisma migrate deploy
     startCommand: npm start
     healthCheckPath: /
     envVars:
