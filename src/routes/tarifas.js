@@ -23,6 +23,11 @@ function validarMonto(valor) {
 router.get('/', async (req, res) => {
   try {
     const tarifas = await prisma.tarifa.findMany({
+      where: {
+        tipoVehiculo: {
+          nombre: { not: 'Reserva Web' }
+        }
+      },
       include: { tipoVehiculo: true },
       orderBy: { id: 'asc' }
     });

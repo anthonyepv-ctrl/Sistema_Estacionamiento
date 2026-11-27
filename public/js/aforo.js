@@ -4,6 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewDashboard = document.getElementById('view-dashboard');
     const viewAforo = document.getElementById('view-aforo');
     const parkingList = document.getElementById('parking-list');
+    const cardCapacidad = document.getElementById('card-config-capacidad');
+    const formCapacidad = document.getElementById('form-config-capacidad');
+    const inputCapAutos = document.getElementById('input-cap-autos');
+    const inputCapMotos = document.getElementById('input-cap-motos');
+    const btnGuardarCapacidad = document.getElementById('btn-guardar-capacidad');
 
     if (cardModuloAforo && viewDashboard && viewAforo) {
         cardModuloAforo.addEventListener('click', (e) => {
@@ -66,6 +71,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const motosOcup = data.motos.ocupados;
             const totalMotos = data.motos.capacidad;
 
+            const rolActual = window.sesionActual && window.sesionActual.rol;
+            const esDueno = rolActual === 'DUENO' || rolActual === 'DUEÑO';
+            if (cardCapacidad) {
+                cardCapacidad.classList.toggle('hidden', !esDueno);
+                if (esDueno) {
+                    if (inputCapAutos) inputCapAutos.value = totalAutos;
+                    if (inputCapMotos) inputCapMotos.value = totalMotos;
+                }
+            }
+
             // 1. Actualizar contadores de sectores (Autos y Motos)
             if (document.getElementById('autos-disponibles')) document.getElementById('autos-disponibles').textContent = autosDisp;
             if (document.getElementById('autos-ocupados')) document.getElementById('autos-ocupados').textContent = autosOcup;
@@ -127,5 +142,51 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error al cargar datos del aforo:', error);
             parkingList.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #ef4444;">No se pudo cargar la información del aforo.</div>';
         }
+    }
+
+    if (formCapacidad) {
+        formCapacidad.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const capacidadAutos = Number(inputCapAutos ? inputCapAutos.value : 0);
+            const capacidadMotos = Number(inputCapMotos ? inputCapMotos.value : 0);
+            if (!Number.isInteger(capacidadAutos) || capacidadAutos < 1 || !Number.isInteger(capacidadMotos) || capacidadMotos < 1) {
+                if (typeof window.mostrarToast === 'function') {
+                    window.mostrarToast('Ingrese capacidades enteras mayores a 0.', true);
+                }
+                return;
+            }
+            if (btnGuardarCapacidad) {
+                btnGuardarCapacidad.classList.add('loading');
+                btnGuardarCapacidad.disabled = true;
+            }
+            try {
+                const token = obtenerToken();
+                const res = await fetch('/api/espacios/capacidad', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {})
+                    },
+                    body: JSON.stringify({ capacidadAutos, capacidadMotos })
+                });
+                const body = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(body.error || 'No se pudo actualizar la capacidad.');
+                }
+                if (typeof window.mostrarToast === 'function') {
+                    window.mostrarToast(body.mensaje || 'Capacidad actualizada correctamente.');
+                }
+                await cargarDatosAforo();
+            } catch (err) {
+                if (typeof window.mostrarToast === 'function') {
+                    window.mostrarToast(err.message, true);
+                }
+            } finally {
+                if (btnGuardarCapacidad) {
+                    btnGuardarCapacidad.classList.remove('loading');
+                    btnGuardarCapacidad.disabled = false;
+                }
+            }
+        });
     }
 });

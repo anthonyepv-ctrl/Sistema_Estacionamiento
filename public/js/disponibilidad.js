@@ -83,7 +83,10 @@
       elPrecio.textContent = `S/ ${Number(data.precioHora).toFixed(2)}`;
     }
     if (elFraccion && data.precioFraccion !== undefined) {
-      elFraccion.textContent = `Fracción: S/ ${Number(data.precioFraccion).toFixed(2)}`;
+      const baseFraccion = `Fracción: S/ ${Number(data.precioFraccion).toFixed(2)}`;
+      elFraccion.textContent = Number(data.precioHora) < 3
+        ? `${baseFraccion} · Adelanto mín. online: S/ 3.00`
+        : baseFraccion;
     }
 
     if (elCapacidad) elCapacidad.textContent = capacidad;
@@ -248,8 +251,8 @@
       terminos: {
         titulo: 'Términos y Condiciones — Cochera SP',
         html: `
-          <p><strong>1. Titular del servicio:</strong> Cochera SP (RUC 10607991664), ubicado en Av. América Sur 3145, Urb. Monserrate, Trujillo, La Libertad.</p>
-          <p><strong>2. Servicio de reserva:</strong> El conductor puede reservar un espacio de estacionamiento (Automóvil o Motocicleta) abonando por adelantado el equivalente a 1 hora de tarifa vigente.</p>
+          <p><strong>1. Titular del servicio:</strong> FLORES LEONARDO ALBERTH JAIR (Cochera SP, RUC 10607991664), ubicado en Av. América Sur 3145, Urb. Monserrate, Trujillo, La Libertad.</p>
+          <p><strong>2. Servicio de reserva:</strong> El conductor puede reservar un espacio de estacionamiento (Automóvil o Motocicleta) abonando por adelantado el equivalente a 1 hora de tarifa vigente (mínimo S/ 3.00 en línea). Todos los precios incluyen impuestos de ley y emitimos Boleta de Venta electrónica SUNAT.</p>
           <p><strong>3. Vigencia de la reserva:</strong> La reserva tiene una vigencia máxima de 30 minutos desde su confirmación de pago. Transcurrido ese plazo sin ingreso en recepción, la reserva expira automáticamente.</p>
           <p><strong>4. Descuento en salida:</strong> Al ingresar dentro del plazo vigente, el monto abonado por adelantado se descuenta íntegramente del total calculado al registrar la salida del vehículo.</p>
         `
@@ -257,9 +260,9 @@
       privacidad: {
         titulo: 'Política de Privacidad',
         html: `
-          <p><strong>1. Protección de datos personales:</strong> En cumplimiento de la Ley N.° 29733 (Ley de Protección de Datos Personales del Perú), Cochera SP recopila únicamente nombre, DNI, celular, usuario y placa vehicular para gestionar reservas e ingresos.</p>
+          <p><strong>1. Protección de datos personales:</strong> En cumplimiento de la Ley N.° 29733 (Ley de Protección de Datos Personales del Perú), FLORES LEONARDO ALBERTH JAIR (Cochera SP) recopila únicamente nombre, DNI, celular, correo electrónico y placa vehicular para gestionar reservas, comprobantes e ingresos.</p>
           <p><strong>2. Datos de pago:</strong> Cochera SP no almacena números de tarjeta, códigos CVV ni credenciales bancarias. Todos los pagos se procesan directamente mediante la pasarela certificada Culqi.</p>
-          <p><strong>3. Derechos ARCO:</strong> El titular puede solicitar acceso, rectificación o eliminación de sus datos escribiendo a alberthflores47@gmail.com o al +51 988 940 558.</p>
+          <p><strong>3. Derechos ARCO:</strong> El titular puede solicitar acceso, rectificación, cancelación u oposición sobre sus datos escribiendo a alberthflores47@gmail.com o llamando al +51 988 940 558.</p>
         `
       },
       reembolsos: {
@@ -267,7 +270,7 @@
         html: `
           <p><strong>1. Anulación con reembolso:</strong> El conductor puede anular su reserva sin penalidad desde la sección Mis Reservas siempre que se encuentre vigente (dentro de los 30 minutos) y antes de registrar el ingreso en recepción.</p>
           <p><strong>2. Devolución del importe:</strong> La anulación elegible dispara el reembolso del 100% del adelanto pagado hacia el mismo medio de pago utilizado (tarjeta o Yape vía Culqi), sujeto a los plazos de acreditación de cada entidad emisora.</p>
-          <p><strong>3. Casos no reembolsables:</strong> No procede devolución cuando la reserva ya fue utilizada para el ingreso del vehículo o cuando expiró el plazo de 30 minutos sin presentación.</p>
+          <p><strong>3. Reclamos y consultas:</strong> Conforme a la Ley N.° 31435, toda hoja ingresada en nuestro Libro de Reclamaciones Virtual es respondida en un plazo máximo de 15 días hábiles.</p>
         `
       }
     };
@@ -278,7 +281,8 @@
     const btnCerrarLegal = document.getElementById('btn-cerrar-modal-legal');
 
     document.querySelectorAll('.link-legal-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
         const clave = btn.getAttribute('data-legal');
         const info = TEXTOS_LEGALES[clave];
         if (!info || !modalLegal) return;
@@ -292,6 +296,105 @@
       btnCerrarLegal.addEventListener('click', () => modalLegal.classList.add('hidden'));
       modalLegal.addEventListener('click', (e) => {
         if (e.target === modalLegal) modalLegal.classList.add('hidden');
+      });
+    }
+
+    const btnAbrirReclamo = document.getElementById('btn-abrir-libro-reclamaciones');
+    const modalReclamo = document.getElementById('modal-libro-reclamaciones');
+    const btnCerrarReclamo = document.getElementById('btn-cerrar-modal-reclamo');
+    const btnCancelarReclamo = document.getElementById('btn-cancelar-reclamo');
+    const formReclamo = document.getElementById('form-libro-reclamaciones');
+    const boxConstancia = document.getElementById('box-constancia-reclamo');
+    const btnImprimirConstancia = document.getElementById('btn-imprimir-constancia-reclamo');
+    const btnNuevoReclamo = document.getElementById('btn-nuevo-reclamo');
+
+    function abrirModalReclamo() {
+      if (!modalReclamo) return;
+      if (formReclamo) formReclamo.classList.remove('hidden');
+      if (boxConstancia) boxConstancia.classList.add('hidden');
+      modalReclamo.classList.remove('hidden');
+    }
+
+    function cerrarModalReclamo() {
+      if (modalReclamo) modalReclamo.classList.add('hidden');
+    }
+
+    if (btnAbrirReclamo) btnAbrirReclamo.addEventListener('click', abrirModalReclamo);
+    if (btnCerrarReclamo) btnCerrarReclamo.addEventListener('click', cerrarModalReclamo);
+    if (btnCancelarReclamo) btnCancelarReclamo.addEventListener('click', cerrarModalReclamo);
+    if (modalReclamo) {
+      modalReclamo.addEventListener('click', (e) => {
+        if (e.target === modalReclamo) cerrarModalReclamo();
+      });
+    }
+    if (btnImprimirConstancia) {
+      btnImprimirConstancia.addEventListener('click', () => window.print());
+    }
+    if (btnNuevoReclamo) {
+      btnNuevoReclamo.addEventListener('click', () => {
+        if (formReclamo) {
+          formReclamo.reset();
+          formReclamo.classList.remove('hidden');
+        }
+        if (boxConstancia) boxConstancia.classList.add('hidden');
+      });
+    }
+
+    if (formReclamo) {
+      formReclamo.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btnEnviar = document.getElementById('btn-enviar-reclamo');
+        if (btnEnviar) {
+          btnEnviar.classList.add('loading');
+          btnEnviar.disabled = true;
+        }
+        try {
+          const payload = {
+            tipo: document.getElementById('rec-tipo').value,
+            servicio: document.getElementById('rec-servicio').value.trim(),
+            nombreConsumidor: document.getElementById('rec-nombre').value.trim(),
+            tipoDocumento: document.getElementById('rec-tipo-doc').value,
+            numeroDocumento: document.getElementById('rec-num-doc').value.trim(),
+            telefono: document.getElementById('rec-telefono').value.trim(),
+            correo: document.getElementById('rec-correo').value.trim(),
+            montoReclamado: document.getElementById('rec-monto').value.trim() || null,
+            domicilio: document.getElementById('rec-domicilio').value.trim(),
+            detalle: document.getElementById('rec-detalle').value.trim(),
+            pedido: document.getElementById('rec-pedido').value.trim()
+          };
+
+          const resp = await fetch('/api/publico/reclamos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            throw new Error(data.error || 'No se pudo registrar la hoja de reclamación.');
+          }
+
+          document.getElementById('rec-constancia-codigo').textContent = data.reclamo.codigo;
+          document.getElementById('rec-constancia-nombre').textContent = data.reclamo.nombreConsumidor;
+          document.getElementById('rec-constancia-fecha').textContent =
+            typeof window.formatearFechaHoraPeru === 'function'
+              ? window.formatearFechaHoraPeru(data.reclamo.creadoEn)
+              : new Date(data.reclamo.creadoEn).toLocaleString('es-PE', { timeZone: 'America/Lima', hourCycle: 'h23' });
+
+          formReclamo.classList.add('hidden');
+          if (boxConstancia) boxConstancia.classList.remove('hidden');
+          if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast(data.mensaje || `Reclamo ${data.reclamo.codigo} registrado.`);
+          }
+        } catch (err) {
+          if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast(err.message, true);
+          }
+        } finally {
+          if (btnEnviar) {
+            btnEnviar.classList.remove('loading');
+            btnEnviar.disabled = false;
+          }
+        }
       });
     }
   }

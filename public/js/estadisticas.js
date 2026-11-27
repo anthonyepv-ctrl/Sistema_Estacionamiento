@@ -419,20 +419,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function exportarCsv() {
+  async function exportarCsv() {
     if (!datos || !datos.tieneDatos) return;
 
     const token = obtenerToken();
     const parametros = new URLSearchParams({ periodo: modo, anio: String(periodo.anio) });
     if (modo === 'mensual') parametros.set('mes', String(periodo.mes));
-    if (token) parametros.set('token', token);
+    const nombreDefecto = modo === 'mensual'
+      ? `reporte_ingresos_${periodo.anio}_${String(periodo.mes).padStart(2, '0')}.csv`
+      : `reporte_ingresos_${periodo.anio}.csv`;
 
-    const enlace = document.createElement('a');
-    enlace.href = `/api/reportes/exportar?${parametros.toString()}`;
-    enlace.download = '';
-    document.body.appendChild(enlace);
-    enlace.click();
-    enlace.remove();
+    try {
+      const respuesta = await fetch(`/api/reportes/exportar?${parametros.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!respuesta.ok) {
+        const errData = await respuesta.json().catch(() => ({}));
+        throw new Error(errData.error || 'No se pudo exportar el reporte.');
+      }
+      const blob = await respuesta.blob();
+      const urlObj = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = urlObj;
+      enlace.download = nombreDefecto;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      setTimeout(() => URL.revokeObjectURL(urlObj), 1000);
+    } catch (error) {
+      mostrarErrorPeriodo(error.message);
+    }
   }
 
   if (cardModulo) {

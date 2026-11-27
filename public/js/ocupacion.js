@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function exportar() {
+  async function exportar() {
     if (!datos || datos.sinDatos || !periodoConsultado) return;
 
     const token = obtenerToken();
@@ -348,14 +348,28 @@ document.addEventListener('DOMContentLoaded', () => {
       fechaFin: periodoConsultado.fin,
       formato: 'csv'
     });
-    if (token) parametros.set('token', token);
-    const enlace = document.createElement('a');
+    const nombreDefecto = `reporte_ocupacion_${periodoConsultado.inicio}_${periodoConsultado.fin}.csv`;
 
-    enlace.href = `/api/ocupacion/exportar?${parametros.toString()}`;
-    enlace.download = '';
-    document.body.appendChild(enlace);
-    enlace.click();
-    enlace.remove();
+    try {
+      const respuesta = await fetch(`/api/ocupacion/exportar?${parametros.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!respuesta.ok) {
+        const errData = await respuesta.json().catch(() => ({}));
+        throw new Error(errData.error || 'No se pudo exportar el reporte de ocupación.');
+      }
+      const blob = await respuesta.blob();
+      const urlObj = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = urlObj;
+      enlace.download = nombreDefecto;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      setTimeout(() => URL.revokeObjectURL(urlObj), 1000);
+    } catch (error) {
+      mostrarError(error.message);
+    }
   }
 
   if (cardModulo) {

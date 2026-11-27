@@ -233,6 +233,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.reservasModulo && typeof window.reservasModulo.cargarVistaPasarelaDueno === 'function') {
         window.reservasModulo.cargarVistaPasarelaDueno();
       }
+    } else if (nombre === 'usuarios') {
+      const viewUsuarios = document.getElementById('view-usuarios');
+      if (viewUsuarios) viewUsuarios.classList.add('active');
+      headerUserSection.style.display = 'flex';
+      cargarModuloUsuarios();
     }
 
     actualizarSidebar(nombre, rolActual);
@@ -276,9 +281,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardConductorReservas = document.getElementById('card-modulo-conductor-reservas');
     const cardConductorHistorial = document.getElementById('card-modulo-conductor-historial');
     const cardPasarela = document.getElementById('card-modulo-pasarela');
+    const cardUsuarios = document.getElementById('card-modulo-usuarios');
 
     if (cardTarifas) cardTarifas.style.display = esDueno ? '' : 'none';
     if (cardPasarela) cardPasarela.style.display = esDueno ? '' : 'none';
+    if (cardUsuarios) cardUsuarios.style.display = esDueno ? '' : 'none';
     if (cardIngreso) cardIngreso.style.display = esRecepcionista ? '' : 'none';
     if (cardSalida) cardSalida.style.display = esRecepcionista ? '' : 'none';
     if (cardAforo) cardAforo.style.display = (esDueno || esRecepcionista) ? '' : 'none';
@@ -464,6 +471,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
+      const sesionPrevia = leerSesionGuardada();
+      const tokenPrevio = sesionPrevia && sesionPrevia.token ? sesionPrevia.token : null;
+      if (tokenPrevio) {
+        fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${tokenPrevio}` }
+        }).catch(() => {});
+      }
       rolActual = '';
       window.sesionActual = null;
       olvidarSesion();
@@ -503,32 +518,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const tablaBody = document.getElementById('tabla-tarifas-body');
   const formTarifa = document.getElementById('form-modificar-tarifa');
-  const selectTipo = document.getElementById('select-tipo-tarifa');
   const inputPrecioHora = document.getElementById('input-precio-hora');
   const inputPrecioFraccion = document.getElementById('input-precio-fraccion');
   const btnGuardarTarifa = document.getElementById('btn-guardar-tarifa');
   const btnCancelarEdicion = document.getElementById('btn-cancelar-edicion');
   const formTitle = document.getElementById('form-tarifa-title');
+  let tarifaSeleccionadaId = null;
 
   async function cargarTarifas() {
     tarifas = await pedirApi('/api/tarifas');
-    renderSelectTipos();
+    if (tarifas.length > 0 && !tarifas.some((t) => String(t.id) === String(tarifaSeleccionadaId))) {
+      tarifaSeleccionadaId = tarifas[0].id;
+    }
     renderTablaTarifas();
-  }
-
-  function renderSelectTipos() {
-    if (!selectTipo) return;
-
-    selectTipo.innerHTML = tarifas
-      .map((tarifa) => `<option value="${Number(tarifa.id)}">${window.escaparHtml(tarifa.tipo)}</option>`)
-      .join('');
+    if (tarifaSeleccionadaId !== null) {
+      cargarTarifaEnFormulario(tarifaSeleccionadaId, false);
+    }
   }
 
   function renderTablaTarifas() {
     if (!tablaBody) return;
 
-    tablaBody.innerHTML = tarifas.map((item) => `
-      <tr>
+    tablaBody.innerHTML = tarifas.map((item) => {
+      const esSeleccionada = String(item.id) === String(tarifaSeleccionadaId);
+      return `
+      <tr class="fila-activo ${esSeleccionada ? 'seleccionada' : ''}" data-id="${Number(item.id)}">
         <td style="font-weight: 500;">${window.escaparHtml(item.tipo)}</td>
         <td class="mono" style="font-weight: 700; color: var(--primary);">S/ ${item.precioHora.toFixed(2)}</td>
         <td class="mono" style="font-weight: 600;">S/ ${item.precioFraccion.toFixed(2)}</td>
@@ -539,38 +553,40 @@ document.addEventListener('DOMContentLoaded', () => {
           </button>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     tablaBody.querySelectorAll('.btn-editar-fila').forEach((btn) => {
       btn.addEventListener('click', (e) => {
-        cargarTarifaEnFormulario(e.currentTarget.getAttribute('data-id'));
+        cargarTarifaEnFormulario(e.currentTarget.getAttribute('data-id'), true);
       });
     });
   }
 
-  function cargarTarifaEnFormulario(id) {
+  function cargarTarifaEnFormulario(id, enfocar = true) {
     const tarifa = tarifas.find((t) => String(t.id) === String(id));
     if (!tarifa) return;
 
-    selectTipo.value = tarifa.id;
+    tarifaSeleccionadaId = tarifa.id;
+    if (tablaBody) {
+      tablaBody.querySelectorAll('tr[data-id]').forEach((fila) => {
+        fila.classList.toggle('seleccionada', String(fila.getAttribute('data-id')) === String(tarifa.id));
+      });
+    }
     inputPrecioHora.value = tarifa.precioHora.toFixed(2);
     inputPrecioFraccion.value = tarifa.precioFraccion.toFixed(2);
     formTitle.textContent = `Modificar Tarifa: ${tarifa.tipo}`;
 
     limpiarErrores(inputPrecioHora);
     limpiarErrores(inputPrecioFraccion);
-    inputPrecioHora.focus();
-  }
-
-  if (selectTipo) {
-    selectTipo.addEventListener('change', (e) => {
-      cargarTarifaEnFormulario(e.target.value);
-    });
+    if (enfocar) {
+      inputPrecioHora.focus();
+    }
   }
 
   if (btnCancelarEdicion) {
     btnCancelarEdicion.addEventListener('click', () => {
-      cargarTarifaEnFormulario(selectTipo.value);
+      cargarTarifaEnFormulario(tarifaSeleccionadaId, true);
     });
   }
 
@@ -616,15 +632,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const esHoraValida = validarMonto(inputPrecioHora);
       const esFraccionValida = validarMonto(inputPrecioFraccion);
 
-      if (!esHoraValida || !esFraccionValida) {
+      if (!esHoraValida || !esFraccionValida || !tarifaSeleccionadaId) {
         return;
       }
 
+      const idTarifaEditada = tarifaSeleccionadaId;
       btnGuardarTarifa.classList.add('loading');
       btnGuardarTarifa.disabled = true;
 
       try {
-        await pedirApi(`/api/tarifas/${selectTipo.value}`, {
+        await pedirApi(`/api/tarifas/${idTarifaEditada}`, {
           method: 'PUT',
           body: JSON.stringify({
             precioHora: inputPrecioHora.value.trim(),
@@ -632,8 +649,9 @@ document.addEventListener('DOMContentLoaded', () => {
           })
         });
 
+        tarifaSeleccionadaId = idTarifaEditada;
         await cargarTarifas();
-        cargarTarifaEnFormulario(selectTipo.value);
+        cargarTarifaEnFormulario(idTarifaEditada, false);
 
         mostrarToast('Tarifa actualizada correctamente');
       } catch (error) {
@@ -1283,9 +1301,234 @@ document.addEventListener('DOMContentLoaded', () => {
   window.pedirApi = pedirApi;
   window.activarSesion = activarSesion;
 
+  const cardModuloUsuarios = document.getElementById('card-modulo-usuarios');
+  const btnVolverDesdeUsuarios = document.getElementById('btn-volver-menu-desde-usuarios');
+  const tbodyUsuariosAdmin = document.getElementById('tbody-usuarios-admin');
+  const formUsuarioAdmin = document.getElementById('form-usuario-admin');
+  const formCambiarContrasena = document.getElementById('form-cambiar-contrasena');
+  const tbodyReclamosAdmin = document.getElementById('tbody-reclamos-admin');
+
+  if (cardModuloUsuarios) {
+    cardModuloUsuarios.addEventListener('click', () => {
+      mostrarPantalla('usuarios');
+    });
+  }
+
+  if (btnVolverDesdeUsuarios) {
+    btnVolverDesdeUsuarios.addEventListener('click', () => {
+      mostrarPantalla('dashboard');
+    });
+  }
+
+  function formatearFechaHoraLima(valor) {
+    if (!valor) return '-';
+    const fecha = new Date(valor);
+    if (Number.isNaN(fecha.getTime())) return '-';
+    return fecha.toLocaleString('es-PE', {
+      timeZone: 'America/Lima',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  async function cargarModuloUsuarios() {
+    if (tbodyUsuariosAdmin) {
+      tbodyUsuariosAdmin.innerHTML = '<tr><td colspan="5">Cargando usuarios...</td></tr>';
+    }
+    if (tbodyReclamosAdmin) {
+      tbodyReclamosAdmin.innerHTML = '<tr><td colspan="6">Cargando reclamos...</td></tr>';
+    }
+
+    try {
+      const [resUsuarios, resReclamos] = await Promise.all([
+        pedirApi('/api/usuarios'),
+        pedirApi('/api/reclamos')
+      ]);
+
+      const listaUsuarios = Array.isArray(resUsuarios?.usuarios) ? resUsuarios.usuarios : [];
+      if (tbodyUsuariosAdmin) {
+        if (listaUsuarios.length === 0) {
+          tbodyUsuariosAdmin.innerHTML = '<tr><td colspan="5">No hay usuarios registrados.</td></tr>';
+        } else {
+          tbodyUsuariosAdmin.innerHTML = listaUsuarios.map((u) => {
+            const esMismoUsuario = window.sesionActual && u.usuario === window.sesionActual.usuario;
+            return `
+              <tr>
+                <td>${window.escaparHtml(u.nombre)}</td>
+                <td class="mono">${window.escaparHtml(u.usuario)}</td>
+                <td><span class="badge ${u.rol === 'DUENO' ? 'badge-primary' : 'badge-secondary'}">${window.escaparHtml(u.rol)}</span></td>
+                <td><span class="badge ${u.activo ? 'badge-success' : 'badge-danger'}">${u.activo ? 'ACTIVO' : 'INACTIVO'}</span></td>
+                <td>
+                  <button type="button" class="btn btn-secondary btn-sm btn-toggle-usuario"
+                    data-id="${Number(u.id)}" data-activo="${u.activo ? '1' : '0'}"
+                    ${esMismoUsuario ? 'disabled title="No puede desactivar su propia cuenta"' : ''}>
+                    ${u.activo ? 'Desactivar' : 'Activar'}
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          tbodyUsuariosAdmin.querySelectorAll('.btn-toggle-usuario').forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+              const boton = e.currentTarget;
+              const id = Number(boton.getAttribute('data-id'));
+              const activoActual = boton.getAttribute('data-activo') === '1';
+              boton.disabled = true;
+              try {
+                await pedirApi(`/api/usuarios/${id}`, {
+                  method: 'PUT',
+                  body: JSON.stringify({ activo: !activoActual })
+                });
+                mostrarToast(!activoActual ? 'Usuario activado correctamente' : 'Usuario desactivado correctamente');
+                await cargarModuloUsuarios();
+              } catch (err) {
+                mostrarToast(err.message, true);
+                boton.disabled = false;
+              }
+            });
+          });
+        }
+      }
+
+      const listaReclamos = Array.isArray(resReclamos?.reclamos) ? resReclamos.reclamos : [];
+      if (tbodyReclamosAdmin) {
+        if (listaReclamos.length === 0) {
+          tbodyReclamosAdmin.innerHTML = '<tr><td colspan="6">Sin reclamos ni quejas registrados.</td></tr>';
+        } else {
+          tbodyReclamosAdmin.innerHTML = listaReclamos.map((r) => `
+            <tr>
+              <td class="mono">${window.escaparHtml(r.codigo)}</td>
+              <td class="mono">${window.escaparHtml(formatearFechaHoraLima(r.creadoEn))}</td>
+              <td>${window.escaparHtml(r.nombreConsumidor)}<br><small>${window.escaparHtml(`${r.tipoDocumento} ${r.numeroDocumento}`)}</small></td>
+              <td><span class="badge ${r.tipo === 'RECLAMO' ? 'badge-warning' : 'badge-secondary'}">${window.escaparHtml(r.tipo)}</span></td>
+              <td>${window.escaparHtml(r.detalle)}</td>
+              <td>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+                  <span class="badge ${r.estado === 'ATENDIDO' ? 'badge-success' : 'badge-danger'}">${window.escaparHtml(r.estado)}</span>
+                  <button type="button" class="btn btn-secondary btn-sm btn-estado-reclamo"
+                    data-id="${Number(r.id)}" data-estado="${window.escaparHtml(r.estado)}">
+                    ${r.estado === 'ATENDIDO' ? 'Reabrir' : 'Marcar atendido'}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+
+          tbodyReclamosAdmin.querySelectorAll('.btn-estado-reclamo').forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+              const boton = e.currentTarget;
+              const id = Number(boton.getAttribute('data-id'));
+              const estadoActual = boton.getAttribute('data-estado');
+              const nuevoEstado = estadoActual === 'ATENDIDO' ? 'PENDIENTE' : 'ATENDIDO';
+              boton.disabled = true;
+              try {
+                await pedirApi(`/api/reclamos/${id}`, {
+                  method: 'PATCH',
+                  body: JSON.stringify({ estado: nuevoEstado })
+                });
+                mostrarToast(`Reclamo actualizado a ${nuevoEstado}`);
+                await cargarModuloUsuarios();
+              } catch (err) {
+                mostrarToast(err.message, true);
+                boton.disabled = false;
+              }
+            });
+          });
+        }
+      }
+    } catch (error) {
+      mostrarToast(error.message, true);
+    }
+  }
+
+  if (formUsuarioAdmin) {
+    formUsuarioAdmin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const inputNombre = document.getElementById('usr-nombre');
+      const inputUsuario = document.getElementById('usr-usuario');
+      const selectRol = document.getElementById('usr-rol');
+      const inputPassword = document.getElementById('usr-password');
+      const btnCrear = document.getElementById('btn-crear-usuario-admin');
+
+      const nombre = (inputNombre?.value || '').trim();
+      const usuario = (inputUsuario?.value || '').trim();
+      const rol = (selectRol?.value || 'RECEPCIONISTA').trim();
+      const contrasena = inputPassword?.value || '';
+
+      if (!nombre || !usuario || contrasena.length < 6) {
+        mostrarToast('Complete nombre, usuario y contraseña (mínimo 6 caracteres).', true);
+        return;
+      }
+
+      if (btnCrear) {
+        btnCrear.disabled = true;
+        btnCrear.classList.add('loading');
+      }
+
+      try {
+        await pedirApi('/api/usuarios', {
+          method: 'POST',
+          body: JSON.stringify({ nombre, usuario, rol, contrasena })
+        });
+        formUsuarioAdmin.reset();
+        mostrarToast('Usuario creado correctamente');
+        await cargarModuloUsuarios();
+      } catch (error) {
+        mostrarToast(error.message, true);
+      } finally {
+        if (btnCrear) {
+          btnCrear.disabled = false;
+          btnCrear.classList.remove('loading');
+        }
+      }
+    });
+  }
+
+  if (formCambiarContrasena) {
+    formCambiarContrasena.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const inputActual = document.getElementById('pwd-actual');
+      const inputNueva = document.getElementById('pwd-nueva');
+      const btnCambiar = document.getElementById('btn-cambiar-contrasena');
+
+      const contrasenaActual = inputActual?.value || '';
+      const contrasenaNueva = inputNueva?.value || '';
+
+      if (!contrasenaActual || contrasenaNueva.length < 6) {
+        mostrarToast('Ingrese su contraseña actual y una nueva de mínimo 6 caracteres.', true);
+        return;
+      }
+
+      if (btnCambiar) {
+        btnCambiar.disabled = true;
+        btnCambiar.classList.add('loading');
+      }
+
+      try {
+        await pedirApi('/api/auth/cambiar-contrasena', {
+          method: 'PUT',
+          body: JSON.stringify({ contrasenaActual, contrasenaNueva })
+        });
+        formCambiarContrasena.reset();
+        mostrarToast('Contraseña actualizada correctamente');
+      } catch (error) {
+        mostrarToast(error.message, true);
+      } finally {
+        if (btnCambiar) {
+          btnCambiar.disabled = false;
+          btnCambiar.classList.remove('loading');
+        }
+      }
+    });
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && viewTarifas.classList.contains('active')) {
-      cargarTarifaEnFormulario(selectTipo.value);
+      cargarTarifaEnFormulario(tarifaSeleccionadaId, true);
     }
     if (e.key === 'Escape' && viewIngreso.classList.contains('active')) {
       limpiarFormularioIngreso();

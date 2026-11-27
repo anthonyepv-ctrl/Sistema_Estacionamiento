@@ -7,6 +7,21 @@ const SECRETO = process.env.AUTH_SECRET || 'cochera_secret_session_52a09a69e2e0e
 const HORAS_VIGENCIA = Number(process.env.AUTH_TTL_HORAS) || 8;
 const VIGENCIA_MS = HORAS_VIGENCIA * 60 * 60 * 1000;
 
+if (process.env.NODE_ENV === 'production' && !process.env.AUTH_SECRET) {
+  console.warn('[auth] ADVERTENCIA CRÍTICA: AUTH_SECRET no está definida en producción. Configure un secreto largo y único.');
+}
+
+const tokensRevocados = new Map();
+const limpiarRevocadosTimer = setInterval(() => {
+  const ahora = Date.now();
+  for (const [jti, exp] of tokensRevocados.entries()) {
+    if (exp < ahora) tokensRevocados.delete(jti);
+  }
+}, 10 * 60 * 1000);
+if (typeof limpiarRevocadosTimer.unref === 'function') {
+  limpiarRevocadosTimer.unref();
+}
+
 function firmar(cuerpo) {
   return crypto.createHmac('sha256', SECRETO).update(cuerpo).digest('base64url');
 }
@@ -17,6 +32,7 @@ function firmar(cuerpo) {
  */
 function firmarToken(usuario) {
   const payload = {
+    jti: crypto.randomUUID(),
     sub: usuario.id,
     usuario: usuario.usuario,
     nombre: usuario.nombre,
@@ -54,6 +70,7 @@ function verificarToken(token) {
   }
 
   if (!payload || typeof payload.exp !== 'number' || payload.exp < Date.now()) return null;
+  if (payload.jti && tokensRevocados.has(payload.jti)) return null;
 
   return payload;
 }
@@ -63,10 +80,14 @@ function leerTokenDeCabecera(req) {
   if (cabecera.startsWith('Bearer ')) {
     return cabecera.slice(7).trim() || null;
   }
-  if (req.query && typeof req.query.token === 'string') {
-    return req.query.token.trim() || null;
-  }
   return null;
+}
+
+function revocarToken(token) {
+  const sesion = verificarToken(token);
+  if (!sesion || !sesion.jti) return false;
+  tokensRevocados.set(sesion.jti, sesion.exp);
+  return true;
 }
 
 /**
@@ -103,6 +124,8 @@ function autorizar(...roles) {
 module.exports = {
   firmarToken,
   verificarToken,
+  leerTokenDeCabecera,
+  revocarToken,
   autenticar,
   autorizar,
   ROLES: { DUENO: 'DUENO', RECEPCIONISTA: 'RECEPCIONISTA', CONDUCTOR: 'CONDUCTOR' }

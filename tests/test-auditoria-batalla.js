@@ -74,6 +74,7 @@ async function ejecutarAuditoriaBatalla() {
     env: {
       ...process.env,
       PORT: String(PORT),
+      RATE_LIMIT_MAX_AUTH: '60',
       PAYMENT_GATEWAY: 'culqi',
       CULQI_API_BASE: mock.url,
       CULQI_PUBLIC_KEY: 'pk_test_audmock123456',
@@ -95,6 +96,10 @@ async function ejecutarAuditoriaBatalla() {
   const placaRes = `RES-${suf.slice(1)}`;
   const idsEstadiasLimpiar = [];
   const idsPagosLimpiar = [];
+  const idsReclamosLimpiar = [];
+  const codigosReclamosLimpiar = [];
+  const usuariosLimpiarIds = [];
+  const usuariosLimpiarNombres = [];
 
   try {
     await esperarServidor();
@@ -499,14 +504,282 @@ async function ejecutarAuditoriaBatalla() {
       assert.strictEqual(valPlacaInput, placaMoto7, `Input conductor debe aceptar placa moto 7 chars (${valPlacaInput})`);
       assert.strictEqual(valTipoSelect, 'moto', 'Debe autoseleccionar tipo moto');
 
+      // [CP-AUD-18] E2E: Libro de Reclamaciones, Tarifas sin combobox redundante, Usuarios Admin y descarga CSV Blob
+      await page.click('#btn-logout');
+      await page.waitForFunction(() => document.getElementById('view-disponibilidad')?.classList.contains('active'));
+      await page.click('#btn-abrir-libro-reclamaciones');
+      await page.waitForFunction(() => !document.getElementById('modal-libro-reclamaciones')?.classList.contains('hidden'));
+      await page.fill('#rec-nombre', 'Cliente E2E Auditoria');
+      await page.selectOption('#rec-tipo-doc', 'DNI');
+      await page.fill('#rec-num-doc', `7451${suf}`);
+      await page.fill('#rec-telefono', '987654321');
+      await page.fill('#rec-correo', `cliente_${suf}@correo.pe`);
+      await page.fill('#rec-domicilio', 'Av. Larco 1234, Trujillo');
+      await page.fill('#rec-detalle', 'Prueba automatizada de registro de reclamo legal Indecopi.');
+      await page.fill('#rec-pedido', 'Validar emisión de constancia con código correlativo.');
+      await page.click('#btn-enviar-reclamo');
+      await page.waitForFunction(() => !document.getElementById('box-constancia-reclamo')?.classList.contains('hidden'), null, { timeout: 15000 });
+      const codigoRecE2E = (await page.textContent('#rec-constancia-codigo')).trim();
+      assert.ok(/^LR-\d{4}-\d{4}$/.test(codigoRecE2E), `Código de constancia Libro Reclamaciones inválido: ${codigoRecE2E}`);
+      codigosReclamosLimpiar.push(codigoRecE2E);
+      await page.click('#btn-cerrar-modal-reclamo');
+
+      // Login DUEÑO para verificar Tarifas sin select redundante, Reportes Culqi, CSV Blob y Usuarios
+      await page.click('#btn-header-login');
+      await page.fill('#login-usuario', 'admin');
+      await page.fill('#login-password', '123456');
+      await page.click('#btn-login-submit');
+      await page.waitForFunction(() => document.getElementById('view-dashboard')?.classList.contains('active'));
+
+      await page.click('#card-modulo-tarifas');
+      await page.waitForFunction(() => {
+        const view = document.getElementById('view-tarifas');
+        const filas = document.querySelectorAll('#tabla-tarifas-body tr');
+        return view?.classList.contains('active') && filas.length >= 2;
+      }, null, { timeout: 15000 });
+      assert.strictEqual(await page.locator('#select-tipo-tarifa').count(), 0, 'Tarifas no debe tener combobox redundante #select-tipo-tarifa');
+      const textoTablaTarifas = await page.textContent('#tabla-tarifas-body');
+      assert.ok(!textoTablaTarifas.includes('Reserva Web'), 'Tarifas no debe mostrar fila fantasma Reserva Web');
+      const segundaFila = page.locator('#tabla-tarifas-body tr').nth(1);
+      await segundaFila.locator('.btn-editar-fila').click();
+      assert.ok(await segundaFila.evaluate((el) => el.classList.contains('seleccionada')), 'Fila seleccionada en Tarifas debe resaltarse');
+      const tituloTarifaAntes = (await page.textContent('#form-tarifa-title')).trim();
+      await page.click('#btn-guardar-tarifa');
+      await page.waitForFunction(() => {
+        const toast = document.querySelector('.toast');
+        return toast && toast.textContent.includes('Tarifa actualizada');
+      }, null, { timeout: 10000 });
+      assert.ok(await page.locator('#tabla-tarifas-body tr').nth(1).evaluate((el) => el.classList.contains('seleccionada')), 'Selección de Tarifa debe mantenerse tras guardar');
+      assert.strictEqual((await page.textContent('#form-tarifa-title')).trim(), tituloTarifaAntes, 'Título de edición debe conservar la tarifa elegida');
+
+      await page.click('#app-sidebar .sidebar-link[data-view="reportes"]');
+      await page.waitForFunction(() => document.getElementById('view-reportes')?.classList.contains('active'));
+      assert.ok(await page.isVisible('#pill-filtro-culqi'), 'Caja Diaria debe exponer filtro Culqi Online');
+
+      await page.click('#app-sidebar .sidebar-link[data-view="estadisticas"]');
+      await page.waitForFunction(() => {
+        const view = document.getElementById('view-estadisticas');
+        const btn = document.getElementById('btn-exportar-estadisticas');
+        return view?.classList.contains('active') && btn && !btn.disabled;
+      }, null, { timeout: 15000 });
+      const [descargaCsv] = await Promise.all([
+        page.waitForEvent('download'),
+        page.click('#btn-exportar-estadisticas')
+      ]);
+      assert.ok(descargaCsv.suggestedFilename().endsWith('.csv'), `Exportación Blob debe descargar .csv (${descargaCsv.suggestedFilename()})`);
+
+      await page.click('#app-sidebar .sidebar-link[data-view="usuarios"]');
+      await page.waitForFunction((cod) => {
+        const view = document.getElementById('view-usuarios');
+        const tbRec = document.getElementById('tbody-reclamos-admin');
+        return view?.classList.contains('active') && tbRec && tbRec.textContent.includes(cod);
+      }, codigoRecE2E, { timeout: 15000 });
+
+      const userE2E = `rec_e2e_${suf}`;
+      usuariosLimpiarNombres.push(userE2E);
+      await page.fill('#usr-nombre', 'Recepcion E2E');
+      await page.fill('#usr-usuario', userE2E);
+      await page.selectOption('#usr-rol', 'RECEPCIONISTA');
+      await page.fill('#usr-password', 'ClaveE2E123');
+      await page.click('#btn-crear-usuario-admin');
+      await page.waitForFunction((u) => {
+        const tb = document.getElementById('tbody-usuarios-admin');
+        return tb && tb.textContent.includes(u);
+      }, userE2E, { timeout: 15000 });
+      const filaUsr = page.locator(`#tbody-usuarios-admin tr:has-text("${userE2E}")`);
+      await filaUsr.locator('.btn-toggle-usuario').click();
+      await page.waitForFunction((u) => {
+        const tb = document.getElementById('tbody-usuarios-admin');
+        const fila = Array.from(tb?.querySelectorAll('tr') || []).find((tr) => tr.textContent.includes(u));
+        return fila && fila.textContent.includes('INACTIVO');
+      }, userE2E, { timeout: 10000 });
+
       assert.strictEqual(erroresConsola.length, 0, `Errores JS en navegador: ${erroresConsola.join(' | ')}`);
       await ctx.close();
     } finally {
       await browser.close();
     }
     console.log('✅ [CP-AUD-11] Verificación E2E (Aforo, Caja Diaria real, Estadísticas, Ocupación, Salida con adelanto, TZ Lima en browser UTC, placa moto 7 chars) OK.');
+    console.log('✅ [CP-AUD-18] Verificación E2E (Libro de Reclamaciones, Tarifas sin select redundante, Culqi Online, Blob CSV, Usuarios Admin) OK.');
 
-    console.log('\n🎉 TODOS LOS CASOS DE AUDITORÍA BATALLA DE ERRORES PASARON (11/11).');
+    // [CP-AUD-12] Libro de Reclamaciones API (correlativo único, validación y RBAC DUEÑO)
+    const rRecBad = await req('/api/publico/reclamos', {
+      method: 'POST',
+      body: JSON.stringify({ tipo: 'INVALIDO', nombreConsumidor: 'A', detalle: 'corto' })
+    });
+    assert.strictEqual(rRecBad.status, 400, `CP-AUD-12: reclamo inválido devolvió ${rRecBad.status}`);
+
+    const rRecOk = await req('/api/publico/reclamos', {
+      method: 'POST',
+      body: JSON.stringify({
+        tipo: 'QUEJA',
+        nombreConsumidor: 'Usuario API Reclamo',
+        tipoDocumento: 'DNI',
+        numeroDocumento: `7462${suf}`,
+        correo: `api_${suf}@correo.pe`,
+        telefono: '987654322',
+        domicilio: 'Jr. Pizarro 450, Trujillo',
+        servicio: 'Reserva web',
+        montoReclamado: 4.7,
+        detalle: 'Demora en validación de comprobante de prueba.',
+        pedido: 'Emitir respuesta formal dentro del plazo.'
+      })
+    });
+    assert.strictEqual(rRecOk.status, 201, `CP-AUD-12: POST reclamo falló (${JSON.stringify(rRecOk.data)})`);
+    assert.ok(/^LR-\d{4}-\d{4}$/.test(rRecOk.data.reclamo.codigo), 'CP-AUD-12: código reclamo debe tener formato LR-YYYY-NNNN');
+    idsReclamosLimpiar.push(rRecOk.data.reclamo.id);
+
+    const rRecCond = await req('/api/reclamos', { headers: hdrCond });
+    assert.strictEqual(rRecCond.status, 403, `CP-AUD-12: CONDUCTOR en GET /api/reclamos devolvió ${rRecCond.status}`);
+
+    const rRecPatch = await req(`/api/reclamos/${rRecOk.data.reclamo.id}`, {
+      method: 'PATCH',
+      headers: hdrDueno,
+      body: JSON.stringify({ estado: 'ATENDIDO' })
+    });
+    assert.strictEqual(rRecPatch.status, 200, `CP-AUD-12: PATCH reclamo falló (${rRecPatch.status})`);
+    console.log('✅ [CP-AUD-12] Libro de Reclamaciones API (validación, correlativo, RBAC y atención DUEÑO) OK.');
+
+    // [CP-AUD-13] Gestión de Usuarios, cambio de contraseña y revocación inmediata de JWT (/logout)
+    const rUsrRecep = await req('/api/usuarios', { headers: hdrRecep });
+    assert.strictEqual(rUsrRecep.status, 403, `CP-AUD-13: RECEPCIONISTA en GET /api/usuarios devolvió ${rUsrRecep.status}`);
+
+    const usrApi = `rec_api_${suf}`;
+    const rUsrCreate = await req('/api/usuarios', {
+      method: 'POST',
+      headers: hdrDueno,
+      body: JSON.stringify({
+        nombre: 'Recepcion API Test',
+        usuario: usrApi,
+        rol: 'RECEPCIONISTA',
+        contrasena: 'Password123!'
+      })
+    });
+    assert.strictEqual(rUsrCreate.status, 201, `CP-AUD-13: crear usuario falló (${JSON.stringify(rUsrCreate.data)})`);
+    usuariosLimpiarIds.push(rUsrCreate.data.usuario.id);
+
+    const authNuevo = await login(usrApi, 'Password123!');
+    const rChgPwd = await req('/api/auth/cambiar-contrasena', {
+      method: 'PUT',
+      headers: { Authorization: authNuevo.Authorization },
+      body: JSON.stringify({ contrasenaActual: 'Password123!', contrasenaNueva: 'NuevaPass456!' })
+    });
+    assert.strictEqual(rChgPwd.status, 200, `CP-AUD-13: cambiar contraseña falló (${rChgPwd.status})`);
+
+    const rOldLogin = await req('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ usuario: usrApi, contrasena: 'Password123!' })
+    });
+    assert.strictEqual(rOldLogin.status, 401, 'CP-AUD-13: contraseña anterior debe quedar invalidada');
+
+    const authNuevo2 = await login(usrApi, 'NuevaPass456!');
+    const rLogout = await req('/api/auth/logout', {
+      method: 'POST',
+      headers: { Authorization: authNuevo2.Authorization }
+    });
+    assert.strictEqual(rLogout.status, 200, `CP-AUD-13: /logout falló (${rLogout.status})`);
+    const rPostLogout = await req('/api/espacios', { headers: { Authorization: authNuevo2.Authorization } });
+    assert.strictEqual(rPostLogout.status, 401, `CP-AUD-13: token revocado en /logout siguió activo (${rPostLogout.status})`);
+
+    const rUsrList = await req('/api/usuarios', { headers: hdrDueno });
+    const adminRow = rUsrList.data.usuarios.find((u) => u.usuario === 'admin');
+    const rSelfOff = await req(`/api/usuarios/${adminRow.id}`, {
+      method: 'PUT',
+      headers: hdrDueno,
+      body: JSON.stringify({ activo: false })
+    });
+    assert.strictEqual(rSelfOff.status, 409, `CP-AUD-13: auto-desactivación de admin devolvió ${rSelfOff.status}`);
+
+    const rOffOk = await req(`/api/usuarios/${rUsrCreate.data.usuario.id}`, {
+      method: 'PUT',
+      headers: hdrDueno,
+      body: JSON.stringify({ activo: false })
+    });
+    assert.strictEqual(rOffOk.status, 200, 'CP-AUD-13: desactivar usuario de prueba falló');
+    const rLoginDisabled = await req('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ usuario: usrApi, contrasena: 'NuevaPass456!' })
+    });
+    assert.strictEqual(rLoginDisabled.status, 403, `CP-AUD-13: usuario inactivo pudo iniciar sesión (${rLoginDisabled.status})`);
+    console.log('✅ [CP-AUD-13] Gestión Usuarios, cambio contraseña, guard auto-desactivación y revocación JWT (/logout) OK.');
+
+    // [CP-AUD-14] Aislamiento de placa entre conductores y exclusión de tarifa 'Reserva Web'
+    const usrCond2 = `cond_aud2_${suf}`;
+    const regCond2 = await req('/api/auth/registro-conductor', {
+      method: 'POST',
+      body: JSON.stringify({
+        nombre: 'Conductor Aislado',
+        dni: `7398${suf}`,
+        celular: '987654329',
+        usuario: usrCond2,
+        contrasena: 'password123'
+      })
+    });
+    assert.strictEqual(regCond2.status, 201, 'CP-AUD-14: registro conductor 2 falló');
+    usuariosLimpiarNombres.push(usrCond2);
+    const hdrCond2 = { Authorization: `Bearer ${regCond2.data.token}` };
+
+    const placaComp = `CMP-${suf.slice(1)}`;
+    const rVeh1 = await req('/api/conductor/vehiculos', {
+      method: 'POST',
+      headers: hdrCond,
+      body: JSON.stringify({ placa: placaComp, tipo: 'auto' })
+    });
+    assert.strictEqual(rVeh1.status, 201, `CP-AUD-14: conductor 1 vehículo falló (${rVeh1.status})`);
+
+    const rVeh2 = await req('/api/conductor/vehiculos', {
+      method: 'POST',
+      headers: hdrCond2,
+      body: JSON.stringify({ placa: placaComp, tipo: 'auto' })
+    });
+    assert.strictEqual(rVeh2.status, 409, `CP-AUD-14: placa compartida entre cuentas no dio 409 (${rVeh2.status})`);
+
+    const rTarifasClean = await req('/api/tarifas', { headers: hdrDueno });
+    assert.strictEqual(rTarifasClean.status, 200);
+    assert.ok(!rTarifasClean.data.some((t) => t.tipo === 'Reserva Web'), 'CP-AUD-14: GET /api/tarifas no debe devolver Reserva Web');
+    console.log('✅ [CP-AUD-14] Aislamiento de placa entre cuentas (409) y exclusión de Reserva Web OK.');
+
+    // [CP-AUD-15] Integración contable de Culqi Online en Caja Diaria y Gráficos
+    const hoyLima = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date());
+    const rDiario = await req(`/api/reportes/diario?fecha=${hoyLima}`, { headers: hdrDueno });
+    assert.strictEqual(rDiario.status, 200);
+    const movCulqi = (rDiario.data.movimientos || []).find((m) => m.placa === placaRes && m.metodoPago === 'Culqi Online');
+    assert.ok(movCulqi, `CP-AUD-15: Caja Diaria debe incluir cobro online Culqi de ${placaRes}`);
+    assert.ok(Number(rDiario.data.totalCulqi) > 0, 'CP-AUD-15: totalCulqi debe ser > 0');
+    assert.strictEqual(
+      Number((rDiario.data.totalEfectivo + rDiario.data.cuadre.dineroDigital.total).toFixed(2)),
+      rDiario.data.totalGeneral,
+      'CP-AUD-15: Efectivo + Digital debe cuadrar con totalGeneral'
+    );
+    console.log('✅ [CP-AUD-15] Contabilidad de pagos Culqi Online integrada en Caja Diaria OK.');
+
+    // [CP-AUD-16] Persistencia en BD de capacidad de espacios (DEF-77-08)
+    const capPruebaAutos = capacidadOriginal.capacidadAutos + 1;
+    const rCapPut = await req('/api/espacios/capacidad', {
+      method: 'PUT',
+      headers: hdrDueno,
+      body: JSON.stringify({ capacidadAutos: capPruebaAutos, capacidadMotos: capacidadOriginal.capacidadMotos })
+    });
+    assert.strictEqual(rCapPut.status, 200, `CP-AUD-16: PUT capacidad falló (${rCapPut.status})`);
+    const capBD = await prisma.configuracionEspacios.findUnique({ where: { id: 1 } });
+    assert.ok(capBD && capBD.capacidadAutos === capPruebaAutos, 'CP-AUD-16: configuracion_espacios debe persistir en PostgreSQL');
+    console.log('✅ [CP-AUD-16] Persistencia en BD de capacidad de espacios OK.');
+
+    // [CP-AUD-17] Exportación CSV sin ?token= en URL y headers de seguridad CSP
+    const rawDuenoToken = authDueno.Authorization.replace('Bearer ', '');
+    const [anioActual, mesActual] = hoyLima.split('-').map((p) => Number(p));
+    const qsExport = `periodo=mensual&anio=${anioActual}&mes=${mesActual}`;
+    const rCsvQueryTok = await fetch(`${BASE_URL}/api/reportes/exportar?${qsExport}&token=${encodeURIComponent(rawDuenoToken)}`);
+    assert.strictEqual(rCsvQueryTok.status, 401, `CP-AUD-17: ?token= en query string debe rechazarse con 401 (obtuvo ${rCsvQueryTok.status})`);
+    const rCsvBearer = await fetch(`${BASE_URL}/api/reportes/exportar?${qsExport}`, {
+      headers: hdrDueno
+    });
+    assert.strictEqual(rCsvBearer.status, 200, `CP-AUD-17: CSV con Bearer falló (${rCsvBearer.status})`);
+    const cspHeader = rCsvBearer.headers.get('content-security-policy');
+    assert.ok(cspHeader && cspHeader.includes("default-src 'self'"), 'CP-AUD-17: respuesta debe incluir header Content-Security-Policy');
+    console.log('✅ [CP-AUD-17] Rechazo de ?token= en URL, descarga CSV con Bearer y header CSP OK.');
+
+    console.log('\n🎉 TODOS LOS CASOS DE AUDITORÍA BATALLA DE ERRORES PASARON (18/18).');
   } finally {
     try {
       if (idsEstadiasLimpiar.length > 0) {
@@ -515,12 +788,36 @@ async function ejecutarAuditoriaBatalla() {
       if (idsPagosLimpiar.length > 0) {
         await prisma.pago.deleteMany({ where: { id: { in: idsPagosLimpiar } } });
       }
-      const u = await prisma.usuario.findUnique({ where: { usuario: usuarioCond } });
-      if (u) {
-        await prisma.reserva.deleteMany({ where: { idUsuario: u.id } });
-        await prisma.vehiculoConductor.deleteMany({ where: { idUsuario: u.id } });
-        await prisma.usuario.delete({ where: { id: u.id } });
+      if (idsReclamosLimpiar.length > 0) {
+        await prisma.reclamo.deleteMany({ where: { id: { in: idsReclamosLimpiar } } });
       }
+      if (codigosReclamosLimpiar.length > 0) {
+        await prisma.reclamo.deleteMany({ where: { codigo: { in: codigosReclamosLimpiar } } });
+      }
+      const nombresUnicos = Array.from(new Set([usuarioCond, ...usuariosLimpiarNombres]));
+      for (const nombreUsuario of nombresUnicos) {
+        const u = await prisma.usuario.findUnique({ where: { usuario: nombreUsuario } });
+        if (u) {
+          await prisma.reserva.deleteMany({ where: { idUsuario: u.id } });
+          await prisma.vehiculoConductor.deleteMany({ where: { idUsuario: u.id } });
+          await prisma.usuario.delete({ where: { id: u.id } });
+        }
+      }
+      if (usuariosLimpiarIds.length > 0) {
+        await prisma.usuario.deleteMany({ where: { id: { in: usuariosLimpiarIds } } });
+      }
+      await prisma.configuracionEspacios.upsert({
+        where: { id: 1 },
+        update: {
+          capacidadAutos: capacidadOriginal.capacidadAutos,
+          capacidadMotos: capacidadOriginal.capacidadMotos
+        },
+        create: {
+          id: 1,
+          capacidadAutos: capacidadOriginal.capacidadAutos,
+          capacidadMotos: capacidadOriginal.capacidadMotos
+        }
+      });
       if (configPasarelaOriginal) {
         await prisma.configuracionPasarela.upsert({
           where: { proveedor: 'culqi' },

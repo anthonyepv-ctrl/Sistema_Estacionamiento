@@ -2,15 +2,16 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 
 const prisma = require('../config/prisma');
-const { firmarToken, autenticar } = require('../config/auth');
+const { firmarToken, autenticar, leerTokenDeCabecera, revocarToken } = require('../config/auth');
 
 const router = express.Router();
 
 const REGEX_DNI = /^\d{8}$/;
 const REGEX_CELULAR = /^9\d{8}$/;
+const REGEX_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 router.post('/registro-conductor', async (req, res) => {
-  const { nombre, dni, celular, usuario, contrasena } = req.body || {};
+  const { nombre, dni, celular, correo, usuario, contrasena, aceptoTerminos } = req.body || {};
 
   if (
     typeof nombre !== 'string'
@@ -20,6 +21,18 @@ router.post('/registro-conductor', async (req, res) => {
     || (typeof celular !== 'string' && typeof celular !== 'number')
   ) {
     return res.status(400).json({ error: 'Complete todos los campos requeridos con formato válido.' });
+  }
+
+  let correoLimpio = null;
+  if (correo !== undefined && correo !== null && String(correo).trim() !== '') {
+    if (typeof correo !== 'string') {
+      return res.status(400).json({ error: 'Ingrese un correo electrónico válido.' });
+    }
+    const candidate = correo.trim().toLowerCase();
+    if (candidate.length > 120 || !REGEX_CORREO.test(candidate)) {
+      return res.status(400).json({ error: 'Ingrese un correo electrónico válido.' });
+    }
+    correoLimpio = candidate;
   }
 
   const nombreLimpio = nombre.trim();
@@ -65,7 +78,9 @@ router.post('/registro-conductor', async (req, res) => {
         contrasena: hash,
         rol: 'CONDUCTOR',
         dni: dniLimpio,
-        celular: celularLimpio
+        celular: celularLimpio,
+        correo: correoLimpio,
+        aceptoTerminosEn: aceptoTerminos === true ? new Date() : null
       }
     });
 
@@ -73,6 +88,7 @@ router.post('/registro-conductor', async (req, res) => {
       usuario: creado.usuario,
       nombre: creado.nombre,
       rol: creado.rol,
+      correo: creado.correo,
       token: firmarToken(creado),
       expiraEnHoras: Number(process.env.AUTH_TTL_HORAS) || 8
     });
@@ -105,6 +121,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas.' });
     }
 
+    if (encontrado.activo === false) {
+      return res.status(403).json({ error: 'Su cuenta se encuentra desactivada. Contacte al administrador.' });
+    }
+
     const esValida = await bcrypt.compare(contrasena, encontrado.contrasena);
 
     if (!esValida) {
@@ -121,6 +141,45 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'No se pudo iniciar sesión.' });
+  }
+});
+
+router.post('/logout', autenticar, (req, res) => {
+  const token = leerTokenDeCabecera(req);
+  if (token) revocarToken(token);
+  return res.json({ mensaje: 'Sesión cerrada correctamente.' });
+});
+
+router.put('/cambiar-contrasena', autenticar, async (req, res) => {
+  const { contrasenaActual, contrasenaNueva } = req.body || {};
+  if (typeof contrasenaActual !== 'string' || typeof contrasenaNueva !== 'string') {
+    return res.status(400).json({ error: 'Ingrese la contraseña actual y la nueva.' });
+  }
+  if (contrasenaNueva.length < 6 || contrasenaNueva.length > 72 || contrasenaNueva.trim().length < 6) {
+    return res.status(400).json({ error: 'La nueva contraseña debe tener entre 6 y 72 caracteres válidos.' });
+  }
+
+  try {
+    const usuario = await prisma.usuario.findUnique({ where: { id: req.sesion.sub } });
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+    const coincide = await bcrypt.compare(contrasenaActual, usuario.contrasena);
+    if (!coincide) {
+      return res.status(401).json({ error: 'La contraseña actual no es correcta.' });
+    }
+    if (contrasenaActual === contrasenaNueva) {
+      return res.status(400).json({ error: 'La nueva contraseña debe ser distinta a la actual.' });
+    }
+    const hash = await bcrypt.hash(contrasenaNueva, 10);
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { contrasena: hash }
+    });
+    return res.json({ mensaje: 'Contraseña actualizada correctamente.' });
+  } catch (error) {
+    console.error('Error al cambiar contraseña:', error);
+    return res.status(500).json({ error: 'No se pudo actualizar la contraseña.' });
   }
 });
 
