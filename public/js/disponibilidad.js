@@ -258,7 +258,7 @@
         titulo: 'Términos y Condiciones — Cochera SP',
         html: `
           <p><strong>1. Titular del servicio:</strong> FLORES LEONARDO ALBERTH JAIR (Cochera SP, RUC 10607991664), ubicado en Av. América Sur 3145, Urb. Monserrate, Trujillo, La Libertad.</p>
-          <p><strong>2. Servicio de reserva:</strong> El conductor puede reservar un espacio de estacionamiento (Automóvil o Motocicleta) abonando por adelantado el equivalente a 1 hora de tarifa vigente (mínimo S/ 3.00 en línea). Todos los precios incluyen impuestos de ley y emitimos Boleta de Venta electrónica SUNAT.</p>
+          <p><strong>2. Servicio de reserva:</strong> El conductor puede reservar un espacio de estacionamiento (Automóvil o Motocicleta) abonando por adelantado el equivalente a 1 hora de tarifa vigente (mínimo S/ 3.00 en línea). Todos los precios incluyen impuestos de ley; se entrega comprobante de reserva digital y boleta de venta a solicitud en recepción.</p>
           <p><strong>3. Vigencia de la reserva:</strong> La reserva tiene una vigencia máxima de 30 minutos desde su confirmación de pago. Transcurrido ese plazo sin ingreso en recepción, la reserva expira automáticamente.</p>
           <p><strong>4. Descuento en salida:</strong> Al ingresar dentro del plazo vigente, el monto abonado por adelantado se descuenta íntegramente del total calculado al registrar la salida del vehículo.</p>
         `
