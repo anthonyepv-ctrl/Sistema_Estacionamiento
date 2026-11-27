@@ -61,37 +61,57 @@ router.get('/diario', async (req, res) => {
   try {
     const { inicioDia, finDia } = obtenerRangoFechaPeru(fechaConsulta);
 
-    // 3. Consultar pagos registrados en el rango del día en BD
-    const pagos = await prisma.pago.findMany({
-      where: {
-        fechaHora: {
-          gte: inicioDia,
-          lte: finDia
-        }
-      },
-      include: {
-        metodoPago: true,
-        estadia: {
-          include: {
-            tipoVehiculo: true
+    // 3. Consultar pagos en garita y adelantos pagados de reservas online en el rango del día en BD
+    const [pagos, reservasPagadas] = await Promise.all([
+      prisma.pago.findMany({
+        where: {
+          fechaHora: {
+            gte: inicioDia,
+            lte: finDia
           }
+        },
+        include: {
+          metodoPago: true,
+          estadia: {
+            include: {
+              tipoVehiculo: true
+            }
+          }
+        },
+        orderBy: {
+          fechaHora: 'desc'
         }
-      },
-      orderBy: {
-        fechaHora: 'desc'
-      }
-    });
+      }),
+      prisma.reserva.findMany({
+        where: {
+          estadoPago: 'PAGADO',
+          fechaReserva: {
+            gte: inicioDia,
+            lte: finDia
+          }
+        },
+        include: {
+          vehiculo: true,
+          tipoVehiculo: true
+        },
+        orderBy: {
+          fechaReserva: 'desc'
+        }
+      })
+    ]);
 
-    // 4. Lógica de agrupación por método de pago y cuadre de caja (Efectivo, Yape, POS y otros)
+    // 4. Lógica de agrupación por método de pago y cuadre de caja (Efectivo, Yape, POS, Culqi Online y otros)
     let totalEfectivo = 0;
     let totalYape = 0;
     let totalPos = 0;
+    let totalCulqi = 0;
     let totalOtros = 0;
     let cantidadEfectivo = 0;
     let cantidadYape = 0;
     let cantidadPos = 0;
+    let cantidadCulqi = 0;
     let cantidadOtros = 0;
-    const movimientos = [];
+    const movimientosConFecha = [];
 
     for (const p of pagos) {
       const monto = Number(p.monto) || 0;
@@ -112,7 +132,6 @@ router.get('/diario', async (req, res) => {
         cantidadOtros += 1;
       }
 
-      // Hora formateada en horario de Perú (24 horas estricto 00:00 - 23:59)
       const horaSalida = new Date(p.fechaHora).toLocaleTimeString('es-PE', {
         timeZone: 'America/Lima',
         hour: '2-digit',
@@ -120,20 +139,52 @@ router.get('/diario', async (req, res) => {
         hourCycle: 'h23'
       });
 
-      movimientos.push({
-        id: p.id,
-        placa: p.estadia?.placa || 'SIN-PLACA',
-        tipoVehiculo: p.estadia?.tipoVehiculo?.nombre || 'Automóvil / Camioneta',
-        horaSalida,
-        metodoPago: metodo,
-        monto: Number(monto.toFixed(2))
+      movimientosConFecha.push({
+        ts: new Date(p.fechaHora).getTime(),
+        item: {
+          id: p.id,
+          placa: p.estadia?.placa || 'SIN-PLACA',
+          tipoVehiculo: p.estadia?.tipoVehiculo?.nombre || 'Automóvil / Camioneta',
+          horaSalida,
+          metodoPago: metodo,
+          monto: Number(monto.toFixed(2))
+        }
       });
     }
 
-    const totalDigital = Number((totalYape + totalPos + totalOtros).toFixed(2));
-    const cantidadDigital = cantidadYape + cantidadPos + cantidadOtros;
+    for (const r of reservasPagadas) {
+      const monto = Number(r.montoAdelanto) || 0;
+      if (monto <= 0) continue;
+      totalCulqi += monto;
+      cantidadCulqi += 1;
+
+      const horaReserva = new Date(r.fechaReserva).toLocaleTimeString('es-PE', {
+        timeZone: 'America/Lima',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23'
+      });
+
+      movimientosConFecha.push({
+        ts: new Date(r.fechaReserva).getTime(),
+        item: {
+          id: `RES-${r.id}`,
+          placa: r.vehiculo?.placa || 'RESERVA',
+          tipoVehiculo: r.tipoVehiculo?.nombre || 'Automóvil / Camioneta',
+          horaSalida: horaReserva,
+          metodoPago: 'Culqi Online',
+          monto: Number(monto.toFixed(2))
+        }
+      });
+    }
+
+    movimientosConFecha.sort((a, b) => b.ts - a.ts);
+    const movimientos = movimientosConFecha.map((x) => x.item);
+
+    const totalDigital = Number((totalYape + totalPos + totalCulqi + totalOtros).toFixed(2));
+    const cantidadDigital = cantidadYape + cantidadPos + cantidadCulqi + cantidadOtros;
     const totalGeneral = Number((totalEfectivo + totalDigital).toFixed(2));
-    const totalTransacciones = pagos.length;
+    const totalTransacciones = pagos.length + cantidadCulqi;
 
     const porcentajeFisico = totalGeneral > 0 ? Number(((totalEfectivo / totalGeneral) * 100).toFixed(1)) : 0;
     const porcentajeDigital = totalGeneral > 0 ? Number(((totalDigital / totalGeneral) * 100).toFixed(1)) : 0;
@@ -143,6 +194,12 @@ router.get('/diario', async (req, res) => {
     const fechaFormateada = `${dd}/${mm}/${yyyy}`;
 
     // Estructura de cuadre de caja financiero
+    const metodoDigitalTexto = [
+      cantidadYape > 0 ? 'Yape' : null,
+      cantidadPos > 0 ? 'POS' : null,
+      cantidadCulqi > 0 ? 'Culqi Online' : null
+    ].filter(Boolean).join(' / ') || 'Yape';
+
     const cuadre = {
       dineroFisico: {
         metodo: 'Efectivo',
@@ -152,8 +209,8 @@ router.get('/diario', async (req, res) => {
         porcentaje: porcentajeFisico
       },
       dineroDigital: {
-        metodo: totalPos > 0 ? 'Yape / POS' : 'Yape',
-        descripcion: 'Cobros digitales (Yape y POS) para contrastar en banco',
+        metodo: metodoDigitalTexto,
+        descripcion: 'Cobros digitales (Yape, POS y Culqi Online) para contrastar en banco',
         total: totalDigital,
         cantidadCobros: cantidadDigital,
         porcentaje: porcentajeDigital
@@ -170,7 +227,9 @@ router.get('/diario', async (req, res) => {
       totalEfectivo: Number(totalEfectivo.toFixed(2)),
       totalYape: Number(totalYape.toFixed(2)),
       totalPos: Number(totalPos.toFixed(2)),
+      totalCulqi: Number(totalCulqi.toFixed(2)),
       cantidadPos,
+      cantidadCulqi,
       totalGeneral,
       movimientos
     });
@@ -264,25 +323,61 @@ function normalizarMetodo(nombre) {
 
 async function consultarPagosPeriodo(anio, mes) {
   const rango = obtenerRangoPeriodo(anio, mes);
-  const pagos = await prisma.pago.findMany({
-    where: {
-      fechaHora: {
-        gte: rango.inicio,
-        lte: rango.fin
-      }
-    },
-    include: {
-      metodoPago: true,
-      estadia: {
-        include: {
-          tipoVehiculo: true
+  const [pagosBase, reservasPagadas] = await Promise.all([
+    prisma.pago.findMany({
+      where: {
+        fechaHora: {
+          gte: rango.inicio,
+          lte: rango.fin
         }
+      },
+      include: {
+        metodoPago: true,
+        estadia: {
+          include: {
+            tipoVehiculo: true
+          }
+        }
+      },
+      orderBy: {
+        fechaHora: 'asc'
       }
-    },
-    orderBy: {
-      fechaHora: 'asc'
-    }
-  });
+    }),
+    prisma.reserva.findMany({
+      where: {
+        estadoPago: 'PAGADO',
+        fechaReserva: {
+          gte: rango.inicio,
+          lte: rango.fin
+        }
+      },
+      include: {
+        vehiculo: true,
+        tipoVehiculo: true
+      },
+      orderBy: {
+        fechaReserva: 'asc'
+      }
+    })
+  ]);
+
+  const pagosReservas = reservasPagadas
+    .filter((r) => Number(r.montoAdelanto) > 0)
+    .map((r) => ({
+      id: `RES-${r.id}`,
+      monto: r.montoAdelanto,
+      fechaHora: r.fechaReserva,
+      metodoPago: { nombre: 'Culqi Online' },
+      estadia: {
+        placa: r.vehiculo ? r.vehiculo.placa : 'RESERVA',
+        tipoVehiculo: r.tipoVehiculo || { nombre: 'Automóvil / Camioneta' }
+      }
+    }));
+
+  const pagos = [...pagosBase, ...pagosReservas].sort(
+    (a, b) => new Date(a.fechaHora).getTime() - new Date(b.fechaHora).getTime()
+  );
+
   return { pagos, rango };
 }
 
@@ -467,6 +562,7 @@ router.get('/exportar', async (req, res) => {
     let totalEfectivo = 0;
     let totalYape = 0;
     let totalPos = 0;
+    let totalCulqi = 0;
 
     for (const pago of pagos) {
       const monto = redondear(pago.monto);
@@ -475,6 +571,7 @@ router.get('/exportar', async (req, res) => {
       if (metodo.toLowerCase().includes('efectivo')) totalEfectivo = redondear(totalEfectivo + monto);
       if (metodo.toLowerCase().includes('yape')) totalYape = redondear(totalYape + monto);
       if (metodo.toLowerCase().includes('pos')) totalPos = redondear(totalPos + monto);
+      if (metodo.toLowerCase().includes('culqi')) totalCulqi = redondear(totalCulqi + monto);
 
       filas.push([
         formatearFechaHoraPeru(pago.fechaHora),
@@ -490,6 +587,9 @@ router.get('/exportar', async (req, res) => {
     filas.push(['TOTAL YAPE', '', '', '', formatearMoneda(totalYape)]);
     if (totalPos > 0) {
       filas.push(['TOTAL POS', '', '', '', formatearMoneda(totalPos)]);
+    }
+    if (totalCulqi > 0) {
+      filas.push(['TOTAL CULQI ONLINE', '', '', '', formatearMoneda(totalCulqi)]);
     }
     filas.push(['TOTAL VEHÍCULOS ATENDIDOS', '', '', '', String(pagos.length)]);
 

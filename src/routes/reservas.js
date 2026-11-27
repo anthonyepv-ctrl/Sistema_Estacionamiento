@@ -240,7 +240,7 @@ router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
       }),
       prisma.usuario.findUnique({
         where: { id: req.sesion.sub },
-        select: { id: true, dni: true }
+        select: { id: true, dni: true, correo: true }
       })
     ]);
 
@@ -281,9 +281,12 @@ router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
 
     montoAdelanto = calcularMontoAdelanto(tarifaPrev.precioHora);
     const emailRaw = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const emailUsuario = usuario && usuario.correo && REGEX_EMAIL.test(usuario.correo)
+      ? usuario.correo.trim().toLowerCase()
+      : '';
     const emailFinal = REGEX_EMAIL.test(emailRaw)
       ? emailRaw
-      : `conductor.${usuario && usuario.dni ? usuario.dni : req.sesion.sub}@cochera.pe`;
+      : (emailUsuario || `conductor.${usuario && usuario.dni ? usuario.dni : req.sesion.sub}@cochera.pe`);
 
     const claveIdempotencia = (idempotencyKey && String(idempotencyKey).trim().slice(0, 64))
       || crypto.randomUUID();

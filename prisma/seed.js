@@ -51,7 +51,7 @@ async function main() {
 
     await prisma.usuario.upsert({
       where: { usuario: datos.usuario },
-      update: { contrasena: contrasenaHash, nombre: datos.nombre, rol: datos.rol },
+      update: { nombre: datos.nombre, rol: datos.rol },
       create: {
         usuario: datos.usuario,
         nombre: datos.nombre,

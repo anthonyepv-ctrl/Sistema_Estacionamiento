@@ -10,6 +10,20 @@ const router = express.Router();
 
 const CAPACIDAD_MAXIMA = 5000;
 
+async function sincronizarCapacidadDesdeBD() {
+  try {
+    const cfg = await prisma.configuracionEspacios.findUnique({ where: { id: 1 } });
+    if (cfg) {
+      guardarCapacidad({
+        capacidadAutos: cfg.capacidadAutos,
+        capacidadMotos: cfg.capacidadMotos
+      });
+    }
+  } catch (error) {
+    console.warn('[espacios] No se pudo sincronizar capacidad desde BD al iniciar:', error.message);
+  }
+}
+
 async function obtenerEstadiasActivasPorTipo() {
   await expirarReservasVencidas();
 
@@ -155,6 +169,19 @@ router.put('/capacidad', autorizar('DUENO'), async (req, res) => {
       capacidadMotos: motosVal
     });
 
+    await prisma.configuracionEspacios.upsert({
+      where: { id: 1 },
+      update: {
+        capacidadAutos: nuevaCapacidad.capacidadAutos,
+        capacidadMotos: nuevaCapacidad.capacidadMotos
+      },
+      create: {
+        id: 1,
+        capacidadAutos: nuevaCapacidad.capacidadAutos,
+        capacidadMotos: nuevaCapacidad.capacidadMotos
+      }
+    });
+
     const estadoActualizado = calcularEstadoAforo(nuevaCapacidad, ocupados);
 
     return res.json({
@@ -169,3 +196,4 @@ router.put('/capacidad', autorizar('DUENO'), async (req, res) => {
 });
 
 module.exports = router;
+module.exports.sincronizarCapacidadDesdeBD = sincronizarCapacidadDesdeBD;

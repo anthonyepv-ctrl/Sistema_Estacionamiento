@@ -40,8 +40,11 @@ Sistema_Estacionamiento/
 │   ├── js/
 │   └── index.html
 ├── src/                 # Código del backend
+│   ├── config/          # Configuración (Prisma, auth, espacios, pasarela)
+│   ├── middleware/      # Seguridad HTTP (CSP/HSTS) y rate limiting
 │   ├── routes/          # Rutas de la API
-│   └── config/          # Configuración (cliente Prisma)
+│   └── utils/           # Validaciones y placas MTC
+├── tests/               # Pruebas organizadas por Sprint/HU (ver tests/README.md)
 ├── prisma/              # Esquema, migraciones y seed
 ├── scripts/             # Utilidades (setup de skills)
 ├── docs/                # Documentación
@@ -115,7 +118,7 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 - Referencia: [`docs/datos/Modelo_de_Datos.md`](docs/datos/Modelo_de_Datos.md).
 - Implementación: `prisma/schema.prisma` + `prisma/migrations/` (Prisma 6, PostgreSQL). Aplicar con `npm run db:deploy`.
 - Diagrama editable: `docs/datos/diagrama-er.erd`.
-- Entidades: `usuario`, `tipo_vehiculo`, `tarifa`, `estadia`, `pago`, `metodo_pago`.
+- Entidades: `usuario`, `tipo_vehiculo`, `tarifa`, `estadia`, `pago`, `metodo_pago`, `vehiculo_conductor`, `reserva`, `configuracion_pasarela`, `reclamo`, `configuracion_espacios`.
 - Regla clave: una estadía está activa mientras `hora_salida IS NULL`; no se permite un nuevo ingreso para una placa con estadía activa (garantizado por índice único parcial).
 
 ---
@@ -351,7 +354,7 @@ npx skills add usestrix/strix@api-security-testing -g -y
 
 - Compartir el `DATABASE_URL` de Neon con el equipo (por privado; ver README).
 - **`AUTH_SECRET` en Render:** crear la variable de entorno en el servicio de Blue. Sin ella el servidor genera un secreto por proceso y las sesiones se caen en cada reinicio (ver §2 y `.env.example`).
-- **DEF-77-08 — capacidad persistente:** la capacidad de autos/motos vive en `src/config/espacios.json`, un archivo versionado. Un despliegue la revierte a los valores del commit. Requiere moverla a base de datos (tabla `configuracion`) con migración y actualizar el modelo de datos. Ver `docs/modulos/espacios-publicos/plan-pruebas.md`.
+- **DEF-77-08 — capacidad persistente (RESUELTO):** la capacidad de autos y motos ahora persiste en PostgreSQL en la tabla `configuracion_espacios` mediante `sincronizarCapacidadDesdeBD()` al arrancar el servidor.
 - **DEF-77-02 — política de aforo para tipos no clasificados:** la API ya reporta las estadías de tipos distintos de auto/moto (`total.otrosEnCochera`), pero falta que el equipo decida si se descuentan del cupo de autos, del de motos o se contabilizan aparte.
 - **Despliegue demo (UPAO-36):** login + tarifas publicados en **Render** (plan free, rama `main`, BD Neon) mediante `render.yaml`; `DATABASE_URL` es variable secreta del panel de Render. El despliegue productivo de la Reserva Web (Epic UPAO-28) sigue siendo trabajo futuro.
 - Posible error de nombre en `public/css/stye.css` (¿`style.css`?).

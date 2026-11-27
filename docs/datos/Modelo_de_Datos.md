@@ -1,13 +1,13 @@
 # Modelo de Datos — Sistema de Gestión de Cochera
 
-Base de datos **PostgreSQL**. Implementada con **Prisma 6** (migración inicial `20261005120000_init`).
+Base de datos PostgreSQL gestionada con Prisma 6 (migración inicial 20261005120000_init hasta 20261127160000_auditoria_legal_usuarios_capacidad).
 
 ## Archivos
 
 | Archivo | Descripción |
 | --- | --- |
-| `prisma/schema.prisma` | Esquema Prisma (modelos, tipos y relaciones). |
-| `prisma/migrations/20261005120000_init/migration.sql` | Migración inicial (tablas, PK, FK, CHECK, índices). |
+| prisma/schema.prisma | Esquema Prisma (modelos, tipos y relaciones). |
+| prisma/migrations/ | Historial de migraciones SQL (tablas, PK, FK, CHECK, índices y políticas legales/capacidad). |
 | `diagrama-er.erd` | Diagrama entidad-relación editable (referencia visual). |
 | `diagrama-er.jpg` | Captura visual del diagrama ER actualizado al Sprint 3. |
 | `modelo-sprint1.png` | Imagen del modelo del Sprint 1. |
@@ -41,6 +41,9 @@ Credenciales y rol de acceso al sistema.
 | `rol` | ENUM `rol_usuario` | NOT NULL, DEFAULT `RECEPCIONISTA` — valores: `RECEPCIONISTA`, `DUEÑO`, `CONDUCTOR` |
 | `dni` | VARCHAR(8) | UNIQUE, NULL (obligatorio para rol `CONDUCTOR`, 8 dígitos) |
 | `celular` | VARCHAR(9) | NULL (obligatorio para rol `CONDUCTOR`, 9 dígitos iniciando en 9) |
+| `correo` | VARCHAR(120) | NULL (correo de contacto y comprobantes del conductor) |
+| `activo` | BOOLEAN | NOT NULL, DEFAULT `true` (control administrativo de acceso) |
+| `acepto_terminos_en` | TIMESTAMP | NULL (constancia de consentimiento Ley N.° 29733 y Términos) |
 
 ### tipo_vehiculo
 
@@ -153,6 +156,39 @@ Credenciales de la pasarela configuradas por el `DUEÑO` desde la web (`Sprint 3
 | `llave_publica` | VARCHAR(120) | NOT NULL (`pk_test_...` o `pk_live_...`) |
 | `llave_secreta_cifrada` | TEXT | NOT NULL (cifrada con AES-256-GCM en servidor) |
 | `actualizado_por_id` | INTEGER | FK → `usuario`, NULL (`ON DELETE SET NULL`) |
+| `actualizado_en` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
+
+### reclamo
+
+Hojas de reclamación y quejas registradas en el Libro de Reclamaciones Virtual (Indecopi, D.S. N.° 011-2011-PCM).
+
+| Columna | Tipo | Restricciones |
+| --- | --- | --- |
+| `id_reclamo` | SERIAL | PK |
+| `codigo` | VARCHAR(20) | UNIQUE, NOT NULL (formato `LR-YYYY-NNNN`) |
+| `tipo` | VARCHAR(20) | NOT NULL (`RECLAMO` o `QUEJA`) |
+| `nombre_consumidor` | VARCHAR(120) | NOT NULL |
+| `tipo_documento` | VARCHAR(10) | NOT NULL (`DNI`, `CE` o `RUC`) |
+| `numero_documento` | VARCHAR(15) | NOT NULL |
+| `correo` | VARCHAR(120) | NOT NULL |
+| `telefono` | VARCHAR(15) | NOT NULL |
+| `domicilio` | VARCHAR(200) | NOT NULL |
+| `servicio` | VARCHAR(100) | NOT NULL |
+| `monto_reclamado` | DECIMAL(10,2) | NULL |
+| `detalle` | TEXT | NOT NULL |
+| `pedido` | TEXT | NOT NULL |
+| `estado` | VARCHAR(20) | NOT NULL, DEFAULT `'PENDIENTE'` (`PENDIENTE` o `ATENDIDO`) |
+| `creado_en` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
+
+### configuracion_espacios
+
+Capacidad máxima persistente de la cochera en base de datos para sobrevivir reinicios y despliegues en Render (cierra DEF-77-08).
+
+| Columna | Tipo | Restricciones |
+| --- | --- | --- |
+| `id` | INTEGER | PK, DEFAULT `1` |
+| `capacidad_autos` | INTEGER | NOT NULL, DEFAULT `20` |
+| `capacidad_motos` | INTEGER | NOT NULL, DEFAULT `15` |
 | `actualizado_en` | TIMESTAMP | NOT NULL, DEFAULT `CURRENT_TIMESTAMP` |
 
 ---

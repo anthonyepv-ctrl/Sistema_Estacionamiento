@@ -82,6 +82,10 @@
           <span class="sidebar-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
           <span class="sidebar-link-text">Pasarela de Pagos</span>
         </button>
+        <button type="button" class="sidebar-link" data-view="usuarios" data-trigger="card-modulo-usuarios" data-roles="DUENO">
+          <span class="sidebar-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span class="sidebar-link-text">Usuarios y Seguridad</span>
+        </button>
         <button type="button" class="sidebar-link" data-view="garita-reservas" data-trigger="card-modulo-garita-reservas" data-roles="RECEPCIONISTA,DUENO">
           <span class="sidebar-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></span>
           <span class="sidebar-link-text">Buscar Reservas</span>
@@ -209,6 +213,15 @@
             </div>
 
             <div class="form-group">
+              <label for="reg-correo" class="form-label">
+                <span>Correo electrónico (para comprobantes)</span>
+                <span class="required">*</span>
+              </label>
+              <input type="email" id="reg-correo" class="input-control" placeholder="ej. juan@correo.com" maxlength="120" autocomplete="email" required>
+              <div class="input-feedback" id="feedback-reg-correo"></div>
+            </div>
+
+            <div class="form-group">
               <label for="reg-usuario" class="form-label">
                 <span>Usuario</span>
                 <span class="required">*</span>
@@ -224,6 +237,18 @@
               </label>
               <input type="password" id="reg-password" class="input-control" placeholder="••••••••" autocomplete="new-password" required>
               <div class="input-feedback" id="feedback-reg-password"></div>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--text2); cursor: pointer;">
+                <input type="checkbox" id="reg-acepto-terminos" style="margin-top: 3px;" required>
+                <span>
+                  Acepto los
+                  <button type="button" class="link-legal-btn" data-legal="terminos" style="font-size: 12px;">Términos y Condiciones</button>
+                  y autorizo el tratamiento de mis datos conforme a la
+                  <button type="button" class="link-legal-btn" data-legal="privacidad" style="font-size: 12px;">Política de Privacidad (Ley 29733)</button>.
+                </span>
+              </label>
             </div>
 
             <button type="submit" id="btn-registro-conductor-submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
@@ -445,6 +470,22 @@
           </div>
         </div>
 
+        <!-- Módulo de Gestión de Usuarios, Seguridad y Reclamos (Rol Dueño) -->
+        <div class="module-card card-primary" id="card-modulo-usuarios">
+          <div class="module-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="module-card-body">
+            <div class="module-card-top">
+              <h2>Usuarios y Seguridad</h2>
+            </div>
+            <p>Administre cuentas de recepción, cambie su contraseña y revise hojas del Libro de Reclamaciones.</p>
+            <div class="module-card-action">
+              <span>Gestionar Usuarios →</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -461,12 +502,12 @@
 
       <div class="page-title-group">
         <h1>Módulo de Tarifas</h1>
-        <p>Gestión de precios vigentes por hora y fracción para vehículos y reservas</p>
+        <p>Gestión de precios vigentes por hora y fracción para vehículos</p>
       </div>
 
       <div class="tarifas-layout">
         
-        <!-- SECCIÓN 1: TABLA DE TARIFAS VIGENTES (AUTOS, MOTOS, RESERVAS) -->
+        <!-- SECCIÓN 1: TABLA DE TARIFAS VIGENTES (AUTOS Y MOTOS) -->
         <div class="card card-table">
           <div class="card-header">
             <h2>Tarifas Actuales</h2>
@@ -478,7 +519,7 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Tipo de Vehículo / Servicio</th>
+                  <th>Tipo de Vehículo</th>
                   <th>Precio por Hora</th>
                   <th>Precio por Fracción</th>
                   <th>Estado</th>
@@ -496,24 +537,11 @@
         <div class="card card-form" id="card-formulario-tarifa">
           <div class="card-header">
             <h2 id="form-tarifa-title">Modificar Tarifa</h2>
-            <p class="caption">Actualice el precio por hora o por fracción</p>
+            <p class="caption">Actualice el precio por hora o por fracción de la fila seleccionada</p>
           </div>
           <div class="accent-bar-sm"></div>
 
           <form id="form-modificar-tarifa" novalidate>
-            <!-- Tipo de Vehículo / Servicio -->
-            <div class="form-group">
-              <label for="select-tipo-tarifa" class="form-label">
-                <span>Tipo de Vehículo / Servicio</span>
-                <span class="required">*</span>
-              </label>
-              <select id="select-tipo-tarifa" class="input-control">
-                <option value="auto">Automóvil / Camioneta</option>
-                <option value="moto">Motocicleta</option>
-                <option value="reserva">Reserva Web</option>
-              </select>
-            </div>
-
             <!-- Precio por Hora (S/) -->
             <div class="form-group">
               <label for="input-precio-hora" class="form-label">
@@ -856,6 +884,26 @@
           </div>
         </div>
 
+        <!-- CONFIGURACIÓN DE CAPACIDAD (SOLO DUEÑO, PERSISTIDA EN BD) -->
+        <div class="card hidden" id="card-config-capacidad">
+          <div class="card-header">
+            <h2>Configurar Capacidad Total</h2>
+            <p class="caption">Ajuste la cantidad de espacios disponibles por sector</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          <form id="form-config-capacidad" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;" novalidate>
+            <div class="form-group" style="flex: 1; min-width: 160px; margin-bottom: 0;">
+              <label for="input-cap-autos" class="form-label"><span>Capacidad Autos</span><span class="required">*</span></label>
+              <input type="number" id="input-cap-autos" class="input-control mono" min="1" max="5000" required>
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 160px; margin-bottom: 0;">
+              <label for="input-cap-motos" class="form-label"><span>Capacidad Motos</span><span class="required">*</span></label>
+              <input type="number" id="input-cap-motos" class="input-control mono" min="1" max="5000" required>
+            </div>
+            <button type="submit" id="btn-guardar-capacidad" class="btn btn-primary">Guardar Capacidad</button>
+          </form>
+        </div>
+
         <!-- LISTA DE VEHÍCULOS OCUPANDO LA COCHERA -->
         <div class="card card-table">
           <div class="card-header">
@@ -990,6 +1038,9 @@
             </button>
             <button type="button" class="btn-pill" data-metodo="POS" id="pill-filtro-pos">
               💳 POS
+            </button>
+            <button type="button" class="btn-pill" data-metodo="Culqi Online" id="pill-filtro-culqi">
+              🌐 Culqi Online
             </button>
           </div>
         </div>
@@ -1318,34 +1369,124 @@
         <div class="public-footer-grid">
           <div>
             <h3>Cochera SP</h3>
-            <p class="caption">Estacionamiento privado y reserva web de espacios.</p>
+            <p class="caption"><strong>Titular legal:</strong> FLORES LEONARDO ALBERTH JAIR</p>
             <p class="caption"><strong>RUC:</strong> <span class="mono">10607991664</span></p>
             <p class="caption"><strong>Dirección:</strong> Av. América Sur 3145, Urb. Monserrate, Trujillo, La Libertad</p>
+            <p class="caption">Precios expresados en soles (PEN). Emitimos Boleta de Venta electrónica.</p>
           </div>
           <div>
-            <h4>Contacto y Atención</h4>
+            <h4>Contacto y Medios de Pago</h4>
             <p class="caption"><strong>Teléfono / WhatsApp:</strong> <span class="mono">+51 988 940 558</span></p>
             <p class="caption"><strong>Correo:</strong> alberthflores47@gmail.com</p>
-            <p class="caption"><strong>Medios de pago:</strong> Visa, Mastercard y Yape (procesados por Culqi)</p>
+            <p class="caption"><strong>Pagos en línea (Culqi):</strong> Tarjetas Visa, Mastercard, Amex y Diners (desde S/ 3.00); Yape (desde S/ 6.00).</p>
           </div>
           <div>
-            <h4>Información Legal</h4>
+            <h4>Información Legal e Indecopi</h4>
             <ul class="footer-legal-links">
               <li><button type="button" class="link-legal-btn" data-legal="terminos">Términos y Condiciones</button></li>
-              <li><button type="button" class="link-legal-btn" data-legal="privacidad">Política de Privacidad</button></li>
+              <li><button type="button" class="link-legal-btn" data-legal="privacidad">Política de Privacidad (Ley 29733)</button></li>
               <li><button type="button" class="link-legal-btn" data-legal="reembolsos">Política de Anulaciones y Reembolsos</button></li>
             </ul>
+            <button type="button" id="btn-abrir-libro-reclamaciones" class="btn btn-secondary btn-sm" style="margin-top: 10px; border-color: #1E3A8A; color: #1E3A8A;">
+              📖 Libro de Reclamaciones Virtual
+            </button>
           </div>
         </div>
       </footer>
 
-      <div id="modal-legal-publico" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-legal-titulo">
+      <div id="modal-legal-publico" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-legal-titulo">
         <div class="modal-card" style="max-width: 640px;">
-          <div class="modal-header">
+          <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h3 id="modal-legal-titulo">Información Legal</h3>
             <button type="button" class="btn btn-secondary btn-sm" id="btn-cerrar-modal-legal">Cerrar</button>
           </div>
           <div id="modal-legal-contenido" class="modal-body-legal"></div>
+        </div>
+      </div>
+
+      <div id="modal-libro-reclamaciones" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-reclamo-titulo">
+        <div class="modal-card" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
+          <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div>
+              <h3 id="modal-reclamo-titulo">Libro de Reclamaciones Virtual</h3>
+              <p class="caption" style="margin-top: 2px;">Conforme al D.S. N.° 011-2011-PCM y Ley N.° 31435 · FLORES LEONARDO ALBERTH JAIR (RUC 10607991664)</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cerrar-modal-reclamo">Cerrar</button>
+          </div>
+          <form id="form-libro-reclamaciones" style="margin-top: 14px;" novalidate>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label for="rec-tipo" class="form-label"><span>Tipo</span><span class="required">*</span></label>
+                <select id="rec-tipo" class="input-control" required>
+                  <option value="RECLAMO">Reclamo (disconformidad con el servicio)</option>
+                  <option value="QUEJA">Queja (malestar en la atención)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="rec-servicio" class="form-label"><span>Servicio</span><span class="required">*</span></label>
+                <input type="text" id="rec-servicio" class="input-control" value="Reserva web / Estacionamiento" maxlength="100" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="rec-nombre" class="form-label"><span>Nombre completo / Razón social</span><span class="required">*</span></label>
+              <input type="text" id="rec-nombre" class="input-control" placeholder="Nombre del consumidor" maxlength="120" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label for="rec-tipo-doc" class="form-label"><span>Documento</span><span class="required">*</span></label>
+                <select id="rec-tipo-doc" class="input-control" required>
+                  <option value="DNI">DNI</option>
+                  <option value="CE">CE</option>
+                  <option value="RUC">RUC</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="rec-num-doc" class="form-label"><span>Número</span><span class="required">*</span></label>
+                <input type="text" id="rec-num-doc" class="input-control mono" placeholder="12345678" maxlength="15" required>
+              </div>
+              <div class="form-group">
+                <label for="rec-telefono" class="form-label"><span>Teléfono</span><span class="required">*</span></label>
+                <input type="text" id="rec-telefono" class="input-control mono" placeholder="987654321" maxlength="15" required>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label for="rec-correo" class="form-label"><span>Correo electrónico</span><span class="required">*</span></label>
+                <input type="email" id="rec-correo" class="input-control" placeholder="consumidor@correo.com" maxlength="120" required>
+              </div>
+              <div class="form-group">
+                <label for="rec-monto" class="form-label"><span>Monto reclamado (S/ opcional)</span></label>
+                <input type="number" step="0.01" min="0" id="rec-monto" class="input-control mono" placeholder="0.00">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="rec-domicilio" class="form-label"><span>Domicilio</span><span class="required">*</span></label>
+              <input type="text" id="rec-domicilio" class="input-control" placeholder="Av. / Jr. / Calle y distrito" maxlength="200" required>
+            </div>
+            <div class="form-group">
+              <label for="rec-detalle" class="form-label"><span>Detalle del reclamo o queja</span><span class="required">*</span></label>
+              <textarea id="rec-detalle" class="input-control textarea-nota" rows="3" maxlength="1000" placeholder="Describa lo sucedido..." required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="rec-pedido" class="form-label"><span>Pedido del consumidor</span><span class="required">*</span></label>
+              <textarea id="rec-pedido" class="input-control textarea-nota" rows="2" maxlength="500" placeholder="¿Qué solución solicita?" required></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px;">
+              <button type="button" id="btn-cancelar-reclamo" class="btn btn-secondary">Cancelar</button>
+              <button type="submit" id="btn-enviar-reclamo" class="btn btn-primary">Registrar Hoja de Reclamación</button>
+            </div>
+          </form>
+          <div id="box-constancia-reclamo" class="hidden" style="margin-top: 16px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 16px;">
+            <h4 style="color: #065F46; margin-bottom: 6px;">Hoja de Reclamación Registrada</h4>
+            <p class="caption" style="color: #047857; margin-bottom: 8px;">Conserve este código como constancia de atención (plazo máximo de respuesta: 15 días hábiles).</p>
+            <p style="margin: 4px 0;"><strong>Código:</strong> <span id="rec-constancia-codigo" class="mono" style="font-size: 16px; color: #1E3A8A; font-weight: 700;">—</span></p>
+            <p style="margin: 4px 0;"><strong>Consumidor:</strong> <span id="rec-constancia-nombre">—</span></p>
+            <p style="margin: 4px 0;"><strong>Fecha:</strong> <span id="rec-constancia-fecha" class="mono">—</span></p>
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
+              <button type="button" id="btn-imprimir-constancia-reclamo" class="btn btn-secondary btn-sm">Imprimir Constancia</button>
+              <button type="button" id="btn-nuevo-reclamo" class="btn btn-primary btn-sm">Registrar otro</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1807,6 +1948,124 @@
               <p class="caption" style="margin: 0; color: #334155;"><code class="mono">pk_test_</code>: pruebas · <code class="mono">pk_live_</code>: cobros reales.</p>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------------------------
+         13. MÓDULO DE GESTIÓN DE USUARIOS, SEGURIDAD Y RECLAMOS (ROL DUEÑO)
+         ---------------------------------------------------------------------- -->
+    <section id="view-usuarios" class="view-section">
+      <div class="view-top-bar">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-volver-menu-desde-usuarios">
+          ← Volver al Menú Principal
+        </button>
+      </div>
+
+      <div class="page-title-group">
+        <h1>Usuarios y Seguridad</h1>
+        <p>Administración de cuentas de personal, cambio de contraseña y hojas de reclamación</p>
+      </div>
+
+      <div class="tarifas-layout" style="align-items: start;">
+        <div class="card card-table">
+          <div class="card-header">
+            <h2>Cuentas del Sistema</h2>
+            <p class="caption">Personal operativo y conductores registrados</p>
+          </div>
+          <div class="accent-bar-sm"></div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Nombre</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th class="text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-usuarios-admin">
+                <tr><td colspan="5" class="caption" style="text-align:center;">Cargando usuarios...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="card card-form">
+            <div class="card-header">
+              <h2>Crear Usuario de Personal</h2>
+            </div>
+            <div class="accent-bar-sm"></div>
+            <form id="form-usuario-admin" novalidate>
+              <div class="form-group">
+                <label for="usr-nombre" class="form-label"><span>Nombre completo</span><span class="required">*</span></label>
+                <input type="text" id="usr-nombre" class="input-control" maxlength="100" required>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label for="usr-usuario" class="form-label"><span>Usuario</span><span class="required">*</span></label>
+                  <input type="text" id="usr-usuario" class="input-control" maxlength="50" required>
+                </div>
+                <div class="form-group">
+                  <label for="usr-rol" class="form-label"><span>Rol</span><span class="required">*</span></label>
+                  <select id="usr-rol" class="input-control">
+                    <option value="RECEPCIONISTA">RECEPCIONISTA</option>
+                    <option value="DUENO">DUENO</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="usr-password" class="form-label"><span>Contraseña inicial</span><span class="required">*</span></label>
+                <input type="password" id="usr-password" class="input-control" maxlength="72" required>
+              </div>
+              <button type="submit" id="btn-crear-usuario-admin" class="btn btn-primary btn-block">Crear Cuenta</button>
+            </form>
+          </div>
+
+          <div class="card card-form">
+            <div class="card-header">
+              <h2>Cambiar Mi Contraseña</h2>
+            </div>
+            <div class="accent-bar-sm"></div>
+            <form id="form-cambiar-contrasena" novalidate>
+              <div class="form-group">
+                <label for="pwd-actual" class="form-label"><span>Contraseña actual</span><span class="required">*</span></label>
+                <input type="password" id="pwd-actual" class="input-control" maxlength="72" required>
+              </div>
+              <div class="form-group">
+                <label for="pwd-nueva" class="form-label"><span>Nueva contraseña</span><span class="required">*</span></label>
+                <input type="password" id="pwd-nueva" class="input-control" maxlength="72" required>
+              </div>
+              <button type="submit" id="btn-cambiar-contrasena" class="btn btn-secondary btn-block">Actualizar Contraseña</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-table" style="margin-top: 24px;">
+        <div class="card-header">
+          <h2>Libro de Reclamaciones Recibidos</h2>
+          <p class="caption">Seguimiento de reclamos y quejas ingresadas desde el portal público</p>
+        </div>
+        <div class="accent-bar-sm"></div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Tipo</th>
+                <th>Consumidor</th>
+                <th>Servicio</th>
+                <th>Estado</th>
+                <th class="text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-reclamos-admin">
+              <tr><td colspan="6" class="caption" style="text-align:center;">Sin reclamos registrados.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>

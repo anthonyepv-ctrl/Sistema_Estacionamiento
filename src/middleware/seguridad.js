@@ -12,6 +12,13 @@ function cabecerasSeguridad(req, res, next) {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('X-XSS-Protection', '0');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' https://checkout.culqi.com https://*.culqi.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://checkout.culqi.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https://*.culqi.com; connect-src 'self' https://api.culqi.com https://secure.culqi.com https://checkout.culqi.com https://*.culqi.com; frame-src https://checkout.culqi.com https://*.culqi.com; frame-ancestors 'none'; base-uri 'self'"
+  );
+  if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   next();
 }
 

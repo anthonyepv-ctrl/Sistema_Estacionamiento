@@ -573,9 +573,20 @@
         const nombre = document.getElementById('reg-nombre').value.trim();
         const dni = document.getElementById('reg-dni').value.trim();
         const celular = document.getElementById('reg-celular').value.trim();
+        const correo = document.getElementById('reg-correo') ? document.getElementById('reg-correo').value.trim() : '';
         const usuario = document.getElementById('reg-usuario').value.trim();
         const contrasena = document.getElementById('reg-password').value;
+        const aceptoTerminosEl = document.getElementById('reg-acepto-terminos');
         const btnSubmit = document.getElementById('btn-registro-conductor-submit');
+
+        if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+          window.mostrarToast('Ingrese un correo electrónico válido.', true);
+          return;
+        }
+        if (aceptoTerminosEl && !aceptoTerminosEl.checked) {
+          window.mostrarToast('Debe aceptar los Términos y Condiciones y la Política de Privacidad.', true);
+          return;
+        }
 
         btnSubmit.classList.add('loading');
         btnSubmit.disabled = true;
@@ -583,7 +594,15 @@
         try {
           const sesion = await window.pedirApi('/api/auth/registro-conductor', {
             method: 'POST',
-            body: JSON.stringify({ nombre, dni, celular, usuario, contrasena })
+            body: JSON.stringify({
+              nombre,
+              dni,
+              celular,
+              correo,
+              usuario,
+              contrasena,
+              aceptoTerminos: true
+            })
           });
 
           if (typeof window.activarSesion === 'function') {

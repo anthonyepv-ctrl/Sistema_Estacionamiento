@@ -59,12 +59,21 @@ router.post('/vehiculos', async (req, res) => {
   }
 
   try {
-    const tipoVehiculo = await prisma.tipoVehiculo.findUnique({
-      where: { nombre: validacion.config.nombre }
-    });
+    const [tipoVehiculo, placaEnOtraCuenta] = await Promise.all([
+      prisma.tipoVehiculo.findUnique({
+        where: { nombre: validacion.config.nombre }
+      }),
+      prisma.vehiculoConductor.findFirst({
+        where: { placa: validacion.placa, idUsuario: { not: req.sesion.sub } }
+      })
+    ]);
 
     if (!tipoVehiculo) {
       return res.status(500).json({ error: 'Tipo de vehículo no configurado en el sistema.' });
+    }
+
+    if (placaEnOtraCuenta) {
+      return res.status(409).json({ error: `La placa ${validacion.placa} ya está registrada en otra cuenta de conductor.` });
     }
 
     const creado = await prisma.vehiculoConductor.create({
@@ -151,7 +160,7 @@ router.get('/historial', async (req, res) => {
 
     const vehiculos = await prisma.vehiculoConductor.findMany({
       where: { idUsuario: req.sesion.sub },
-      select: { placa: true }
+      select: { placa: true, creadoEn: true }
     });
 
     const placas = vehiculos.map((v) => v.placa);
@@ -159,6 +168,7 @@ router.get('/historial', async (req, res) => {
       return res.json({ estadias: [] });
     }
 
+    const creadoEnPorPlaca = new Map(vehiculos.map((v) => [v.placa, new Date(v.creadoEn).getTime()]));
     const placasBuscadas = placaFiltro
       ? placas.filter((p) => p === placaFiltro)
       : placas;
@@ -174,14 +184,21 @@ router.get('/historial', async (req, res) => {
       where.horaSalida = { not: null };
     }
 
-    const estadias = await prisma.estadia.findMany({
+    const estadiasRaw = await prisma.estadia.findMany({
       where,
       include: {
         tipoVehiculo: { select: { nombre: true } },
         pago: { include: { metodoPago: { select: { nombre: true } } } },
-        reserva: { select: { codigo: true, montoAdelanto: true } }
+        reserva: { select: { codigo: true, montoAdelanto: true, idUsuario: true } }
       },
       orderBy: { horaIngreso: 'desc' }
+    });
+
+    const estadias = estadiasRaw.filter((e) => {
+      if (e.reserva && e.reserva.idUsuario === req.sesion.sub) return true;
+      if (e.reserva && e.reserva.idUsuario !== req.sesion.sub) return false;
+      const creadoMs = creadoEnPorPlaca.get(e.placa) || 0;
+      return new Date(e.horaIngreso).getTime() >= (creadoMs - 5000);
     });
 
     return res.json({

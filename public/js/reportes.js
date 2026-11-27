@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const pillEfectivo = document.getElementById('pill-filtro-efectivo');
   const pillYape = document.getElementById('pill-filtro-yape');
   const pillPos = document.getElementById('pill-filtro-pos');
+  const pillCulqi = document.getElementById('pill-filtro-culqi');
   const pillCountTodos = document.getElementById('pill-count-todos');
   const cardFiltroEfectivo = document.getElementById('card-filtro-efectivo');
   const cardFiltroYape = document.getElementById('card-filtro-yape');
@@ -203,10 +204,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalEfectivo = 0;
     let totalYape = 0;
     let totalPos = 0;
+    let totalCulqi = 0;
     let totalOtros = 0;
     let countEfectivo = 0;
     let countYape = 0;
     let countPos = 0;
+    let countCulqi = 0;
     let countOtros = 0;
 
     movimientos.forEach(m => {
@@ -221,14 +224,17 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (metodo.includes('pos') || metodo.includes('tarjeta')) {
         totalPos += monto;
         countPos++;
+      } else if (metodo.includes('culqi')) {
+        totalCulqi += monto;
+        countCulqi++;
       } else {
         totalOtros += monto;
         countOtros++;
       }
     });
 
-    const totalDigital = totalYape + totalPos + totalOtros;
-    const countDigital = countYape + countPos + countOtros;
+    const totalDigital = totalYape + totalPos + totalCulqi + totalOtros;
+    const countDigital = countYape + countPos + countCulqi + countOtros;
     const totalGeneral = totalEfectivo + totalDigital;
 
     if (totalEfectivoEl) totalEfectivoEl.textContent = formatearMoneda(totalEfectivo);
@@ -237,8 +243,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (countEfectivoEl) countEfectivoEl.textContent = `${countEfectivo} cobro${countEfectivo === 1 ? '' : 's'}`;
     if (countYapeEl) {
-      countYapeEl.textContent = countPos > 0
-        ? `${countYape} Yape · ${countPos} POS`
+      const detalleDigital = [
+        countYape > 0 ? `${countYape} Yape` : null,
+        countPos > 0 ? `${countPos} POS` : null,
+        countCulqi > 0 ? `${countCulqi} Culqi` : null
+      ].filter(Boolean);
+      countYapeEl.textContent = detalleDigital.length > 0
+        ? detalleDigital.join(' · ')
         : `${countDigital} cobro${countDigital === 1 ? '' : 's'}`;
     }
     if (pillCountTodos) pillCountTodos.textContent = movimientos.length;
@@ -292,8 +303,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const metodoNorm = (m.metodoPago || '').toLowerCase();
       const esEfectivo = metodoNorm.includes('efectivo');
       const esPos = metodoNorm.includes('pos') || metodoNorm.includes('tarjeta');
+      const esCulqi = metodoNorm.includes('culqi');
       const badgeClase = esEfectivo ? 'badge-metodo-efectivo' : 'badge-metodo-yape';
-      const icono = esEfectivo ? '💵' : (esPos ? '💳' : '📱');
+      const icono = esEfectivo ? '💵' : (esPos ? '💳' : (esCulqi ? '🌐' : '📱'));
 
       tr.innerHTML = `
         <td class="mono" style="font-weight: 700; color: #1e3a8a;">${esc(m.placa)}</td>
@@ -316,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function actualizarEstilosPills() {
-    [pillTodos, pillEfectivo, pillYape, pillPos].forEach(p => {
+    [pillTodos, pillEfectivo, pillYape, pillPos, pillCulqi].forEach(p => {
       if (p) p.classList.remove('active');
     });
 
@@ -334,6 +346,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (filtroMetodoActivo === 'POS') {
       if (pillPos) pillPos.classList.add('active');
       if (cardFiltroYape) cardFiltroYape.classList.add('active-filter');
+    } else if (filtroMetodoActivo === 'Culqi Online') {
+      if (pillCulqi) pillCulqi.classList.add('active');
+      if (cardFiltroYape) cardFiltroYape.classList.add('active-filter');
     }
   }
 
@@ -348,6 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (pillPos) {
     pillPos.addEventListener('click', () => setFiltro('POS'));
+  }
+  if (pillCulqi) {
+    pillCulqi.addEventListener('click', () => setFiltro('Culqi Online'));
   }
 
   // También permitir filtrar al hacer clic en las tarjetas de resumen

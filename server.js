@@ -13,6 +13,8 @@ const ocupacionRoutes = require('./src/routes/ocupacion');
 const publicoRoutes = require('./src/routes/publico');
 const conductorRoutes = require('./src/routes/conductor');
 const reservasRoutes = require('./src/routes/reservas');
+const usuariosRoutes = require('./src/routes/usuarios');
+const { publicoReclamosRouter, adminReclamosRouter } = require('./src/routes/reclamos');
 const { autenticar, autorizar } = require('./src/config/auth');
 const { cabecerasSeguridad, crearLimitadorTasa } = require('./src/middleware/seguridad');
 
@@ -49,6 +51,7 @@ const limiteApi = crearLimitadorTasa({
 // Autenticación: el login debe ser accesible sin sesión.
 // Disponibilidad: es la única consulta que el conductor ve sin iniciar sesión.
 app.use('/api/auth', limiteAuth, authRoutes);
+app.use('/api/publico/reclamos', limiteAuth, publicoReclamosRouter);
 app.use('/api/publico', limitePublico, publicoRoutes);
 
 // --- A partir de aquí, toda la API exige sesión válida --------------------
@@ -60,6 +63,8 @@ app.use('/api/salidas', autorizar('RECEPCIONISTA', 'DUENO'), salidasRoutes);
 app.use('/api/espacios', autorizar('RECEPCIONISTA', 'DUENO'), espaciosRoutes);
 app.use('/api/conductor', autorizar('CONDUCTOR'), conductorRoutes);
 app.use('/api/reservas', reservasRoutes);
+app.use('/api/usuarios', autorizar('DUENO'), usuariosRoutes);
+app.use('/api/reclamos', autorizar('DUENO'), adminReclamosRouter);
 
 // Reportes, gráficos y ocupación son información del negocio: solo el DUEÑO.
 app.use('/api/reportes/ocupacion', autorizar('DUENO'), ocupacionRoutes);
@@ -80,6 +85,10 @@ app.use((err, req, res, next) => {
   console.error(err);
   return res.status(500).json({ error: 'Error interno del servidor.' });
 });
+
+if (typeof espaciosRoutes.sincronizarCapacidadDesdeBD === 'function') {
+  espaciosRoutes.sincronizarCapacidadDesdeBD().catch(() => {});
+}
 
 app.listen(PORT, () => {
   console.log(`Servidor disponible en http://localhost:${PORT}`);
