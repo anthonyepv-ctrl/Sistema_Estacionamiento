@@ -133,7 +133,8 @@ jobs:
 
       - name: Healthcheck post-despliegue en Render Green
         run: |
-          for i in 1 2 3 4 5; do
+          sleep 30
+          for i in $(seq 1 12); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" https://cochera-sp.onrender.com/api/publico/disponibilidad)
             echo "Intento $i — Green HTTP $CODE"
             if [ "$CODE" -eq 200 ]; then

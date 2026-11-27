@@ -32,6 +32,8 @@
   const dispActualizadoMotos = document.getElementById('disp-actualizado-motos');
 
   const btnVolverDisponibilidad = document.getElementById('btn-volver-disponibilidad');
+  const topBarDisponibilidad = document.getElementById('disponibilidad-top-bar');
+  const btnHeaderLogin = document.getElementById('btn-header-login');
 
   function formatearHora(isoString) {
     if (!isoString) return '--:--:--';
@@ -81,7 +83,7 @@
       elPrecio.textContent = `S/ ${Number(data.precioHora).toFixed(2)}`;
     }
     if (elFraccion && data.precioFraccion !== undefined) {
-      elFraccion.textContent = `Fracción adicional: S/ ${Number(data.precioFraccion).toFixed(2)}`;
+      elFraccion.textContent = `Fracción: S/ ${Number(data.precioFraccion).toFixed(2)}`;
     }
 
     if (elCapacidad) elCapacidad.textContent = capacidad;
@@ -224,19 +226,20 @@
       btnReservarMotos.addEventListener('click', () => manejarAccionReservar('motos'));
     }
 
+    if (btnHeaderLogin) {
+      btnHeaderLogin.addEventListener('click', () => {
+        window.location.hash = '#login';
+        if (typeof window.mostrarPantalla === 'function') {
+          window.mostrarPantalla('login');
+        }
+      });
+    }
+
     if (btnVolverDisponibilidad) {
       btnVolverDisponibilidad.addEventListener('click', () => {
-        const autenticado = haySesionActiva();
-        if (autenticado) {
-          limpiarHashDisponibilidad();
-          if (typeof window.mostrarPantalla === 'function') {
-            window.mostrarPantalla('dashboard');
-          }
-        } else {
-          window.location.hash = '#login';
-          if (typeof window.mostrarPantalla === 'function') {
-            window.mostrarPantalla('login');
-          }
+        limpiarHashDisponibilidad();
+        if (typeof window.mostrarPantalla === 'function') {
+          window.mostrarPantalla(haySesionActiva() ? 'dashboard' : 'login');
         }
       });
     }
@@ -297,15 +300,19 @@
   window.disponibilidadModulo = {
     iniciar: () => {
       iniciarPolling();
-      // Ajustar texto del botón volver según si hay sesión abierta o no
-      if (btnVolverDisponibilidad) {
-        btnVolverDisponibilidad.innerHTML = haySesionActiva()
-          ? '← Volver al Menú Principal'
-          : '<span>Iniciar Sesión</span>';
+      const autenticado = haySesionActiva();
+      if (topBarDisponibilidad) {
+        topBarDisponibilidad.classList.toggle('hidden', !autenticado);
+      }
+      if (btnHeaderLogin) {
+        btnHeaderLogin.classList.toggle('hidden', autenticado);
       }
     },
     detener: () => {
       detenerPolling();
+      if (btnHeaderLogin) {
+        btnHeaderLogin.classList.add('hidden');
+      }
     },
     recargar: cargarDisponibilidadPublica
   };
