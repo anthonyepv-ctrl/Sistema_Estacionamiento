@@ -19,6 +19,7 @@ function crearLimitadorTasa({
   nombre = 'api',
   ventanaMs = 60 * 1000,
   maxPeticiones = 120,
+  maxEntradas = 10000,
   mensaje = 'Demasiadas solicitudes desde esta dirección IP. Espere unos segundos e intente nuevamente.'
 }) {
   const registros = new Map();
@@ -42,6 +43,18 @@ function crearLimitadorTasa({
     let entrada = registros.get(clave);
 
     if (!entrada || ahora >= entrada.reiniciaEn) {
+      if (!entrada && registros.size >= maxEntradas) {
+        for (const [k, v] of registros.entries()) {
+          if (ahora >= v.reiniciaEn) {
+            registros.delete(k);
+          }
+          if (registros.size < maxEntradas) break;
+        }
+        if (registros.size >= maxEntradas) {
+          const primeraClave = registros.keys().next().value;
+          if (primeraClave !== undefined) registros.delete(primeraClave);
+        }
+      }
       entrada = { cuenta: 0, reiniciaEn: ahora + ventanaMs };
       registros.set(clave, entrada);
     }

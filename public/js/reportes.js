@@ -35,13 +35,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const pillTodos = document.getElementById('pill-filtro-todos');
   const pillEfectivo = document.getElementById('pill-filtro-efectivo');
   const pillYape = document.getElementById('pill-filtro-yape');
+  const pillPos = document.getElementById('pill-filtro-pos');
   const pillCountTodos = document.getElementById('pill-count-todos');
   const cardFiltroEfectivo = document.getElementById('card-filtro-efectivo');
   const cardFiltroYape = document.getElementById('card-filtro-yape');
 
   function obtenerToken() {
+    if (typeof window.obtenerTokenSesion === 'function') {
+      return window.obtenerTokenSesion();
+    }
     try {
-      const crudo = sessionStorage.getItem('cochera_sesion');
+      const crudo = localStorage.getItem('cochera_sesion') || sessionStorage.getItem('cochera_sesion');
       if (!crudo) return null;
       const sesion = JSON.parse(crudo);
       return sesion && sesion.token ? sesion.token : null;
@@ -54,32 +58,18 @@ document.addEventListener('DOMContentLoaded', () => {
   let transaccionesActuales = [];
   let filtroMetodoActivo = 'todos';
 
-  // Datos mock para enriquecer fechas anteriores durante la fase de prototipado
-  const DEMO_TRANSACCIONES_FECHAS = {
-    // Ejemplo de ayer
-    ayer: [
-      { id: 101, placa: 'ABC-123', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '18:40', metodoPago: 'Efectivo', monto: 14.00 },
-      { id: 102, placa: 'BCF-456', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '17:15', metodoPago: 'Yape', monto: 21.00 },
-      { id: 103, placa: 'M1-9876', tipoVehiculo: 'Motocicleta', horaSalida: '16:05', metodoPago: 'Efectivo', monto: 7.50 },
-      { id: 104, placa: 'T2A-101', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '14:20', metodoPago: 'Yape', monto: 10.50 },
-      { id: 105, placa: 'ACB-7890', tipoVehiculo: 'Motocicleta', horaSalida: '11:50', metodoPago: 'Efectivo', monto: 5.00 },
-      { id: 106, placa: 'XYZ-999', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '09:30', metodoPago: 'Yape', monto: 17.50 }
-    ],
-    // Ejemplo de anteayer
-    anteayer: [
-      { id: 201, placa: 'DEF-789', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '19:10', metodoPago: 'Efectivo', monto: 28.00 },
-      { id: 202, placa: 'GHI-321', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '15:45', metodoPago: 'Yape', monto: 14.00 },
-      { id: 203, placa: '2345-AB', tipoVehiculo: 'Motocicleta', horaSalida: '12:15', metodoPago: 'Efectivo', monto: 10.00 },
-      { id: 204, placa: 'P1-5544', tipoVehiculo: 'Motocicleta', horaSalida: '10:00', metodoPago: 'Yape', monto: 7.50 }
-    ]
-  };
-
   function obtenerFechaHoyISO() {
-    const ahora = new Date();
-    const yyyy = ahora.getFullYear();
-    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
-    const dd = String(ahora.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    if (typeof window.obtenerHoyPeruISO === 'function') {
+      return window.obtenerHoyPeruISO();
+    }
+    const partes = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(new Date());
+    const val = (tipo) => partes.find((p) => p.type === tipo)?.value || '01';
+    return `${val('year')}-${val('month')}-${val('day')}`;
   }
 
   function formatearFechaPeruana(fechaISO) {
@@ -111,10 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cardModuloReportes) {
     cardModuloReportes.addEventListener('click', (e) => {
       e.preventDefault();
-      document.querySelectorAll('.view-section').forEach(section => {
-        section.classList.remove('active');
-      });
-      if (viewReportes) viewReportes.classList.add('active');
+      if (typeof window.mostrarPantalla === 'function') {
+        window.mostrarPantalla('reportes');
+      } else {
+        document.querySelectorAll('.view-section').forEach(section => {
+          section.classList.remove('active');
+        });
+        if (viewReportes) viewReportes.classList.add('active');
+      }
       inicializarSelectorFecha();
       consultarRecaudacion(inputFecha.value);
     });
@@ -123,8 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnBackToMenu) {
     btnBackToMenu.addEventListener('click', (e) => {
       e.preventDefault();
-      if (viewReportes) viewReportes.classList.remove('active');
-      if (viewDashboard) viewDashboard.classList.add('active');
+      if (typeof window.mostrarPantalla === 'function') {
+        window.mostrarPantalla('dashboard');
+      } else {
+        if (viewReportes) viewReportes.classList.remove('active');
+        if (viewDashboard) viewDashboard.classList.add('active');
+      }
     });
   }
 
@@ -167,46 +165,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      let data = null;
-      try {
-        const token = obtenerToken();
-        const res = await fetch(`/api/reportes/diario?fecha=${fechaISO}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        if (res.ok) {
-          data = await res.json();
-        }
-      } catch (e) {
-        console.warn('API no disponible temporalmente, usando fallback de prototipo.');
+      const token = obtenerToken();
+      const res = await fetch(`/api/reportes/diario?fecha=${encodeURIComponent(fechaISO)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || 'No se pudo consultar la recaudación.');
       }
 
-      // Si la API no devolvió movimientos y es una fecha para probar el prototipo:
-      let movimientos = data && data.movimientos ? data.movimientos : [];
-
-      if (movimientos.length === 0) {
-        // Enriquecer demostrativamente según la fecha para que el prototipo interactivo
-        // muestre recaudación del día actual y de fechas anteriores como pide Jira
-        const hoyISO = obtenerFechaHoyISO();
-        const dActual = new Date(fechaISO + 'T00:00:00');
-        const dHoy = new Date(hoyISO + 'T00:00:00');
-        const diffDias = Math.round((dHoy - dActual) / (1000 * 60 * 60 * 24));
-
-        if (diffDias === 0 && movimientos.length === 0) {
-          // Si hoy no hay cobros aún en BD, mostramos transacciones modelo del día
-          movimientos = [
-            { id: 1, placa: 'ABC-123', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '09:45', metodoPago: 'Efectivo', monto: 7.00 },
-            { id: 2, placa: 'T2A-101', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '10:15', metodoPago: 'Yape', monto: 10.50 },
-            { id: 3, placa: 'ACB-0000', tipoVehiculo: 'Motocicleta', horaSalida: '10:50', metodoPago: 'Efectivo', monto: 5.00 },
-            { id: 4, placa: 'A1-2345', tipoVehiculo: 'Motocicleta', horaSalida: '11:20', metodoPago: 'Yape', monto: 7.50 },
-            { id: 5, placa: 'D4F-567', tipoVehiculo: 'Automóvil / Camioneta', horaSalida: '11:45', metodoPago: 'Efectivo', monto: 14.00 }
-          ];
-        } else if (diffDias === 1) {
-          movimientos = DEMO_TRANSACCIONES_FECHAS.ayer;
-        } else if (diffDias === 2) {
-          movimientos = DEMO_TRANSACCIONES_FECHAS.anteayer;
-        }
-        // Fechas más antiguas mostrarán el estado sin movimientos definido en la especificación
-      }
+      const movimientos = Array.isArray(data.movimientos) ? data.movimientos : [];
 
       transaccionesActuales = movimientos;
       filtroMetodoActivo = 'todos';
@@ -216,6 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error('Error al consultar recaudación:', err);
+      if (typeof window.mostrarToast === 'function') {
+        window.mostrarToast(err.message || 'No se pudo cargar la recaudación.', true);
+      }
       transaccionesActuales = [];
       actualizarTotales([]);
       renderizarTabla([]);
@@ -230,8 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function actualizarTotales(movimientos) {
     let totalEfectivo = 0;
     let totalYape = 0;
+    let totalPos = 0;
+    let totalOtros = 0;
     let countEfectivo = 0;
     let countYape = 0;
+    let countPos = 0;
+    let countOtros = 0;
 
     movimientos.forEach(m => {
       const metodo = (m.metodoPago || '').toLowerCase();
@@ -242,17 +218,29 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (metodo.includes('yape')) {
         totalYape += monto;
         countYape++;
+      } else if (metodo.includes('pos') || metodo.includes('tarjeta')) {
+        totalPos += monto;
+        countPos++;
+      } else {
+        totalOtros += monto;
+        countOtros++;
       }
     });
 
-    const totalGeneral = totalEfectivo + totalYape;
+    const totalDigital = totalYape + totalPos + totalOtros;
+    const countDigital = countYape + countPos + countOtros;
+    const totalGeneral = totalEfectivo + totalDigital;
 
     if (totalEfectivoEl) totalEfectivoEl.textContent = formatearMoneda(totalEfectivo);
-    if (totalYapeEl) totalYapeEl.textContent = formatearMoneda(totalYape);
+    if (totalYapeEl) totalYapeEl.textContent = formatearMoneda(totalDigital);
     if (totalGeneralEl) totalGeneralEl.textContent = formatearMoneda(totalGeneral);
 
     if (countEfectivoEl) countEfectivoEl.textContent = `${countEfectivo} cobro${countEfectivo === 1 ? '' : 's'}`;
-    if (countYapeEl) countYapeEl.textContent = `${countYape} cobro${countYape === 1 ? '' : 's'}`;
+    if (countYapeEl) {
+      countYapeEl.textContent = countPos > 0
+        ? `${countYape} Yape · ${countPos} POS`
+        : `${countDigital} cobro${countDigital === 1 ? '' : 's'}`;
+    }
     if (pillCountTodos) pillCountTodos.textContent = movimientos.length;
 
     // Actualizar barra de desglose porcentual
@@ -265,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         barDigital.style.width = `${pctDigital}%`;
 
         lblPctFisico.textContent = `💵 ${pctFisico}% Físico (${formatearMoneda(totalEfectivo)})`;
-        lblPctDigital.textContent = `📱 ${pctDigital}% Digital (${formatearMoneda(totalYape)})`;
+        lblPctDigital.textContent = `📱 ${pctDigital}% Digital (${formatearMoneda(totalDigital)})`;
       } else {
         barFisico.style.width = '0%';
         barDigital.style.width = '0%';
@@ -281,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Aplicar filtro activo si es diferente de 'todos'
     let listaFiltrada = movimientos;
     if (filtroMetodoActivo !== 'todos') {
-      listaFiltrada = movimientos.filter(m => 
+      listaFiltrada = movimientos.filter(m =>
         (m.metodoPago || '').toLowerCase().includes(filtroMetodoActivo.toLowerCase())
       );
     }
@@ -297,18 +285,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reporteVacio) reporteVacio.style.display = 'none';
     if (tableContainer) tableContainer.style.display = 'block';
 
+    const esc = typeof window.escaparHtml === 'function' ? window.escaparHtml : (x) => String(x ?? '');
+
     listaFiltrada.forEach(m => {
       const tr = document.createElement('tr');
-      const esEfectivo = (m.metodoPago || '').toLowerCase().includes('efectivo');
+      const metodoNorm = (m.metodoPago || '').toLowerCase();
+      const esEfectivo = metodoNorm.includes('efectivo');
+      const esPos = metodoNorm.includes('pos') || metodoNorm.includes('tarjeta');
       const badgeClase = esEfectivo ? 'badge-metodo-efectivo' : 'badge-metodo-yape';
-      const icono = esEfectivo ? '💵' : '📱';
+      const icono = esEfectivo ? '💵' : (esPos ? '💳' : '📱');
 
       tr.innerHTML = `
-        <td class="mono" style="font-weight: 700; color: #1e3a8a;">${m.placa}</td>
-        <td>${m.tipoVehiculo}</td>
-        <td class="mono">${m.horaSalida}</td>
+        <td class="mono" style="font-weight: 700; color: #1e3a8a;">${esc(m.placa)}</td>
+        <td>${esc(m.tipoVehiculo)}</td>
+        <td class="mono">${esc(m.horaSalida)}</td>
         <td>
-          <span class="${badgeClase}">${icono} ${m.metodoPago}</span>
+          <span class="${badgeClase}">${icono} ${esc(m.metodoPago)}</span>
         </td>
         <td class="mono" style="text-align: right; font-weight: 600; color: #111827;">${formatearMoneda(m.monto)}</td>
       `;
@@ -324,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function actualizarEstilosPills() {
-    [pillTodos, pillEfectivo, pillYape].forEach(p => {
+    [pillTodos, pillEfectivo, pillYape, pillPos].forEach(p => {
       if (p) p.classList.remove('active');
     });
 
@@ -339,6 +331,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (filtroMetodoActivo === 'Yape') {
       if (pillYape) pillYape.classList.add('active');
       if (cardFiltroYape) cardFiltroYape.classList.add('active-filter');
+    } else if (filtroMetodoActivo === 'POS') {
+      if (pillPos) pillPos.classList.add('active');
+      if (cardFiltroYape) cardFiltroYape.classList.add('active-filter');
     }
   }
 
@@ -350,6 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (pillYape) {
     pillYape.addEventListener('click', () => setFiltro('Yape'));
+  }
+  if (pillPos) {
+    pillPos.addEventListener('click', () => setFiltro('POS'));
   }
 
   // También permitir filtrar al hacer clic en las tarjetas de resumen

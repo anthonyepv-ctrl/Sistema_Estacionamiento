@@ -1,5 +1,6 @@
 const express = require('express');
 const prisma = require('../config/prisma');
+const { esFechaValida } = require('../utils/validaciones');
 
 const router = express.Router();
 
@@ -35,10 +36,16 @@ router.get('/diario', async (req, res) => {
   const { fecha } = req.query;
   const hoyPeru = obtenerFechaHoyPeru();
 
+  if (fecha !== undefined && typeof fecha !== 'string') {
+    return res.status(400).json({
+      error: 'Formato de fecha inválido. Utilice el formato YYYY-MM-DD.'
+    });
+  }
+
   let fechaConsulta = fecha || hoyPeru;
 
-  // 1. Validar formato de fecha YYYY-MM-DD
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaConsulta)) {
+  // 1. Validar formato y existencia real de la fecha YYYY-MM-DD en calendario
+  if (!esFechaValida(fechaConsulta)) {
     return res.status(400).json({
       error: 'Formato de fecha inválido. Utilice el formato YYYY-MM-DD.'
     });
@@ -75,11 +82,15 @@ router.get('/diario', async (req, res) => {
       }
     });
 
-    // 4. Lógica de agrupación por método de pago y cuadre de caja
+    // 4. Lógica de agrupación por método de pago y cuadre de caja (Efectivo, Yape, POS y otros)
     let totalEfectivo = 0;
     let totalYape = 0;
+    let totalPos = 0;
+    let totalOtros = 0;
     let cantidadEfectivo = 0;
     let cantidadYape = 0;
+    let cantidadPos = 0;
+    let cantidadOtros = 0;
     const movimientos = [];
 
     for (const p of pagos) {
@@ -93,14 +104,20 @@ router.get('/diario', async (req, res) => {
       } else if (metodoNorm.includes('yape')) {
         totalYape += monto;
         cantidadYape += 1;
+      } else if (metodoNorm.includes('pos') || metodoNorm.includes('tarjeta')) {
+        totalPos += monto;
+        cantidadPos += 1;
+      } else {
+        totalOtros += monto;
+        cantidadOtros += 1;
       }
 
-      // Hora formateada en horario de Perú (24 horas)
+      // Hora formateada en horario de Perú (24 horas estricto 00:00 - 23:59)
       const horaSalida = new Date(p.fechaHora).toLocaleTimeString('es-PE', {
         timeZone: 'America/Lima',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hourCycle: 'h23'
       });
 
       movimientos.push({
@@ -113,11 +130,13 @@ router.get('/diario', async (req, res) => {
       });
     }
 
-    const totalGeneral = Number((totalEfectivo + totalYape).toFixed(2));
-    const totalTransacciones = cantidadEfectivo + cantidadYape;
+    const totalDigital = Number((totalYape + totalPos + totalOtros).toFixed(2));
+    const cantidadDigital = cantidadYape + cantidadPos + cantidadOtros;
+    const totalGeneral = Number((totalEfectivo + totalDigital).toFixed(2));
+    const totalTransacciones = pagos.length;
 
     const porcentajeFisico = totalGeneral > 0 ? Number(((totalEfectivo / totalGeneral) * 100).toFixed(1)) : 0;
-    const porcentajeDigital = totalGeneral > 0 ? Number(((totalYape / totalGeneral) * 100).toFixed(1)) : 0;
+    const porcentajeDigital = totalGeneral > 0 ? Number(((totalDigital / totalGeneral) * 100).toFixed(1)) : 0;
 
     // Formato de fecha para presentación peruana
     const [yyyy, mm, dd] = fechaConsulta.split('-');
@@ -133,10 +152,10 @@ router.get('/diario', async (req, res) => {
         porcentaje: porcentajeFisico
       },
       dineroDigital: {
-        metodo: 'Yape',
-        descripcion: 'Cobros digitales para contrastar en app Yape / banco',
-        total: Number(totalYape.toFixed(2)),
-        cantidadCobros: cantidadYape,
+        metodo: totalPos > 0 ? 'Yape / POS' : 'Yape',
+        descripcion: 'Cobros digitales (Yape y POS) para contrastar en banco',
+        total: totalDigital,
+        cantidadCobros: cantidadDigital,
         porcentaje: porcentajeDigital
       },
       totalGeneral,
@@ -150,6 +169,8 @@ router.get('/diario', async (req, res) => {
       cuadre,
       totalEfectivo: Number(totalEfectivo.toFixed(2)),
       totalYape: Number(totalYape.toFixed(2)),
+      totalPos: Number(totalPos.toFixed(2)),
+      cantidadPos,
       totalGeneral,
       movimientos
     });
@@ -184,7 +205,7 @@ function obtenerAhoraPeru() {
 
 function obtenerRangoPeriodo(anio, mes) {
   if (mes) {
-    const ultimoDia = new Date(anio, mes, 0).getDate();
+    const ultimoDia = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
     return {
       inicio: new Date(`${anio}-${String(mes).padStart(2, '0')}-01T00:00:00.000-05:00`),
       fin: new Date(`${anio}-${String(mes).padStart(2, '0')}-${ultimoDia}T23:59:59.999-05:00`),
@@ -198,9 +219,11 @@ function obtenerRangoPeriodo(anio, mes) {
 }
 
 function validarPeriodo(req) {
-  const periodo = String(req.query.periodo || 'mensual');
-  const anio = Number(req.query.anio);
-  const mes = Number(req.query.mes);
+  const periodo = typeof req.query.periodo === 'string' ? req.query.periodo : (req.query.periodo === undefined ? 'mensual' : '');
+  const anioRaw = typeof req.query.anio === 'string' ? req.query.anio.trim() : '';
+  const mesRaw = typeof req.query.mes === 'string' ? req.query.mes.trim() : '';
+  const anio = /^\d{4}$/.test(anioRaw) ? Number(anioRaw) : NaN;
+  const mes = /^\d{1,2}$/.test(mesRaw) ? Number(mesRaw) : NaN;
   const ahora = obtenerAhoraPeru();
 
   if (periodo !== 'mensual' && periodo !== 'anual') {
@@ -297,7 +320,7 @@ async function generarReporteGraficos(periodo, anio, mes) {
     itemMes.monto = redondear(itemMes.monto + monto);
     itemMes.vehiculos += 1;
 
-    if (partes.hora >= 6 && partes.hora <= 23) {
+    if (partes.hora >= 0 && partes.hora <= 23) {
       if (!horas.has(partes.hora)) horas.set(partes.hora, { vehiculos: 0, monto: 0 });
       const itemHora = horas.get(partes.hora);
       itemHora.vehiculos += 1;
@@ -312,17 +335,22 @@ async function generarReporteGraficos(periodo, anio, mes) {
     }))
     .sort((a, b) => b.monto - a.monto);
 
-  const totalEfectivo = redondear(porMetodo.find((item) => item.nombre.toLowerCase().includes('efectivo')) ? porMetodo.find((item) => item.nombre.toLowerCase().includes('efectivo')).monto : 0);
-  const totalYape = redondear(porMetodo.find((item) => item.nombre.toLowerCase().includes('yape')) ? porMetodo.find((item) => item.nombre.toLowerCase().includes('yape')).monto : 0);
+  const itemEf = porMetodo.find((item) => item.nombre.toLowerCase().includes('efectivo'));
+  const itemYa = porMetodo.find((item) => item.nombre.toLowerCase().includes('yape'));
+  const itemPo = porMetodo.find((item) => item.nombre.toLowerCase().includes('pos'));
+  const totalEfectivo = redondear(itemEf ? itemEf.monto : 0);
+  const totalYape = redondear(itemYa ? itemYa.monto : 0);
+  const totalPos = redondear(itemPo ? itemPo.monto : 0);
   const porcentajeEfectivo = totalGeneral > 0 ? redondear((totalEfectivo / totalGeneral) * 100) : 0;
   const porcentajeYape = totalGeneral > 0 ? redondear((totalYape / totalGeneral) * 100) : 0;
+  const porcentajePos = totalGeneral > 0 ? redondear((totalPos / totalGeneral) * 100) : 0;
 
   let serieDiaria = [];
   if (periodo === 'mensual') {
     serieDiaria = Array.from({ length: rango.ultimoDia }, (_, indice) => {
       const dia = indice + 1;
       const item = dias.get(`${anio}-${mes}-${dia}`) || { monto: 0, vehiculos: 0 };
-      return { dia, monto: item.monto, efectivo: 0, yape: 0, vehiculos: item.vehiculos };
+      return { dia, monto: item.monto, efectivo: 0, yape: 0, pos: 0, vehiculos: item.vehiculos };
     });
 
     for (const pago of pagos) {
@@ -332,6 +360,7 @@ async function generarReporteGraficos(periodo, anio, mes) {
       if (!fila) continue;
       if (metodo.includes('efectivo')) fila.efectivo = redondear(fila.efectivo + redondear(pago.monto));
       if (metodo.includes('yape')) fila.yape = redondear(fila.yape + redondear(pago.monto));
+      if (metodo.includes('pos')) fila.pos = redondear(fila.pos + redondear(pago.monto));
     }
   }
 
@@ -344,8 +373,7 @@ async function generarReporteGraficos(periodo, anio, mes) {
     });
   }
 
-  const concurrenciaHoraria = Array.from({ length: 18 }, (_, indice) => {
-    const hora = indice + 6;
+  const concurrenciaHoraria = Array.from({ length: 24 }, (_, hora) => {
     const item = horas.get(hora) || { vehiculos: 0, monto: 0 };
     return { hora, vehiculos: item.vehiculos, monto: item.monto };
   });
@@ -363,9 +391,11 @@ async function generarReporteGraficos(periodo, anio, mes) {
       totalGeneral,
       totalEfectivo,
       totalYape,
+      totalPos,
       concurrenciaTotal: pagos.length,
       porcentajeEfectivo,
       porcentajeYape,
+      porcentajePos,
       porMetodo
     },
     serieDiaria,
@@ -436,6 +466,7 @@ router.get('/exportar', async (req, res) => {
     let totalGeneral = 0;
     let totalEfectivo = 0;
     let totalYape = 0;
+    let totalPos = 0;
 
     for (const pago of pagos) {
       const monto = redondear(pago.monto);
@@ -443,6 +474,7 @@ router.get('/exportar', async (req, res) => {
       totalGeneral = redondear(totalGeneral + monto);
       if (metodo.toLowerCase().includes('efectivo')) totalEfectivo = redondear(totalEfectivo + monto);
       if (metodo.toLowerCase().includes('yape')) totalYape = redondear(totalYape + monto);
+      if (metodo.toLowerCase().includes('pos')) totalPos = redondear(totalPos + monto);
 
       filas.push([
         formatearFechaHoraPeru(pago.fechaHora),
@@ -456,6 +488,9 @@ router.get('/exportar', async (req, res) => {
     filas.push(['TOTAL RECAUDADO', '', '', '', formatearMoneda(totalGeneral)]);
     filas.push(['TOTAL EFECTIVO', '', '', '', formatearMoneda(totalEfectivo)]);
     filas.push(['TOTAL YAPE', '', '', '', formatearMoneda(totalYape)]);
+    if (totalPos > 0) {
+      filas.push(['TOTAL POS', '', '', '', formatearMoneda(totalPos)]);
+    }
     filas.push(['TOTAL VEHÍCULOS ATENDIDOS', '', '', '', String(pagos.length)]);
 
     const contenido = `\uFEFF${filas.map((fila) => fila.map((valor) => `"${String(valor).replace(/"/g, '""')}"`).join(',')).join('\r\n')}`;

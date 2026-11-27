@@ -775,6 +775,10 @@
               <span class="caption">Tarifa aplicada</span>
               <span class="preview-value mono" id="salida-tarifa">—</span>
             </div>
+            <div class="preview-row" id="salida-adelanto-row" style="display: none;">
+              <span class="caption">Adelanto de reserva</span>
+              <span class="preview-value mono" id="salida-adelanto" style="color: var(--success); font-weight: 600;">—</span>
+            </div>
             <div class="preview-row">
               <span class="caption">Monto total a pagar</span>
               <span class="preview-value mono monto-total" id="salida-monto">S/ 0.00</span>
@@ -983,6 +987,9 @@
             </button>
             <button type="button" class="btn-pill" data-metodo="Yape" id="pill-filtro-yape">
               📱 Yape
+            </button>
+            <button type="button" class="btn-pill" data-metodo="POS" id="pill-filtro-pos">
+              💳 POS
             </button>
           </div>
         </div>
@@ -1417,7 +1424,7 @@
         <div class="card" id="card-mis-vehiculos">
           <div class="card-header">
             <h2>2. Mis Vehículos</h2>
-            <p class="caption">Registre la placa SUNARP/MTC de sus vehículos para reservar en un clic</p>
+            <p class="caption">Registre la placa SUNARP/MTC de sus vehículos para reservar</p>
           </div>
           <div class="accent-bar-sm"></div>
 
@@ -1425,10 +1432,10 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label for="vehiculo-placa" class="form-label">
-                  <span>Placa (ABC-123)</span>
+                  <span>Placa (ABC-123 / 1234-AB)</span>
                   <span class="required">*</span>
                 </label>
-                <input type="text" id="vehiculo-placa" class="input-control mono" placeholder="ABC-123" maxlength="7" required>
+                <input type="text" id="vehiculo-placa" class="input-control mono" placeholder="ABC-123 / 1234-AB" maxlength="8" required>
                 <div class="input-feedback" id="feedback-vehiculo-placa"></div>
               </div>
 
@@ -1514,7 +1521,7 @@
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
             <h2>3. Mis Reservas</h2>
-            <p class="caption">Consulte sus reservas activas e históricas, estado, placa, fecha/hora y monto, con anulación en un clic para reservas vigentes.</p>
+            <p class="caption">Consulte sus reservas activas e históricas, estado, placa, fecha y monto, con anulación inmediata para reservas vigentes.</p>
           </div>
           <button type="button" id="btn-refrescar-mis-reservas" class="btn btn-secondary btn-sm">
             ↻ Actualizar Estado

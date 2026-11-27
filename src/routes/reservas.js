@@ -4,6 +4,7 @@ const prisma = require('../config/prisma');
 const { obtenerCapacidad } = require('../config/espacios');
 const { autorizar } = require('../config/auth');
 const { normalizarPlaca } = require('../utils/placas');
+const { parsearIdEntero } = require('../utils/validaciones');
 const {
   MONTO_MINIMO_RESERVA_SOLES,
   obtenerMinimoYapeSoles,
@@ -130,8 +131,8 @@ router.put('/config-pasarela', autorizar('DUENO'), async (req, res) => {
  * Pre-valida cupo, no duplicidad y calcula el monto exacto en PEN antes de abrir Checkout v4.
  */
 router.post('/preparar-pago', autorizar('CONDUCTOR'), async (req, res) => {
-  const idVehiculo = Number((req.body || {}).idVehiculo);
-  if (!Number.isInteger(idVehiculo) || idVehiculo <= 0) {
+  const idVehiculo = parsearIdEntero((req.body || {}).idVehiculo);
+  if (!idVehiculo) {
     return res.status(400).json({ error: 'Seleccione un vehículo válido de su cuenta.' });
   }
 
@@ -215,9 +216,9 @@ router.post('/preparar-pago', autorizar('CONDUCTOR'), async (req, res) => {
  */
 router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
   const { idVehiculo: idVehiculoRaw, sourceToken, email, idempotencyKey } = req.body || {};
-  const idVehiculo = Number(idVehiculoRaw);
+  const idVehiculo = parsearIdEntero(idVehiculoRaw);
 
-  if (!Number.isInteger(idVehiculo) || idVehiculo <= 0) {
+  if (!idVehiculo) {
     return res.status(400).json({ error: 'Seleccione un vehículo válido.' });
   }
   if (!sourceToken || typeof sourceToken !== 'string') {
@@ -355,7 +356,7 @@ router.post('/', autorizar('CONDUCTOR'), async (req, res) => {
           fechaReserva: ahora,
           fechaLimite,
           estado: 'VIGENTE',
-          montoAdelanto: calcularMontoAdelanto(tarifa.precioHora),
+          montoAdelanto,
           pasarelaPagoId: cargo.id,
           pasarelaProveedor: cargo.proveedor,
           estadoPago: 'PAGADO'
@@ -428,8 +429,8 @@ router.get('/mias', autorizar('CONDUCTOR'), async (req, res) => {
  * Protegido contra doble clic simultáneo y carrera con ingreso en garita.
  */
 const anularReservaHandler = async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
+  const id = parsearIdEntero(req.params.id);
+  if (!id) {
     return res.status(400).json({ error: 'ID de reserva debe ser numérico.' });
   }
 
@@ -536,7 +537,11 @@ router.post('/:id/anular', autorizar('CONDUCTOR'), anularReservaHandler);
 router.get('/por-placa/:placa', autorizar('RECEPCIONISTA', 'DUENO'), async (req, res) => {
   try {
     await expirarReservasVencidas();
-    const placa = normalizarPlaca(req.params.placa);
+    const alfanum = String(req.params.placa || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (alfanum.length < 6 || alfanum.length > 7) {
+      return res.json({ reserva: null });
+    }
+    const placa = normalizarPlaca(alfanum);
     if (!placa) {
       return res.json({ reserva: null });
     }
@@ -565,8 +570,8 @@ router.get('/', autorizar('RECEPCIONISTA', 'DUENO'), async (req, res) => {
   try {
     await expirarReservasVencidas();
 
-    const q = req.query.q ? String(req.query.q).trim() : '';
-    const estadoFiltro = req.query.estado ? String(req.query.estado).trim().toUpperCase() : '';
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
+    const estadoFiltro = typeof req.query.estado === 'string' ? req.query.estado.trim().toUpperCase() : '';
     const where = {};
 
     if (q) {
@@ -606,8 +611,8 @@ router.get('/', autorizar('RECEPCIONISTA', 'DUENO'), async (req, res) => {
  * POST /api/reservas/:id/confirmar (UPAO-8 - Recepcionista / Dueño)
  */
 router.post('/:id/confirmar', autorizar('RECEPCIONISTA', 'DUENO'), async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
+  const id = parsearIdEntero(req.params.id);
+  if (!id) {
     return res.status(400).json({ error: 'Identificador de reserva inválido.' });
   }
 
@@ -615,7 +620,11 @@ router.post('/:id/confirmar', autorizar('RECEPCIONISTA', 'DUENO'), async (req, r
     return res.status(409).json({ error: 'La reserva está siendo anulada por el conductor en este momento.' });
   }
 
-  const notaRaw = req.body && req.body.nota !== undefined && req.body.nota !== null ? String(req.body.nota).trim() : '';
+  const notaInput = req.body ? req.body.nota : undefined;
+  if (notaInput !== undefined && notaInput !== null && typeof notaInput !== 'string') {
+    return res.status(400).json({ error: 'La nota debe ser una cadena de texto válida.' });
+  }
+  const notaRaw = typeof notaInput === 'string' ? notaInput.trim() : '';
   if (notaRaw.length > 250) {
     return res.status(400).json({ error: 'La nota no puede exceder los 250 caracteres.' });
   }
@@ -651,6 +660,15 @@ router.post('/:id/confirmar', autorizar('RECEPCIONISTA', 'DUENO'), async (req, r
         throw err;
       }
 
+      const ahora = new Date();
+      if (reserva.fechaLimite < ahora) {
+        await tx.reserva.update({
+          where: { id },
+          data: { estado: 'VENCIDA' }
+        });
+        return { expirada: true };
+      }
+
       const estadiaActiva = await tx.estadia.findFirst({
         where: { placa: reserva.vehiculo.placa, horaSalida: null }
       });
@@ -681,12 +699,17 @@ router.post('/:id/confirmar', autorizar('RECEPCIONISTA', 'DUENO'), async (req, r
           idTarifa: tarifa.id,
           idUsuario: req.sesion.sub,
           idReserva: reserva.id,
+          horaIngreso: ahora,
           nota: notaFinal
         }
       });
 
-      return { reserva: reservaActualizada, estadia, placa: reserva.vehiculo.placa };
+      return { expirada: false, reserva: reservaActualizada, estadia, placa: reserva.vehiculo.placa };
     }, { maxWait: 10000, timeout: 20000 });
+
+    if (resultado.expirada) {
+      return res.status(409).json({ error: 'No se puede admitir el ingreso: la reserva está en estado VENCIDA.' });
+    }
 
     return res.status(201).json({
       estadiaId: resultado.estadia.id,

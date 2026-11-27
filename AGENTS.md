@@ -78,7 +78,8 @@ Cada carpeta tiene una única responsabilidad. **No crear capas/carpetas inneces
 | `npm run db:migrate` | Crear/aplicar migraciones en desarrollo. |
 | `npm run db:generate` | Generar el cliente Prisma. |
 | `npm run db:studio` | Explorar la base de datos. |
-| `npm test` | Runner único en 1 clic de las 7 suites automatizadas (Culqi, UPAO-22, UPAO-8, Sprint 3, Ataque/Bot, RBAC y No Regresión). |
+| `npm test` | Runner único de las 9 suites automatizadas (Culqi, UPAO-22, UPAO-8, UPAO-23, Sprint 3, Ataque/Bot, RBAC, No Regresión y Auditoría Batalla). |
+| `npm run test:auditoria` | Suite adversarial de auditoría (RBAC, desbordes INT4, fechas, POS, aforo, placas MTC y E2E Playwright en zona horaria Lima). |
 | `npm run test:upao8` | Suite dedicada de búsqueda en garita, protección de cupo, confirmación y descuento en salida (`UPAO-8`). |
 | `npm run test:upao22` | Suite dedicada de anulación atómica, exclusión mutua y reembolso Culqi (`UPAO-22`). |
 | `npm run test:ataque` | Simulación tipo atacante/bot: fuerza bruta (`429`), bombas JSON (`413`), SQLi/XSS e IDOR. |

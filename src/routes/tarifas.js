@@ -2,6 +2,7 @@ const express = require('express');
 
 const prisma = require('../config/prisma');
 const { autorizar } = require('../config/auth');
+const { parsearIdEntero } = require('../utils/validaciones');
 
 const router = express.Router();
 
@@ -43,10 +44,10 @@ router.get('/', async (req, res) => {
 
 // Modificar precios es una función exclusiva del DUEÑO (DEF-77-07).
 router.put('/:id', autorizar('DUENO'), async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parsearIdEntero(req.params.id);
   const { precioHora, precioFraccion } = req.body || {};
 
-  if (!Number.isInteger(id)) {
+  if (!id) {
     return res.status(400).json({ error: 'Identificador de tarifa inválido.' });
   }
 

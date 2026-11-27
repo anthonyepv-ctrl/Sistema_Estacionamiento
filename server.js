@@ -54,10 +54,10 @@ app.use('/api/publico', limitePublico, publicoRoutes);
 // --- A partir de aquí, toda la API exige sesión válida --------------------
 app.use('/api', limiteApi, autenticar);
 
-app.use('/api/tarifas', tarifasRoutes);
-app.use('/api/ingresos', ingresosRoutes);
-app.use('/api/salidas', salidasRoutes);
-app.use('/api/espacios', espaciosRoutes);
+app.use('/api/tarifas', autorizar('RECEPCIONISTA', 'DUENO'), tarifasRoutes);
+app.use('/api/ingresos', autorizar('RECEPCIONISTA', 'DUENO'), ingresosRoutes);
+app.use('/api/salidas', autorizar('RECEPCIONISTA', 'DUENO'), salidasRoutes);
+app.use('/api/espacios', autorizar('RECEPCIONISTA', 'DUENO'), espaciosRoutes);
 app.use('/api/conductor', autorizar('CONDUCTOR'), conductorRoutes);
 app.use('/api/reservas', reservasRoutes);
 

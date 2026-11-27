@@ -55,8 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function obtenerToken() {
+    if (typeof window.obtenerTokenSesion === 'function') {
+      return window.obtenerTokenSesion();
+    }
     try {
-      const crudo = sessionStorage.getItem('cochera_sesion');
+      const crudo = localStorage.getItem('cochera_sesion') || sessionStorage.getItem('cochera_sesion');
       if (!crudo) return null;
       const sesion = JSON.parse(crudo);
       return sesion && sesion.token ? sesion.token : null;
@@ -64,8 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return null;
     }
   }
-
-  const HOY = ahoraPeru();
 
   function formatearMoneda(valor) {
     const numero = Number(valor) || 0;
@@ -82,22 +83,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function poblarAnios() {
     if (!selectAnio) return;
+    const hoy = ahoraPeru();
 
     selectAnio.innerHTML = '';
-    for (let anio = ANIO_MINIMO; anio <= HOY.anio; anio += 1) {
+    for (let anio = ANIO_MINIMO; anio <= hoy.anio; anio += 1) {
       const opcion = document.createElement('option');
       opcion.value = String(anio);
       opcion.textContent = String(anio);
       selectAnio.appendChild(opcion);
     }
-    selectAnio.value = String(HOY.anio);
+    selectAnio.value = String(hoy.anio);
   }
 
   function poblarMeses() {
     if (!selectMes || !selectAnio) return;
+    const hoy = ahoraPeru();
 
     const anio = Number(selectAnio.value);
-    const maximoMes = anio === HOY.anio ? HOY.mes : 12;
+    const maximoMes = anio === hoy.anio ? hoy.mes : 12;
     const valorPrevio = Number(selectMes.value) || maximoMes;
 
     selectMes.innerHTML = '';
@@ -148,15 +151,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = obtenerToken();
     if (!token) return;
 
+    const hoy = ahoraPeru();
     const anio = Number(selectAnio.value);
     const mes = Number(selectMes.value) || 1;
 
-    if (anio > HOY.anio) {
+    if (anio > hoy.anio) {
       mostrarErrorPeriodo('No se pueden consultar períodos futuros.');
       return;
     }
 
-    if (modo === 'mensual' && anio === HOY.anio && mes > HOY.mes) {
+    if (modo === 'mensual' && anio === hoy.anio && mes > hoy.mes) {
       mostrarErrorPeriodo('No se pueden consultar meses futuros. Seleccione el mes actual o uno anterior.');
       return;
     }
@@ -392,11 +396,12 @@ document.addEventListener('DOMContentLoaded', () => {
       <text x="${centro}" y="${centro + 16}" text-anchor="middle" class="dona-centro-valor mono">${formatearMoneda(total)}</text>
     </svg>`;
 
+    const esc = typeof window.escaparHtml === 'function' ? window.escaparHtml : (x) => String(x ?? '');
     const leyenda = `<div class="dona-leyenda">
       ${items.map((item) => `
         <div class="dona-item">
           <span class="dona-dot" style="background:${colorMetodo(item.nombre)}"></span>
-          <span class="dona-item-label">${item.nombre}</span>
+          <span class="dona-item-label">${esc(item.nombre)}</span>
           <span class="dona-item-valor mono">${formatearMoneda(item.monto)}</span>
           <span class="dona-item-pct mono">${formatearPorcentaje(item.porcentaje)}</span>
         </div>`).join('')}
@@ -407,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
     contenedor.querySelectorAll('.dona-segmento').forEach((segmento) => {
       const item = items[Number(segmento.getAttribute('data-idx'))];
       segmento.addEventListener('mouseenter', (evento) => {
-        mostrarTooltip(evento, `<strong>${item.nombre}</strong><br>${formatearMoneda(item.monto)} · ${formatearPorcentaje(item.porcentaje)}`);
+        mostrarTooltip(evento, `<strong>${esc(item.nombre)}</strong><br>${formatearMoneda(item.monto)} · ${formatearPorcentaje(item.porcentaje)}`);
       });
       segmento.addEventListener('mousemove', moverTooltip);
       segmento.addEventListener('mouseleave', ocultarTooltip);
@@ -433,11 +438,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cardModulo) {
     cardModulo.addEventListener('click', (evento) => {
       evento.preventDefault();
-      document.querySelectorAll('.view-section').forEach((seccion) => seccion.classList.remove('active'));
-      if (viewEstadisticas) viewEstadisticas.classList.add('active');
-      if (selectAnio) selectAnio.value = String(HOY.anio);
+      if (typeof window.mostrarPantalla === 'function') {
+        window.mostrarPantalla('estadisticas');
+      } else {
+        document.querySelectorAll('.view-section').forEach((seccion) => seccion.classList.remove('active'));
+        if (viewEstadisticas) viewEstadisticas.classList.add('active');
+      }
+      const hoy = ahoraPeru();
+      poblarAnios();
+      if (selectAnio) selectAnio.value = String(hoy.anio);
       poblarMeses();
-      if (modo === 'mensual' && selectMes) selectMes.value = String(HOY.mes);
+      if (modo === 'mensual' && selectMes) selectMes.value = String(hoy.mes);
       consultar();
     });
   }
@@ -445,8 +456,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnBack) {
     btnBack.addEventListener('click', (evento) => {
       evento.preventDefault();
-      if (viewEstadisticas) viewEstadisticas.classList.remove('active');
-      if (viewDashboard) viewDashboard.classList.add('active');
+      if (typeof window.mostrarPantalla === 'function') {
+        window.mostrarPantalla('dashboard');
+      } else {
+        if (viewEstadisticas) viewEstadisticas.classList.remove('active');
+        if (viewDashboard) viewDashboard.classList.add('active');
+      }
     });
   }
 

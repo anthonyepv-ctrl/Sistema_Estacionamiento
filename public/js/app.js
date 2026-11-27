@@ -2,9 +2,128 @@
  * Sistema de Gestión de Cochera — Lógica de Interfaz conectada a la API (UPAO-34)
  */
 
+(function initUtilidadesGlobales() {
+  const CLAVE_SESION_GLOBAL = 'cochera_sesion';
+
+  function escaparHtml(valor) {
+    return String(valor ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function obtenerTokenSesion() {
+    const storages = [window.localStorage, window.sessionStorage];
+    for (const storage of storages) {
+      try {
+        const crudo = storage.getItem(CLAVE_SESION_GLOBAL);
+        if (!crudo) continue;
+        const sesion = JSON.parse(crudo);
+        if (sesion && sesion.token) return sesion.token;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  function obtenerPartesPeru(fecha = new Date()) {
+    const d = fecha instanceof Date ? fecha : new Date(fecha);
+    if (Number.isNaN(d.getTime())) return null;
+    const partes = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(d);
+    const val = (tipo) => partes.find((p) => p.type === tipo)?.value || '00';
+    return {
+      anio: val('year'),
+      mes: val('month'),
+      dia: val('day'),
+      hora: val('hour'),
+      minuto: val('minute'),
+      segundo: val('second')
+    };
+  }
+
+  function obtenerHoyPeruISO() {
+    const p = obtenerPartesPeru(new Date());
+    return `${p.anio}-${p.mes}-${p.dia}`;
+  }
+
+  function formatearHoraPeru(iso, conSegundos = false) {
+    if (!iso) return '—';
+    const p = obtenerPartesPeru(iso);
+    if (!p) return '—';
+    const hoy = obtenerPartesPeru(new Date());
+    const horaStr = conSegundos ? `${p.hora}:${p.minuto}:${p.segundo}` : `${p.hora}:${p.minuto}`;
+    if (p.anio === hoy.anio && p.mes === hoy.mes && p.dia === hoy.dia) {
+      return horaStr;
+    }
+    return `${p.dia}/${p.mes} ${horaStr}`;
+  }
+
+  function formatearFechaHoraPeru(iso) {
+    if (!iso) return '—';
+    const p = obtenerPartesPeru(iso);
+    if (!p) return '—';
+    return `${p.dia}/${p.mes}/${p.anio} ${p.hora}:${p.minuto}`;
+  }
+
+  function formatearFechaCortaPeru(iso) {
+    if (!iso) return '—';
+    const p = obtenerPartesPeru(iso);
+    if (!p) return '—';
+    return `${p.dia}/${p.mes} ${p.hora}:${p.minuto}`;
+  }
+
+  function analizarPlacaMtc(limpio) {
+    if (limpio.length >= 7) return { tipo: 'moto', corte: 3 };
+    if (/^\d/.test(limpio)) return { tipo: 'moto', corte: 4 };
+    if (limpio.length === 6 && /\d{4}$/.test(limpio)) return { tipo: 'moto', corte: 2 };
+    if (limpio.length === 6) {
+      if (/^[A-Z][A-Z0-9]{2}\d{3}$/.test(limpio)) return { tipo: 'auto', corte: 3 };
+      return { tipo: null, corte: 3 };
+    }
+    return { tipo: 'auto', corte: 3 };
+  }
+
+  function normalizarPlacaMtc(valor) {
+    const limpio = String(valor || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (limpio.length === 0) return '';
+    const { corte } = analizarPlacaMtc(limpio);
+    if (limpio.length <= corte) return limpio;
+    const maxLen = limpio.length >= 7 ? 7 : 6;
+    return `${limpio.slice(0, corte)}-${limpio.slice(corte, maxLen)}`;
+  }
+
+  function inferirTipoPlacaMtc(placa) {
+    const limpio = String(placa || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (limpio.length === 0) return null;
+    if (limpio.length < 6 && !/^\d/.test(limpio)) return null;
+    return analizarPlacaMtc(limpio).tipo;
+  }
+
+  window.escaparHtml = escaparHtml;
+  window.obtenerTokenSesion = obtenerTokenSesion;
+  window.obtenerPartesPeru = obtenerPartesPeru;
+  window.obtenerHoyPeruISO = obtenerHoyPeruISO;
+  window.formatearHoraPeru = formatearHoraPeru;
+  window.formatearFechaHoraPeru = formatearFechaHoraPeru;
+  window.formatearFechaCortaPeru = formatearFechaCortaPeru;
+  window.normalizarPlacaMtc = normalizarPlacaMtc;
+  window.inferirTipoPlacaMtc = inferirTipoPlacaMtc;
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   let tarifas = [];
   let rolActual = '';
+  let desfaseRelojMs = 0;
 
   const viewLogin = document.getElementById('view-login');
   const viewDashboard = document.getElementById('view-dashboard');
@@ -16,6 +135,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const sessionUserName = document.getElementById('session-user-name');
   const sessionUserRole = document.getElementById('session-user-role');
   const sessionUserBadge = document.getElementById('session-user-badge');
+  const userAvatar = document.querySelector('.user-avatar');
+
+  function actualizarAvatarUsuario(nombre) {
+    if (!userAvatar) return;
+    const partes = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+    if (partes.length >= 2) {
+      userAvatar.textContent = (partes[0][0] + partes[1][0]).toUpperCase();
+    } else if (partes.length === 1) {
+      userAvatar.textContent = partes[0].slice(0, 2).toUpperCase();
+    } else {
+      userAvatar.textContent = 'US';
+    }
+  }
 
   function mostrarPantalla(nombre) {
     if (nombre !== 'disponibilidad' && window.disponibilidadModulo && typeof window.disponibilidadModulo.detener === 'function') {
@@ -50,9 +182,21 @@ document.addEventListener('DOMContentLoaded', () => {
       headerUserSection.style.display = 'flex';
       const inputBuscar = document.getElementById('input-buscar-placa');
       if (inputBuscar) inputBuscar.focus();
+    } else if (nombre === 'aforo') {
+      const viewAforo = document.getElementById('view-aforo');
+      if (viewAforo) viewAforo.classList.add('active');
+      headerUserSection.style.display = 'flex';
     } else if (nombre === 'reportes') {
       const viewReportes = document.getElementById('view-reportes');
       if (viewReportes) viewReportes.classList.add('active');
+      headerUserSection.style.display = 'flex';
+    } else if (nombre === 'estadisticas') {
+      const viewEstadisticas = document.getElementById('view-estadisticas');
+      if (viewEstadisticas) viewEstadisticas.classList.add('active');
+      headerUserSection.style.display = 'flex';
+    } else if (nombre === 'ocupacion') {
+      const viewOcupacion = document.getElementById('view-ocupacion');
+      if (viewOcupacion) viewOcupacion.classList.add('active');
       headerUserSection.style.display = 'flex';
     } else if (nombre === 'disponibilidad') {
       const viewDisponibilidad = document.getElementById('view-disponibilidad');
@@ -206,6 +350,13 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { ...cabeceras, ...(opcionesFetch.headers || {}) },
         ...(controlador && !opcionesFetch.signal ? { signal: controlador.signal } : {})
       });
+      const fechaServidor = respuesta.headers.get('Date');
+      if (fechaServidor) {
+        const msServidor = Date.parse(fechaServidor);
+        if (!Number.isNaN(msServidor)) {
+          desfaseRelojMs = msServidor - Date.now();
+        }
+      }
     } catch (error) {
       if (error && error.name === 'AbortError') {
         const timeoutErr = new Error('El servidor tardó demasiado en responder. Verificando el estado de la operación...');
@@ -235,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const datos = await respuesta.json().catch(() => ({}));
 
     if (!respuesta.ok) {
-      throw new Error(datos.error || 'La API no respondió correctamente. Abre la aplicación en http://localhost:3000.');
+      throw new Error(datos.error || 'No se pudo completar la operación. Intente nuevamente.');
     }
 
     return datos;
@@ -260,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
 
       const usuario = inputUsuario.value.trim();
-      const password = inputPassword.value.trim();
+      const password = inputPassword.value;
 
       if (!usuario) {
         mostrarErrorCampo(inputUsuario, 'Ingrese su usuario.');
@@ -292,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sessionUserName) sessionUserName.textContent = sesion.nombre;
         if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
         if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
+        actualizarAvatarUsuario(sesion.nombre);
 
         const destinoPendiente = window.redirigirTrasLogin;
         window.redirigirTrasLogin = null;
@@ -368,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!selectTipo) return;
 
     selectTipo.innerHTML = tarifas
-      .map((tarifa) => `<option value="${tarifa.id}">${tarifa.tipo}</option>`)
+      .map((tarifa) => `<option value="${Number(tarifa.id)}">${window.escaparHtml(tarifa.tipo)}</option>`)
       .join('');
   }
 
@@ -377,12 +529,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tablaBody.innerHTML = tarifas.map((item) => `
       <tr>
-        <td style="font-weight: 500;">${item.tipo}</td>
+        <td style="font-weight: 500;">${window.escaparHtml(item.tipo)}</td>
         <td class="mono" style="font-weight: 700; color: var(--primary);">S/ ${item.precioHora.toFixed(2)}</td>
         <td class="mono" style="font-weight: 600;">S/ ${item.precioFraccion.toFixed(2)}</td>
         <td><span class="badge ${item.estado ? 'badge-success' : 'badge-danger'}">${item.estado ? 'ACTIVA' : 'INACTIVA'}</span></td>
         <td>
-          <button type="button" class="btn btn-secondary btn-sm btn-editar-fila" data-id="${item.id}">
+          <button type="button" class="btn btn-secondary btn-sm btn-editar-fila" data-id="${Number(item.id)}">
             Modificar
           </button>
         </td>
@@ -602,6 +754,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return false;
     }
 
+    if (/-0{3,4}$/.test(valor) || /^0{4}-/.test(valor)) {
+      if (mostrarMensaje) {
+        mostrarErrorCampo(inputPlaca, 'La numeración 000/0000 no es válida en placas SUNARP/MTC.');
+      }
+      return false;
+    }
+
     limpiarErrores(inputPlaca);
     return true;
   }
@@ -755,6 +914,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const salidaHoraEntrada = document.getElementById('salida-hora-entrada');
   const salidaTiempo = document.getElementById('salida-tiempo');
   const salidaTarifa = document.getElementById('salida-tarifa');
+  const salidaAdelantoRow = document.getElementById('salida-adelanto-row');
+  const salidaAdelanto = document.getElementById('salida-adelanto');
   const salidaMonto = document.getElementById('salida-monto');
   const selectMetodoPago = document.getElementById('select-metodo-pago');
   const btnRegistrarSalida = document.getElementById('btn-registrar-salida');
@@ -766,22 +927,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let activoSeleccionado = null;
 
   function formatearHora(fechaISO) {
-    const fecha = new Date(fechaISO);
-    const hoy = new Date();
-    const esHoy = fecha.getFullYear() === hoy.getFullYear()
-      && fecha.getMonth() === hoy.getMonth()
-      && fecha.getDate() === hoy.getDate();
-
-    const hora = fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
-    if (esHoy) return hora;
-
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    return `${dia}/${mes} ${hora}`;
+    return window.formatearHoraPeru(fechaISO, false);
   }
 
   function calcularCobro(horaIngreso) {
-    const diffMs = Math.max(0, new Date() - new Date(horaIngreso));
+    const ahoraMs = Date.now() + desfaseRelojMs;
+    const diffMs = Math.max(0, ahoraMs - new Date(horaIngreso).getTime());
     const horas = Math.floor(diffMs / 3600000);
     const minutos = Math.floor((diffMs % 3600000) / 60000);
     const hayFraccion = diffMs % 3600000 > 0;
@@ -821,12 +972,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const filtrados = activos.filter((a) => placasCoinciden(a.placa, busqueda));
 
     tablaActivosBody.innerHTML = filtrados.map((a) => `
-      <tr class="fila-activo ${activoSeleccionado && String(activoSeleccionado.id) === String(a.id) ? 'seleccionada' : ''}" data-id="${a.id}">
-        <td class="mono" style="font-weight: 700;">${a.placa}</td>
-        <td>${a.tipo}</td>
-        <td class="mono">${formatearHora(a.horaIngreso)}</td>
+      <tr class="fila-activo ${activoSeleccionado && String(activoSeleccionado.id) === String(a.id) ? 'seleccionada' : ''}" data-id="${Number(a.id)}">
+        <td class="mono" style="font-weight: 700;">${window.escaparHtml(a.placa)}</td>
+        <td>${window.escaparHtml(a.tipo)}</td>
+        <td class="mono">${window.escaparHtml(formatearHora(a.horaIngreso))}</td>
         <td>
-          <button type="button" class="btn btn-secondary btn-sm btn-seleccionar-activo" data-id="${a.id}">
+          <button type="button" class="btn btn-secondary btn-sm btn-seleccionar-activo" data-id="${Number(a.id)}">
             Seleccionar
           </button>
         </td>
@@ -912,10 +1063,10 @@ document.addEventListener('DOMContentLoaded', () => {
       meta.style.fontWeight = '500';
 
       const nombreUsuario = activo.usuarioIngreso || 'Recepcionista';
-      const idUsuario = activo.idUsuarioIngreso || activo.idUsuario || 2;
+      const idUsuario = Number(activo.idUsuarioIngreso || activo.idUsuario || 2);
       const horaTexto = formatearHora(activo.horaIngreso);
 
-      meta.innerHTML = `<span aria-hidden="true">👤</span> Registrado por: <strong>${nombreUsuario}</strong> (ID: #${idUsuario}) · ${horaTexto}`;
+      meta.innerHTML = `<span aria-hidden="true">👤</span> Registrado por: <strong>${window.escaparHtml(nombreUsuario)}</strong> (ID: #${idUsuario}) · ${window.escaparHtml(horaTexto)}`;
 
       card.appendChild(header);
       card.appendChild(texto);
@@ -945,7 +1096,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const cobro = calcularCobro(activo.horaIngreso);
-    const tarifa = tarifaDeTipo(activo.tipo);
+    const tarifaActual = tarifaDeTipo(activo.tipo);
+    const tarifaAplicada = (activo.tarifaHora !== null && activo.tarifaHora !== undefined && activo.tarifaFraccion !== null && activo.tarifaFraccion !== undefined)
+      ? { precioHora: Number(activo.tarifaHora), precioFraccion: Number(activo.tarifaFraccion) }
+      : tarifaActual;
 
     salidaPlaca.textContent = activo.placa;
     salidaTipo.textContent = activo.tipo;
@@ -954,9 +1108,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderNotaSalida(activo);
 
-    if (tarifa) {
-      salidaTarifa.textContent = `S/ ${tarifa.precioHora.toFixed(2)} /h + S/ ${tarifa.precioFraccion.toFixed(2)} fracción`;
-      salidaMonto.textContent = `S/ ${montoDeCobro(tarifa, cobro).toFixed(2)}`;
+    const adelanto = Number(activo.adelantoReserva || 0);
+    if (salidaAdelantoRow && salidaAdelanto) {
+      if (adelanto > 0) {
+        const sufijoCod = activo.codigoReserva ? ` (${activo.codigoReserva})` : '';
+        salidaAdelanto.textContent = `-S/ ${adelanto.toFixed(2)}${sufijoCod}`;
+        salidaAdelantoRow.style.display = '';
+      } else {
+        salidaAdelantoRow.style.display = 'none';
+      }
+    }
+
+    if (tarifaAplicada) {
+      const bruto = montoDeCobro(tarifaAplicada, cobro);
+      const neto = Math.max(0, Number((bruto - adelanto).toFixed(2)));
+      salidaTarifa.textContent = `S/ ${tarifaAplicada.precioHora.toFixed(2)} /h + S/ ${tarifaAplicada.precioFraccion.toFixed(2)} fracción`;
+      salidaMonto.textContent = `S/ ${neto.toFixed(2)}`;
     } else {
       salidaTarifa.textContent = 'Sin tarifa vigente';
       salidaMonto.textContent = 'S/ —';
@@ -1089,6 +1256,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionUserName) sessionUserName.textContent = sesion.nombre;
     if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
     if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
+    actualizarAvatarUsuario(sesion.nombre);
   }
 
   document.querySelectorAll('#app-sidebar .sidebar-link').forEach((link) => {
@@ -1139,6 +1307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionUserName) sessionUserName.textContent = sesionRestaurada.nombre || '';
     if (sessionUserRole) sessionUserRole.textContent = sesionRestaurada.rol || '';
     if (sessionUserBadge) sessionUserBadge.textContent = sesionRestaurada.rol || '';
+    actualizarAvatarUsuario(sesionRestaurada.nombre || '');
   }
 
   if (sesionRestaurada) {
