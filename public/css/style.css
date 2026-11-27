@@ -2248,6 +2248,8 @@ html {
   display: flex;
   align-items: center;
   gap: 20px;
+  margin-left: auto;
+  margin-right: 16px;
 }
 
 .header-nav-link {
