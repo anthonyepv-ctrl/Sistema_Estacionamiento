@@ -50,9 +50,14 @@ async function asegurarServidor() {
 
 async function login(page, usuario, password = '123456') {
   const visible = await page.isVisible('#login-usuario');
-  if (!visible && (await page.isVisible('#btn-volver-disponibilidad'))) {
-    await page.click('#btn-volver-disponibilidad');
-    await page.waitForSelector('#login-usuario', { timeout: 5000 });
+  if (!visible) {
+    if (await page.isVisible('#btn-header-login')) {
+      await page.click('#btn-header-login');
+      await page.waitForSelector('#login-usuario', { timeout: 5000 });
+    } else if (await page.isVisible('#btn-volver-disponibilidad')) {
+      await page.click('#btn-volver-disponibilidad');
+      await page.waitForSelector('#login-usuario', { timeout: 5000 });
+    }
   }
   await page.fill('#login-usuario', usuario);
   await page.fill('#login-password', password);

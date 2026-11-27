@@ -40,8 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function obtenerToken() {
+    if (typeof window.obtenerTokenSesion === 'function') {
+      return window.obtenerTokenSesion();
+    }
     try {
-      const crudo = sessionStorage.getItem('cochera_sesion');
+      const crudo = localStorage.getItem('cochera_sesion') || sessionStorage.getItem('cochera_sesion');
       if (!crudo) return null;
       const sesion = JSON.parse(crudo);
       return sesion && sesion.token ? sesion.token : null;
@@ -358,8 +361,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cardModulo) {
     cardModulo.addEventListener('click', (evento) => {
       evento.preventDefault();
-      document.querySelectorAll('.view-section').forEach((seccion) => seccion.classList.remove('active'));
-      if (viewOcupacion) viewOcupacion.classList.add('active');
+      if (typeof window.mostrarPantalla === 'function') {
+        window.mostrarPantalla('ocupacion');
+      } else {
+        document.querySelectorAll('.view-section').forEach((seccion) => seccion.classList.remove('active'));
+        if (viewOcupacion) viewOcupacion.classList.add('active');
+      }
       aplicarFechasPorDefecto();
       consultar();
     });
@@ -368,8 +375,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnBack) {
     btnBack.addEventListener('click', (evento) => {
       evento.preventDefault();
-      if (viewOcupacion) viewOcupacion.classList.remove('active');
-      if (viewDashboard) viewDashboard.classList.add('active');
+      if (typeof window.mostrarPantalla === 'function') {
+        window.mostrarPantalla('dashboard');
+      } else {
+        if (viewOcupacion) viewOcupacion.classList.remove('active');
+        if (viewDashboard) viewDashboard.classList.add('active');
+      }
     });
   }
 

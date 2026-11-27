@@ -2,7 +2,7 @@ const express = require('express');
 
 const prisma = require('../config/prisma');
 const { obtenerCapacidad } = require('../config/espacios');
-const { TIPO_VEHICULO, analizarPlaca, normalizarPlaca } = require('../utils/placas');
+const { validarPlacaYTipo } = require('../utils/placas');
 
 const router = express.Router();
 
@@ -11,33 +11,14 @@ const router = express.Router();
 const LLAVE_LOCK_AFORO = 770000;
 
 router.post('/', async (req, res) => {
-  const { placa: placaRaw, tipo, nota, idUsuario, usuario: nombreUsuario } = req.body || {};
-  const config = TIPO_VEHICULO[tipo];
+  const { placa: placaRaw, tipo, nota } = req.body || {};
+  const validacion = validarPlacaYTipo(placaRaw, tipo);
 
-  if (!config) {
-    return res.status(400).json({ error: 'Seleccione un tipo de vehículo válido (auto o moto).' });
+  if (!validacion.ok) {
+    return res.status(400).json({ error: validacion.error });
   }
 
-  const placa = normalizarPlaca(placaRaw);
-  const alfanumerico = String(placaRaw ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-  if (!placa) {
-    return res.status(400).json({ error: 'Ingrese la placa del vehículo.' });
-  }
-
-  // Validación de coherencia estricta entre formato de placa y tipo de vehículo seleccionado (Prevención de errores humanos / Poka-Yoke)
-  const analisis = analizarPlaca(alfanumerico);
-  if (analisis.tipo && analisis.tipo !== tipo) {
-    const esperado = analisis.tipo === 'auto' ? 'Automóvil / Camioneta' : 'Motocicleta';
-    const seleccionado = tipo === 'auto' ? 'Automóvil / Camioneta' : 'Motocicleta';
-    return res.status(400).json({
-      error: `Incoherencia de vehículo: la placa ${placa} corresponde a ${esperado} según la norma oficial MTC, no puede registrarse como ${seleccionado}.`
-    });
-  }
-
-  if (!config.regex.test(placa)) {
-    return res.status(400).json({ error: 'Ingrese una placa válida según el formato peruano (ej. ABC-123 o 1234-5A).' });
-  }
+  const { placa, config } = validacion;
 
   // Sanitización y validación del campo opcional nota (máx. 250 caracteres)
   let notaFinal = null;
@@ -67,22 +48,12 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'No hay una tarifa vigente para este tipo de vehículo.' });
     }
 
-    let usuario = null;
-    if (idUsuario) {
-      usuario = await prisma.usuario.findUnique({ where: { id: Number(idUsuario) } });
-    } else if (nombreUsuario) {
-      usuario = await prisma.usuario.findUnique({ where: { usuario: String(nombreUsuario).trim() } });
-    }
+    const usuario = req.sesion && req.sesion.sub
+      ? await prisma.usuario.findUnique({ where: { id: Number(req.sesion.sub) } })
+      : null;
 
     if (!usuario) {
-      usuario = await prisma.usuario.findFirst({
-        where: { rol: 'RECEPCIONISTA' },
-        orderBy: { id: 'asc' }
-      }) || await prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
-    }
-
-    if (!usuario) {
-      return res.status(500).json({ error: 'No hay un usuario configurado para registrar el ingreso.' });
+      return res.status(401).json({ error: 'Usuario de sesión no válido.' });
     }
 
     // Registro atómico dentro de una transacción para evitar sobrecupo por concurrencia (DEF-77-10)
@@ -146,6 +117,7 @@ router.post('/', async (req, res) => {
           idTipoVehiculo: tipoVehiculo.id,
           idTarifa: tarifa.id,
           idUsuario: usuario.id,
+          horaIngreso: new Date(),
           nota: notaFinal
         }
       });

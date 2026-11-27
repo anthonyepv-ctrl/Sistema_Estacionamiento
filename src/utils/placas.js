@@ -42,17 +42,28 @@ function normalizarPlaca(valor) {
  * @returns {{ ok: true, placa: string, config: { nombre: string, regex: RegExp } } | { ok: false, error: string }}
  */
 function validarPlacaYTipo(placaRaw, tipo) {
-  const config = TIPO_VEHICULO[tipo];
+  const config = typeof tipo === 'string' && Object.prototype.hasOwnProperty.call(TIPO_VEHICULO, tipo)
+    ? TIPO_VEHICULO[tipo]
+    : null;
   if (!config) {
     return { ok: false, error: 'Seleccione un tipo de vehículo válido (auto o moto).' };
   }
 
-  const placa = normalizarPlaca(placaRaw);
-  const alfanumerico = String(placaRaw ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-  if (!placa) {
+  if (typeof placaRaw !== 'string') {
     return { ok: false, error: 'Ingrese la placa del vehículo.' };
   }
+
+  const alfanumerico = placaRaw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  if (!alfanumerico) {
+    return { ok: false, error: 'Ingrese la placa del vehículo.' };
+  }
+
+  if (alfanumerico.length < 6 || alfanumerico.length > 7) {
+    return { ok: false, error: 'Ingrese una placa válida según el formato peruano (ej. ABC-123 o 1234-5A).' };
+  }
+
+  const placa = normalizarPlaca(alfanumerico);
 
   const analisis = analizarPlaca(alfanumerico);
   if (analisis.tipo && analisis.tipo !== tipo) {

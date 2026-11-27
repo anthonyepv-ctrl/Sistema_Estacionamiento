@@ -29,7 +29,8 @@
     "test:concurrencia": "node tests/test-concurrencia-aforo.js",
     "test:seguridad": "node tests/test-seguridad-api.js",
     "test:regresion": "node tests/test-no-regresion.js",
-    "test:reservas": "node tests/test-reservas-sprint3.js"
+    "test:reservas": "node tests/test-reservas-sprint3.js",
+    "test:auditoria": "node tests/test-auditoria-batalla.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

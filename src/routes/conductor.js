@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../config/prisma');
 const { validarPlacaYTipo } = require('../utils/placas');
+const { parsearIdEntero } = require('../utils/validaciones');
 const { calcularMontoAdelanto } = require('../payments');
 
 const router = express.Router();
@@ -97,8 +98,8 @@ router.post('/vehiculos', async (req, res) => {
  * Elimina un vehículo de la cuenta si no tiene reservas vigentes.
  */
 router.delete('/vehiculos/:id', async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
+  const id = parsearIdEntero(req.params.id);
+  if (!id) {
     return res.status(400).json({ error: 'Identificador de vehículo inválido.' });
   }
 
@@ -108,11 +109,20 @@ router.delete('/vehiculos/:id', async (req, res) => {
       return res.status(404).json({ error: 'Vehículo no encontrado en su cuenta.' });
     }
 
-    const reservaActiva = await prisma.reserva.findFirst({
-      where: { idVehiculo: id, estado: 'VIGENTE' }
-    });
+    const [reservaActiva, estadiaActiva] = await Promise.all([
+      prisma.reserva.findFirst({
+        where: { idVehiculo: id, estado: 'VIGENTE' }
+      }),
+      prisma.estadia.findFirst({
+        where: { placa: vehiculo.placa, horaSalida: null }
+      })
+    ]);
+
     if (reservaActiva) {
       return res.status(409).json({ error: 'No puede eliminar un vehículo con una reserva vigente.' });
+    }
+    if (estadiaActiva) {
+      return res.status(409).json({ error: 'No puede eliminar un vehículo que se encuentra actualmente dentro de la cochera.' });
     }
 
     await prisma.vehiculoConductor.delete({ where: { id } });
@@ -132,8 +142,12 @@ router.delete('/vehiculos/:id', async (req, res) => {
  */
 router.get('/historial', async (req, res) => {
   try {
-    const placaFiltro = req.query.placa ? String(req.query.placa).trim().toUpperCase() : null;
-    const estadoFiltro = req.query.estado ? String(req.query.estado).trim().toUpperCase() : null;
+    const placaFiltro = typeof req.query.placa === 'string' && req.query.placa.trim()
+      ? req.query.placa.trim().toUpperCase()
+      : null;
+    const estadoFiltro = typeof req.query.estado === 'string' && req.query.estado.trim()
+      ? req.query.estado.trim().toUpperCase()
+      : null;
 
     const vehiculos = await prisma.vehiculoConductor.findMany({
       where: { idUsuario: req.sesion.sub },

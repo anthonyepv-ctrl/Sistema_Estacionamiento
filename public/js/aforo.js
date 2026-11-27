@@ -8,10 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cardModuloAforo && viewDashboard && viewAforo) {
         cardModuloAforo.addEventListener('click', (e) => {
             e.preventDefault();
-            document.querySelectorAll('.view-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            viewAforo.classList.add('active');
+            if (typeof window.mostrarPantalla === 'function') {
+                window.mostrarPantalla('aforo');
+            } else {
+                document.querySelectorAll('.view-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                viewAforo.classList.add('active');
+            }
             cargarDatosAforo();
         });
     }
@@ -19,14 +23,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnBackToMenuAforo) {
         btnBackToMenuAforo.addEventListener('click', (e) => {
             e.preventDefault();
-            viewAforo.classList.remove('active');
-            viewDashboard.classList.add('active');
+            if (typeof window.mostrarPantalla === 'function') {
+                window.mostrarPantalla('dashboard');
+            } else {
+                viewAforo.classList.remove('active');
+                viewDashboard.classList.add('active');
+            }
         });
     }
 
     function obtenerToken() {
+        if (typeof window.obtenerTokenSesion === 'function') {
+            return window.obtenerTokenSesion();
+        }
         try {
-            const crudo = sessionStorage.getItem('cochera_sesion');
+            const crudo = localStorage.getItem('cochera_sesion') || sessionStorage.getItem('cochera_sesion');
             if (!crudo) return null;
             const sesion = JSON.parse(crudo);
             return sesion && sesion.token ? sesion.token : null;
@@ -88,19 +99,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const esAuto = (v.tipo || '').toLowerCase().includes('auto');
                 const icono = esAuto ? '🚗' : '🏍️';
-                
-                const hora = new Date(v.horaIngreso).toLocaleTimeString('es-PE', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
+                const esc = typeof window.escaparHtml === 'function' ? window.escaparHtml : (x) => String(x ?? '');
+                const hora = typeof window.formatearHoraPeru === 'function'
+                    ? window.formatearHoraPeru(v.horaIngreso, false)
+                    : new Date(v.horaIngreso).toLocaleTimeString('es-PE', {
+                        timeZone: 'America/Lima',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hourCycle: 'h23'
+                    });
 
                 rowElement.innerHTML = `
                     <div class="row-left-group" style="display: flex; align-items: center; gap: 12px;">
                         <span class="spot-icon" style="font-size: 1.4rem;">${icono}</span>
                         <div>
-                            <div class="spot-id-badge mono" style="font-size: 1.1rem; font-weight: 700; color: #111827; letter-spacing: 0.5px;">${v.placa}</div>
-                            <div style="font-size: 0.8rem; color: #6b7280; font-weight: normal; margin-top: 2px;">${v.tipo} · Entrada: ${hora}</div>
+                            <div class="spot-id-badge mono" style="font-size: 1.1rem; font-weight: 700; color: #111827; letter-spacing: 0.5px;">${esc(v.placa)}</div>
+                            <div style="font-size: 0.8rem; color: #6b7280; font-weight: normal; margin-top: 2px;">${esc(v.tipo)} · Entrada: ${esc(hora)}</div>
                         </div>
                     </div>
                     <span class="status-indicator-pill occupied">Ocupando</span>

@@ -5,17 +5,40 @@
   let reservaParaAnular = null;
 
   function formatearFechaHora(iso) {
+    if (typeof window.formatearFechaHoraPeru === 'function') {
+      return window.formatearFechaHoraPeru(iso);
+    }
     if (!iso) return '—';
     const f = new Date(iso);
     if (Number.isNaN(f.getTime())) return '—';
     return f.toLocaleString('es-PE', {
+      timeZone: 'America/Lima',
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false
+      hourCycle: 'h23'
     }).replace(',', '');
+  }
+
+  function formatearFechaCorta(iso) {
+    if (typeof window.formatearFechaCortaPeru === 'function') {
+      return window.formatearFechaCortaPeru(iso);
+    }
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    const partes = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(d);
+    const val = (tipo) => partes.find((p) => p.type === tipo)?.value || '00';
+    return `${val('day')}/${val('month')} ${val('hour')}:${val('minute')}`;
   }
 
   function formatearSoles(monto) {
@@ -32,11 +55,18 @@
   }
 
   function normalizarPlacaInput(valor) {
-    const limpio = String(valor || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
-    if (limpio.length > 3) {
-      return `${limpio.slice(0, 3)}-${limpio.slice(3)}`;
+    if (typeof window.normalizarPlacaMtc === 'function') {
+      return window.normalizarPlacaMtc(valor);
     }
-    return limpio;
+    const limpio = String(valor || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (limpio.length === 0) return '';
+    let corte = 3;
+    if (limpio.length >= 7) corte = 3;
+    else if (/^\d/.test(limpio)) corte = 4;
+    else if (limpio.length === 6 && /\d{4}$/.test(limpio)) corte = 2;
+    if (limpio.length <= corte) return limpio;
+    const maxLen = limpio.length >= 7 ? 7 : 6;
+    return `${limpio.slice(0, corte)}-${limpio.slice(corte, maxLen)}`;
   }
 
   function badgeEstadoReserva(estado) {
@@ -121,17 +151,21 @@
         if (vehiculosConductor.length === 0) {
           tbody.innerHTML = '<tr><td colspan="3" class="caption" style="text-align:center;">Aún no tiene vehículos registrados.</td></tr>';
         } else {
-          tbody.innerHTML = vehiculosConductor.map((v) => `
+          tbody.innerHTML = vehiculosConductor.map((v) => {
+            const placaEsc = escaparHtml(v.placa);
+            const tipoEsc = escaparHtml(v.tipo);
+            return `
             <tr>
-              <td class="mono" style="font-weight:700;">${v.placa}</td>
-              <td>${v.tipo}</td>
+              <td class="mono" style="font-weight:700;">${placaEsc}</td>
+              <td>${tipoEsc}</td>
               <td class="text-right">
-                <button type="button" class="btn btn-secondary btn-sm btn-eliminar-vehiculo" data-id="${v.id}" data-placa="${v.placa}">
+                <button type="button" class="btn btn-secondary btn-sm btn-eliminar-vehiculo" data-id="${Number(v.id)}" data-placa="${placaEsc}">
                   Eliminar
                 </button>
               </td>
             </tr>
-          `).join('');
+          `;
+          }).join('');
 
           tbody.querySelectorAll('.btn-eliminar-vehiculo').forEach((btn) => {
             btn.addEventListener('click', async () => {
@@ -153,7 +187,7 @@
       if (selectReserva) {
         const valorPrevio = selectReserva.value;
         selectReserva.innerHTML = '<option value="">-- Seleccione un vehículo registrado --</option>' +
-          vehiculosConductor.map((v) => `<option value="${v.id}" data-tipo="${v.tipoCodigo}">${v.placa} — ${v.tipo}</option>`).join('');
+          vehiculosConductor.map((v) => `<option value="${Number(v.id)}" data-tipo="${escaparHtml(v.tipoCodigo)}">${escaparHtml(v.placa)} — ${escaparHtml(v.tipo)}</option>`).join('');
 
         if (window.tipoReservaPreseleccionado) {
           const candidato = vehiculosConductor.find((v) => v.tipoCodigo === window.tipoReservaPreseleccionado);
@@ -186,7 +220,7 @@
       }
     } catch (err) {
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="3" class="caption" style="text-align:center;color:#EF4444;">${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="caption" style="text-align:center;color:#EF4444;">${escaparHtml(err.message)}</td></tr>`;
       }
     }
   }
@@ -231,14 +265,17 @@
       if (contenedorCards) {
         contenedorCards.innerHTML = reservas.map((r) => {
           const puedeAnular = r.estado === 'VIGENTE';
+          const codigoEsc = escaparHtml(r.codigo);
+          const placaEsc = escaparHtml(r.placa);
+          const tipoEsc = escaparHtml(r.tipo || 'Automóvil');
           return `
-            <div class="card reserva-card" data-id="${r.id}">
+            <div class="card reserva-card" data-id="${Number(r.id)}">
               <h4>
-                <span>Reserva #${r.id}</span>
-                <span class="mono" style="font-size:0.85rem;color:var(--text2);">${r.codigo}</span>
+                <span>Reserva #${Number(r.id)}</span>
+                <span class="mono" style="font-size:0.85rem;color:var(--text2);">${codigoEsc}</span>
               </h4>
-              <p><strong>Placa:</strong> <span class="mono" style="font-weight:700;">${r.placa}</span></p>
-              <p><strong>Tipo:</strong> ${r.tipo || 'Automóvil'}</p>
+              <p><strong>Placa:</strong> <span class="mono" style="font-weight:700;">${placaEsc}</span></p>
+              <p><strong>Tipo:</strong> ${tipoEsc}</p>
               <p><strong>Periodo:</strong> <span class="mono" style="font-size:0.82rem;">${formatearFechaHora(r.fechaReserva)} → ${formatearFechaHora(r.fechaLimite)}</span></p>
               <p><strong>Estado:</strong> ${badgeEstadoReserva(r.estado)}</p>
               <div class="reserva-monto-tag">
@@ -247,11 +284,11 @@
               </div>
               ${puedeAnular ? `
                 <button type="button" class="btn-anular btn btn-danger btn-abrir-anular-reserva"
-                  data-id="${r.id}"
-                  data-codigo="${r.codigo}"
-                  data-placa="${r.placa}"
-                  data-tipo="${r.tipo || 'Automóvil'}"
-                  data-monto="${r.montoAdelanto}">
+                  data-id="${Number(r.id)}"
+                  data-codigo="${codigoEsc}"
+                  data-placa="${placaEsc}"
+                  data-tipo="${tipoEsc}"
+                  data-monto="${Number(r.montoAdelanto)}">
                   Anular reserva
                 </button>
               ` : ''}
@@ -264,11 +301,14 @@
       if (tbody) {
         tbody.innerHTML = reservas.map((r) => {
           const puedeAnular = r.estado === 'VIGENTE';
+          const codigoEsc = escaparHtml(r.codigo);
+          const placaEsc = escaparHtml(r.placa);
+          const tipoEsc = escaparHtml(r.tipo || 'Automóvil');
           return `
             <tr>
-              <td class="mono" style="font-weight:700;">${r.codigo}</td>
-              <td class="mono" style="font-weight:700;">${r.placa}</td>
-              <td>${r.tipo || 'Automóvil'}</td>
+              <td class="mono" style="font-weight:700;">${codigoEsc}</td>
+              <td class="mono" style="font-weight:700;">${placaEsc}</td>
+              <td>${tipoEsc}</td>
               <td class="mono">${formatearFechaHora(r.fechaReserva)}</td>
               <td class="mono">${formatearFechaHora(r.fechaLimite)}</td>
               <td class="text-right mono" style="font-weight:600;">${formatearSoles(r.montoAdelanto)}</td>
@@ -277,11 +317,11 @@
                 ${puedeAnular ? `
                   <button type="button" class="btn btn-danger btn-sm btn-anular btn-abrir-anular-reserva"
                     title="Anular reserva"
-                    data-id="${r.id}"
-                    data-codigo="${r.codigo}"
-                    data-placa="${r.placa}"
-                    data-tipo="${r.tipo || 'Automóvil'}"
-                    data-monto="${r.montoAdelanto}">
+                    data-id="${Number(r.id)}"
+                    data-codigo="${codigoEsc}"
+                    data-placa="${placaEsc}"
+                    data-tipo="${tipoEsc}"
+                    data-monto="${Number(r.montoAdelanto)}">
                     Anular
                   </button>
                 ` : '<span class="caption">—</span>'}
@@ -305,10 +345,10 @@
       });
     } catch (err) {
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="8" class="caption" style="text-align:center;color:#EF4444;">${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="caption" style="text-align:center;color:#EF4444;">${escaparHtml(err.message)}</td></tr>`;
       }
       if (contenedorCards) {
-        contenedorCards.innerHTML = `<p class="caption" style="text-align:center;color:#EF4444;grid-column:1/-1;">${err.message}</p>`;
+        contenedorCards.innerHTML = `<p class="caption" style="text-align:center;color:#EF4444;grid-column:1/-1;">${escaparHtml(err.message)}</p>`;
       }
     }
   }
@@ -385,15 +425,7 @@
         return;
       }
 
-      const formatearCorta = (iso) => {
-        if (!iso) return '—';
-        const d = new Date(iso);
-        const dd = String(d.getDate()).padStart(2, '0');
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const hh = String(d.getHours()).padStart(2, '0');
-        const mi = String(d.getMinutes()).padStart(2, '0');
-        return `${dd}/${mm} ${hh}:${mi}`;
-      };
+      const formatearCorta = formatearFechaCorta;
 
       tbody.innerHTML = estadias.map((e) => {
         const badge = e.estado === 'En cochera'
@@ -453,15 +485,7 @@
         return;
       }
 
-      const formatearCorta = (iso) => {
-        if (!iso) return '—';
-        const d = new Date(iso);
-        const dd = String(d.getDate()).padStart(2, '0');
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const hh = String(d.getHours()).padStart(2, '0');
-        const mi = String(d.getMinutes()).padStart(2, '0');
-        return `${dd}/${mm} ${hh}:${mi}`;
-      };
+      const formatearCorta = formatearFechaCorta;
 
       tbody.innerHTML = reservas.map((r) => {
         const puedeConfirmar = r.estado === 'VIGENTE';
@@ -517,7 +541,7 @@
         });
       });
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="9" class="caption" style="text-align:center;color:#EF4444;">${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="caption" style="text-align:center;color:#EF4444;">${escaparHtml(err.message)}</td></tr>`;
     }
   }
 
@@ -550,7 +574,7 @@
         const dni = document.getElementById('reg-dni').value.trim();
         const celular = document.getElementById('reg-celular').value.trim();
         const usuario = document.getElementById('reg-usuario').value.trim();
-        const contrasena = document.getElementById('reg-password').value.trim();
+        const contrasena = document.getElementById('reg-password').value;
         const btnSubmit = document.getElementById('btn-registro-conductor-submit');
 
         btnSubmit.classList.add('loading');
@@ -623,9 +647,16 @@
 
     // 4. Formulario Registrar Vehículo del Conductor
     const inputPlacaVehiculo = document.getElementById('vehiculo-placa');
+    const selectTipoVehiculo = document.getElementById('vehiculo-tipo');
     if (inputPlacaVehiculo) {
       inputPlacaVehiculo.addEventListener('input', () => {
         inputPlacaVehiculo.value = normalizarPlacaInput(inputPlacaVehiculo.value);
+        if (selectTipoVehiculo && typeof window.inferirTipoPlacaMtc === 'function') {
+          const tipoInferido = window.inferirTipoPlacaMtc(inputPlacaVehiculo.value);
+          if (tipoInferido) {
+            selectTipoVehiculo.value = tipoInferido;
+          }
+        }
       });
     }
 

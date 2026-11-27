@@ -34,7 +34,9 @@ function firmarToken(usuario) {
 function verificarToken(token) {
   if (typeof token !== 'string' || !token.includes('.')) return null;
 
-  const [cuerpo, firma] = token.split('.');
+  const partes = token.split('.');
+  if (partes.length !== 2) return null;
+  const [cuerpo, firma] = partes;
   if (!cuerpo || !firma) return null;
 
   const esperada = firmar(cuerpo);

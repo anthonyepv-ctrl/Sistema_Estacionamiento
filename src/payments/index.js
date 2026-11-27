@@ -25,7 +25,9 @@ const ADAPTADORES = {
 };
 
 function obtenerAdaptador(proveedor) {
-  const adaptador = ADAPTADORES[proveedor];
+  const adaptador = typeof proveedor === 'string' && Object.prototype.hasOwnProperty.call(ADAPTADORES, proveedor)
+    ? ADAPTADORES[proveedor]
+    : null;
   if (!adaptador) {
     const err = new Error(`Proveedor de pasarela no soportado: ${proveedor}`);
     err.statusCode = 500;

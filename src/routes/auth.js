@@ -12,14 +12,24 @@ const REGEX_CELULAR = /^9\d{8}$/;
 router.post('/registro-conductor', async (req, res) => {
   const { nombre, dni, celular, usuario, contrasena } = req.body || {};
 
-  const nombreLimpio = String(nombre ?? '').trim();
-  const dniLimpio = String(dni ?? '').trim();
-  const celularLimpio = String(celular ?? '').trim();
-  const usuarioLimpio = String(usuario ?? '').trim();
-  const clave = String(contrasena ?? '');
+  if (
+    typeof nombre !== 'string'
+    || typeof usuario !== 'string'
+    || typeof contrasena !== 'string'
+    || (typeof dni !== 'string' && typeof dni !== 'number')
+    || (typeof celular !== 'string' && typeof celular !== 'number')
+  ) {
+    return res.status(400).json({ error: 'Complete todos los campos requeridos con formato válido.' });
+  }
 
-  if (nombreLimpio.length < 3 || nombreLimpio.length > 100) {
-    return res.status(400).json({ error: 'Ingrese su nombre completo (mínimo 3 caracteres).' });
+  const nombreLimpio = nombre.trim();
+  const dniLimpio = String(dni).trim();
+  const celularLimpio = String(celular).trim();
+  const usuarioLimpio = usuario.trim();
+  const clave = contrasena;
+
+  if (nombreLimpio.length < 3 || nombreLimpio.length > 100 || /[<>]/.test(nombreLimpio)) {
+    return res.status(400).json({ error: 'Ingrese su nombre completo (3 a 100 caracteres, sin símbolos < ni >).' });
   }
   if (!REGEX_DNI.test(dniLimpio)) {
     return res.status(400).json({ error: 'Ingrese un número de documento válido (DNI: 8 dígitos).' });
@@ -30,8 +40,8 @@ router.post('/registro-conductor', async (req, res) => {
   if (!/^[a-zA-Z0-9._-]{4,50}$/.test(usuarioLimpio)) {
     return res.status(400).json({ error: 'El usuario debe tener entre 4 y 50 caracteres alfanuméricos.' });
   }
-  if (clave.length < 6) {
-    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
+  if (clave.length < 6 || clave.length > 72 || clave.trim().length < 6) {
+    return res.status(400).json({ error: 'La contraseña debe tener entre 6 y 72 caracteres válidos.' });
   }
 
   try {
@@ -78,20 +88,24 @@ router.post('/registro-conductor', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { usuario, contrasena } = req.body || {};
 
-  if (!usuario || !contrasena) {
+  if (typeof usuario !== 'string' || typeof contrasena !== 'string' || !usuario.trim() || !contrasena) {
     return res.status(400).json({ error: 'Ingrese usuario y contraseña.' });
+  }
+
+  if (contrasena.length > 72) {
+    return res.status(400).json({ error: 'La contraseña excede la longitud máxima permitida.' });
   }
 
   try {
     const encontrado = await prisma.usuario.findUnique({
-      where: { usuario: String(usuario).trim() }
+      where: { usuario: usuario.trim() }
     });
 
     if (!encontrado) {
       return res.status(401).json({ error: 'Credenciales inválidas.' });
     }
 
-    const esValida = await bcrypt.compare(String(contrasena), encontrado.contrasena);
+    const esValida = await bcrypt.compare(contrasena, encontrado.contrasena);
 
     if (!esValida) {
       return res.status(401).json({ error: 'Credenciales inválidas.' });

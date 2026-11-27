@@ -1,6 +1,8 @@
 const express = require('express');
 
 const prisma = require('../config/prisma');
+const { normalizarPlaca } = require('../utils/placas');
+const { parsearIdEntero } = require('../utils/validaciones');
 
 const router = express.Router();
 
@@ -84,21 +86,38 @@ router.get('/metodos-pago', async (req, res) => {
 router.post('/', async (req, res) => {
   const { estadiaId, placa, metodoPago = 'Efectivo' } = req.body || {};
 
-  if (!estadiaId && !placa) {
+  const tieneEstadiaId = estadiaId !== undefined && estadiaId !== null && estadiaId !== '';
+  const tienePlaca = placa !== undefined && placa !== null && placa !== '';
+
+  if (!tieneEstadiaId && !tienePlaca) {
     return res.status(400).json({ error: 'Debe especificar el vehículo para registrar la salida.' });
   }
 
-  if (!METODOS_PERMITIDOS.includes(metodoPago)) {
+  let whereCond;
+  if (tieneEstadiaId) {
+    const idValido = parsearIdEntero(estadiaId);
+    if (!idValido) {
+      return res.status(400).json({ error: 'Identificador de estadía inválido.' });
+    }
+    whereCond = { id: idValido, horaSalida: null };
+  } else {
+    if (typeof placa !== 'string') {
+      return res.status(400).json({ error: 'La placa debe ser una cadena de texto válida.' });
+    }
+    const placaNormalizada = normalizarPlaca(placa);
+    if (!placaNormalizada) {
+      return res.status(400).json({ error: 'Debe especificar una placa válida para registrar la salida.' });
+    }
+    whereCond = { placa: placaNormalizada, horaSalida: null };
+  }
+
+  if (typeof metodoPago !== 'string' || !METODOS_PERMITIDOS.includes(metodoPago)) {
     return res.status(400).json({
       error: `Método de pago no válido. Permitidos: ${METODOS_PERMITIDOS.join(', ')}.`
     });
   }
 
   try {
-    const whereCond = estadiaId
-      ? { id: Number(estadiaId), horaSalida: null }
-      : { placa: String(placa).trim().toUpperCase(), horaSalida: null };
-
     const estadia = await prisma.estadia.findFirst({
       where: whereCond,
       include: {
@@ -124,9 +143,10 @@ router.post('/', async (req, res) => {
     }
 
     const metodo = await asegurarMetodoPago(metodoPago);
-    const horaSalida = new Date();
+    const horaIngresoDate = new Date(estadia.horaIngreso);
+    const horaSalida = new Date(Math.max(Date.now(), horaIngresoDate.getTime()));
     const cobroBase = calcularTiempoYCobro(
-      new Date(estadia.horaIngreso),
+      horaIngresoDate,
       horaSalida,
       Number(tarifa.precioHora),
       Number(tarifa.precioFraccion)

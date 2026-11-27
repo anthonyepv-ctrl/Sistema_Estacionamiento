@@ -9,7 +9,8 @@ const SUITES = [
   { nombre: 'Sprint 3 Integral (Mock Pasarela)', archivo: 'tests/test-reservas-sprint3.js', env: { CULQI_MOCK: '1' } },
   { nombre: 'Seguridad / Ataque Bot (Rate Limit, 413, XSS/SQLi, IDOR)', archivo: 'tests/test-ataque-bot.js', env: {} },
   { nombre: 'Seguridad de API (RBAC / Sesiones)', archivo: 'tests/test-seguridad-api.js', env: {} },
-  { nombre: 'No Regresión (Sprints 1 y 2)', archivo: 'tests/test-no-regresion.js', env: {} }
+  { nombre: 'No Regresión (Sprints 1 y 2)', archivo: 'tests/test-no-regresion.js', env: {} },
+  { nombre: 'Auditoría Batalla de Errores (Backend + E2E)', archivo: 'tests/test-auditoria-batalla.js', env: { CULQI_MOCK: '1' } }
 ];
 
 console.log('========================================================================');

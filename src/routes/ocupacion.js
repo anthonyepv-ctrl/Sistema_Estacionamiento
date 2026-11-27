@@ -56,8 +56,10 @@ function esFechaValida(texto) {
 }
 
 function validarRango(req) {
-  const fechaInicio = String(req.query.fechaInicio || req.query.inicio || '').trim();
-  const fechaFin = String(req.query.fechaFin || req.query.fin || '').trim();
+  const rawInicio = req.query.fechaInicio !== undefined ? req.query.fechaInicio : req.query.inicio;
+  const rawFin = req.query.fechaFin !== undefined ? req.query.fechaFin : req.query.fin;
+  const fechaInicio = typeof rawInicio === 'string' ? rawInicio.trim() : '';
+  const fechaFin = typeof rawFin === 'string' ? rawFin.trim() : '';
   const hoy = obtenerHoyPeru();
 
   if (!fechaInicio || !fechaFin) {
