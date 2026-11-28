@@ -149,7 +149,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function mostrarPantalla(nombre) {
+  function formatearRolLegible(rol) {
+    if (rol === 'DUENO' || rol === 'DUEÑO') return 'Dueño';
+    if (rol === 'RECEPCIONISTA') return 'Recepcionista';
+    if (rol === 'CONDUCTOR') return 'Conductor';
+    return rol || '';
+  }
+
+  function cerrarMenuUsuario() {
+    const dropdown = document.getElementById('user-menu-dropdown');
+    const trigger = document.getElementById('btn-user-menu');
+    if (dropdown) dropdown.classList.add('hidden');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+  }
+
+  function mostrarPantalla(nombre, opciones = {}) {
+    cerrarMenuUsuario();
+    const esModoPanelAforo = Boolean(opciones && opciones.modoPanel);
+
     if (nombre !== 'disponibilidad' && window.disponibilidadModulo && typeof window.disponibilidadModulo.detener === 'function') {
       window.disponibilidadModulo.detener();
     }
@@ -160,12 +177,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const headerLandingNav = document.getElementById('header-landing-nav');
     if (headerLandingNav) {
-      headerLandingNav.classList.toggle('hidden', nombre !== 'disponibilidad');
+      headerLandingNav.classList.toggle('hidden', nombre !== 'disponibilidad' || esModoPanelAforo);
     }
 
     const btnHeaderPortal = document.getElementById('btn-header-portal');
     if (btnHeaderPortal) {
-      btnHeaderPortal.textContent = nombre === 'disponibilidad' ? 'Mi Panel' : 'Portal Público';
+      const mostrarMiPanel = nombre === 'disponibilidad' && !esModoPanelAforo && Boolean(rolActual);
+      btnHeaderPortal.classList.toggle('hidden', !mostrarMiPanel);
+    }
+
+    const btnMenuMiPanel = document.getElementById('btn-menu-mi-panel');
+    if (btnMenuMiPanel) {
+      btnMenuMiPanel.classList.toggle('hidden', nombre === 'dashboard');
     }
 
     if (nombre === 'login') {
@@ -210,7 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
       headerUserSection.style.display = 'flex';
     } else if (nombre === 'disponibilidad') {
       const viewDisponibilidad = document.getElementById('view-disponibilidad');
-      if (viewDisponibilidad) viewDisponibilidad.classList.add('active');
+      if (viewDisponibilidad) {
+        viewDisponibilidad.classList.add('active');
+        viewDisponibilidad.classList.toggle('modo-panel-aforo', esModoPanelAforo);
+      }
       headerUserSection.style.display = rolActual ? 'flex' : 'none';
       if (window.disponibilidadModulo && typeof window.disponibilidadModulo.iniciar === 'function') {
         window.disponibilidadModulo.iniciar();
@@ -250,19 +276,19 @@ document.addEventListener('DOMContentLoaded', () => {
       cargarModuloUsuarios();
     }
 
-    actualizarSidebar(nombre, rolActual);
+    actualizarSidebar(nombre, rolActual, esModoPanelAforo);
 
     if (nombre && nombre !== 'login') {
       try { localStorage.setItem('cochera_vista_activa', nombre); } catch (_) {}
     }
   }
 
-  function actualizarSidebar(vistaActiva, rol) {
+  function actualizarSidebar(vistaActiva, rol, esModoPanelAforo = false) {
     const sidebar = document.getElementById('app-sidebar');
     if (!sidebar) return;
 
     const rolNormalizado = rol === 'DUEÑO' ? 'DUENO' : rol;
-    if (!rolNormalizado || vistaActiva === 'login' || vistaActiva === 'dashboard') {
+    if (!rolNormalizado || vistaActiva === 'login' || vistaActiva === 'dashboard' || (vistaActiva === 'disponibilidad' && !esModoPanelAforo)) {
       sidebar.classList.add('hidden');
       return;
     }
@@ -458,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (sessionUserName) sessionUserName.textContent = sesion.nombre;
-        if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
+        if (sessionUserRole) sessionUserRole.textContent = formatearRolLegible(sesion.rol);
         if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
         actualizarAvatarUsuario(sesion.nombre);
 
@@ -1268,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cardModuloDisponibilidad = document.getElementById('card-modulo-disponibilidad');
   if (cardModuloDisponibilidad) {
     cardModuloDisponibilidad.addEventListener('click', () => {
-      mostrarPantalla('disponibilidad');
+      mostrarPantalla('disponibilidad', { modoPanel: true });
     });
   }
 
@@ -1291,12 +1317,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnHeaderPortal = document.getElementById('btn-header-portal');
   if (btnHeaderPortal) {
     btnHeaderPortal.addEventListener('click', () => {
-      const viewDisp = document.getElementById('view-disponibilidad');
-      if (viewDisp && viewDisp.classList.contains('active') && window.sesionActual && window.sesionActual.rol) {
+      if (window.sesionActual && window.sesionActual.rol) {
         mostrarPantalla('dashboard');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        irAPortadaPublica();
+      }
+    });
+  }
+
+  const btnUserMenu = document.getElementById('btn-user-menu');
+  const userMenuDropdown = document.getElementById('user-menu-dropdown');
+  const btnMenuMiPanel = document.getElementById('btn-menu-mi-panel');
+
+  if (btnUserMenu && userMenuDropdown) {
+    btnUserMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cerrado = userMenuDropdown.classList.toggle('hidden');
+      btnUserMenu.setAttribute('aria-expanded', cerrado ? 'false' : 'true');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!userMenuDropdown.classList.contains('hidden') && !e.target.closest('.user-menu-wrapper')) {
+        cerrarMenuUsuario();
+      }
+    });
+  }
+
+  if (btnMenuMiPanel) {
+    btnMenuMiPanel.addEventListener('click', () => {
+      cerrarMenuUsuario();
+      if (window.sesionActual && window.sesionActual.rol) {
+        mostrarPantalla('dashboard');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
   }
@@ -1311,7 +1362,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rol: sesion.rol
     });
     if (sessionUserName) sessionUserName.textContent = sesion.nombre;
-    if (sessionUserRole) sessionUserRole.textContent = sesion.rol;
+    if (sessionUserRole) sessionUserRole.textContent = formatearRolLegible(sesion.rol);
     if (sessionUserBadge) sessionUserBadge.textContent = sesion.rol;
     actualizarAvatarUsuario(sesion.nombre);
   }
@@ -1566,6 +1617,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      cerrarMenuUsuario();
+    }
     if (e.key === 'Escape' && viewTarifas.classList.contains('active')) {
       cargarTarifaEnFormulario(tarifaSeleccionadaId, true);
     }
@@ -1587,7 +1641,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rol: sesionRestaurada.rol
     };
     if (sessionUserName) sessionUserName.textContent = sesionRestaurada.nombre || '';
-    if (sessionUserRole) sessionUserRole.textContent = sesionRestaurada.rol || '';
+    if (sessionUserRole) sessionUserRole.textContent = formatearRolLegible(sesionRestaurada.rol || '');
     if (sessionUserBadge) sessionUserBadge.textContent = sesionRestaurada.rol || '';
     actualizarAvatarUsuario(sesionRestaurada.nombre || '');
   }

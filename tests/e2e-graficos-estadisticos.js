@@ -240,6 +240,7 @@ async function login(page, usuario, password = '123456') {
     console.log('\n[CP-06] Validando restricción de acceso para rol RECEPCIONISTA...');
     await page.click('#btn-back-to-menu-estadisticas');
     await page.waitForTimeout(500);
+    await page.click('#btn-user-menu');
     await page.click('#btn-logout');
     await page.waitForTimeout(500);
 

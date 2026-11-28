@@ -410,8 +410,10 @@
     iniciar: () => {
       iniciarPolling();
       const autenticado = haySesionActiva();
+      const viewDisp = document.getElementById('view-disponibilidad');
+      const enModoPanel = Boolean(viewDisp && viewDisp.classList.contains('modo-panel-aforo'));
       if (topBarDisponibilidad) {
-        topBarDisponibilidad.classList.toggle('hidden', !autenticado);
+        topBarDisponibilidad.classList.toggle('hidden', !autenticado || !enModoPanel);
       }
       if (btnHeaderLogin) {
         btnHeaderLogin.classList.toggle('hidden', autenticado);

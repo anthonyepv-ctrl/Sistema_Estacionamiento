@@ -104,6 +104,9 @@ p {
 
 /* Barra Superior (App Header) */
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 900;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   height: 60px;
@@ -201,6 +204,11 @@ p {
 }
 
 .app-sidebar {
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  align-self: flex-start;
   width: 268px;
   flex-shrink: 0;
   background: #F8FAFC;
@@ -309,6 +317,9 @@ p {
   }
 
   .app-sidebar {
+    position: static;
+    height: auto;
+    overflow-y: visible;
     width: 100%;
     border-right: none;
     border-bottom: 1px solid var(--border);
@@ -2564,9 +2575,113 @@ html {
 }
 
 @media (max-width: 480px) {
-  .user-profile-badge {
+  .user-meta {
     display: none;
   }
+}
+
+.user-menu-wrapper {
+  position: relative;
+}
+
+.user-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 4px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.user-menu-trigger:hover {
+  background: #F3F4F6;
+  border-color: var(--border);
+}
+
+.user-menu-trigger:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.user-meta {
+  text-align: left;
+}
+
+.user-role-subtle {
+  display: block;
+  font-size: 11px;
+  color: var(--text2);
+  opacity: 0.78;
+  line-height: 1.15;
+}
+
+.user-menu-chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 175px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px rgba(17, 24, 39, 0.12);
+  padding: 6px;
+  z-index: 950;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-menu-dropdown.hidden {
+  display: none;
+}
+
+.user-dropdown-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.user-dropdown-item.hidden {
+  display: none;
+}
+
+.user-dropdown-item:hover {
+  background: #F3F4F6;
+}
+
+.user-dropdown-logout {
+  color: var(--err);
+}
+
+.user-dropdown-logout:hover {
+  background: var(--errbg);
+}
+
+#view-disponibilidad.modo-panel-aforo .landing-hero,
+#view-disponibilidad.modo-panel-aforo #seccion-como-funciona,
+#view-disponibilidad.modo-panel-aforo .landing-beneficios,
+#view-disponibilidad.modo-panel-aforo #footer-comercio-culqi {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
