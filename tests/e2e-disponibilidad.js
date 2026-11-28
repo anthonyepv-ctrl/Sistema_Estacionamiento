@@ -159,6 +159,7 @@ function report(cond, msg) {
 
     // ---------- responsive (anonimo, como lo ve un conductor) ----------
     console.log('\n[Responsive] Vista movil sin sesion');
+    await page.locator('#btn-user-menu').click();
     await page.locator('#btn-logout').click();
     await page.waitForTimeout(700);
     report(await page.locator('#view-disponibilidad').evaluate((el) => el.classList.contains('active')), 'Cierre de sesion regresa a portada publica');

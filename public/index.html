@@ -27,25 +27,33 @@
       <a href="#footer-comercio-culqi" class="header-nav-link">Acerca de Nosotros</a>
     </nav>
 
-    <!-- Información del usuario en sesión y cerrar sesión (oculto en pantalla de Login) -->
+    <!-- Información del usuario en sesión y menú desplegable limpio -->
     <div class="header-actions-wrap">
       <button type="button" class="btn btn-primary btn-sm hidden" id="btn-header-login">
         Iniciar Sesión
       </button>
       <div class="header-user-section" id="header-user-section" style="display: none;">
-        <button type="button" class="btn btn-secondary btn-sm btn-header-portal" id="btn-header-portal">
-          Portal Público
+        <button type="button" class="btn btn-primary btn-sm btn-header-portal hidden" id="btn-header-portal">
+          Mi Panel
         </button>
-        <div class="user-profile-badge">
-          <div class="user-avatar">DA</div>
-          <div class="user-meta">
-            <span class="user-name" id="session-user-name">Leonardo Aliaga</span>
+        <div class="user-menu-wrapper">
+          <button type="button" class="user-menu-trigger" id="btn-user-menu" aria-haspopup="true" aria-expanded="false">
+            <div class="user-avatar">AD</div>
+            <div class="user-meta">
+              <span class="user-name" id="session-user-name">Administrador</span>
+              <span class="user-role-subtle" id="session-user-role">Dueño</span>
+            </div>
+            <svg class="user-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="user-menu-dropdown hidden" id="user-menu-dropdown" role="menu">
+            <button type="button" class="user-dropdown-item" id="btn-menu-mi-panel" role="menuitem">
+              Ir a Mi Panel
+            </button>
+            <button type="button" class="user-dropdown-item user-dropdown-logout" id="btn-logout" role="menuitem">
+              Cerrar Sesión
+            </button>
           </div>
-          <span class="badge badge-primary mono" id="session-user-badge">DUEÑO</span>
         </div>
-        <button type="button" class="btn-logout" id="btn-logout" title="Cerrar sesión">
-          Cerrar Sesión
-        </button>
       </div>
     </div>
   </header>

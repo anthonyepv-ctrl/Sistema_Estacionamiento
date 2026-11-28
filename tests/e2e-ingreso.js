@@ -81,6 +81,7 @@ async function login(page, usuario) {
     await login(page, 'admin');
     check(await page.isVisible('#card-modulo-tarifas'), 'dueno VE "Configurar Tarifas"');
     check(!(await page.isVisible('#card-modulo-ingreso')), 'dueno NO ve "Registrar Ingreso"');
+    await page.click('#btn-user-menu');
     await page.click('#btn-logout');
     await page.waitForFunction(() => {
       const login = document.getElementById('view-login')?.classList.contains('active');

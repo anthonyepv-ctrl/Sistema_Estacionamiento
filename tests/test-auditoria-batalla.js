@@ -448,6 +448,7 @@ async function ejecutarAuditoriaBatalla() {
       assert.ok(!capOcupacion.includes('NaN'), 'Ocupación debe cargar sin errores');
 
       // Cerrar sesión y entrar como RECEPCIONISTA para verificar descuento de adelanto en Registrar Salida
+      await page.click('#btn-user-menu');
       await page.click('#btn-logout');
       await page.waitForFunction(() => document.getElementById('view-disponibilidad')?.classList.contains('active'));
       await page.click('#btn-header-login');
@@ -490,6 +491,7 @@ async function ejecutarAuditoriaBatalla() {
       assert.strictEqual(horaEntradaUI.slice(0, 2), horaLimaEsperada.slice(0, 2), `Hora entrada UI (${horaEntradaUI}) debe coincidir con hora Lima (${horaLimaEsperada}) incluso con browser en UTC`);
 
       // Cerrar sesión y probar input de placa moto 7 caracteres como CONDUCTOR
+      await page.click('#btn-user-menu');
       await page.click('#btn-logout');
       await page.click('#btn-header-login');
       await page.fill('#login-usuario', usuarioCond);
@@ -505,6 +507,7 @@ async function ejecutarAuditoriaBatalla() {
       assert.strictEqual(valTipoSelect, 'moto', 'Debe autoseleccionar tipo moto');
 
       // [CP-AUD-18] E2E: Libro de Reclamaciones, Tarifas sin combobox redundante, Usuarios Admin y descarga CSV Blob
+      await page.click('#btn-user-menu');
       await page.click('#btn-logout');
       await page.waitForFunction(() => document.getElementById('view-disponibilidad')?.classList.contains('active'));
       await page.click('#btn-abrir-libro-reclamaciones');
